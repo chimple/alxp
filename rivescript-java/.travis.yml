@@ -1,0 +1,29 @@
+language: java
+sudo: false
+jdk:
+- oraclejdk8
+before_install:
+- openssl aes-256-cbc -K $encrypted_69327d5a42d4_key -iv $encrypted_69327d5a42d4_iv -in secring.gpg.enc -out secring.gpg -d
+after_success:
+- ./.travis-deploy-artifacts.sh
+cache:
+  directories:
+  - $HOME/.gradle
+  - $HOME/.m2
+notifications:
+  webhooks:
+    urls:
+    - https://webhooks.gitter.im/e/53c5025773af9113e108
+    on_success: always  # options: [always|never|change] default: always
+    on_failure: always  # options: [always|never|change] default: always
+    on_start: never     # options: [always|never|change] default: always
+env:
+  global:
+  # SIGNING_KEY
+  - secure: "xlxM7lxFwvIMkh9GoDASvaINYwzh9A8fI2t0hd0pZBK/tcyLKM/4A7e92DI8ltkkGZrpPaWxyLoBkCNv0n99QKjqaonksnvwd2bbFzVqXuyJLPjh7vbA5HlR8KCf6NIn5E0ykgFCpDKMq4Wo5vSJT9bDC0gNSchbO285BwzT0LRA7R+rUlQTPUXk++VqYYmRhwuySDjnUwCAtjBoHTGhH6nB/41eIyeDz7U+oAmO4KAnRn4303FWV5p1fOP0mJkKzvkt2ryjiJ5vISWM3kUlUiUJVPLRYVgbdvWshE0C4kscUKiNZ+LfsyjNech/+r2mBZWN0cH91rTtcXn0bcmR29JPZUD5tb9BLjB9wlGV0ZfkRgJ0/acKq22BLA7r04eNdd4tk3I0puqX43cKWQ88z+HH8tdVrkHFOeP7yV4uxbhRYA2W2IGOFFcLbHaLlJizRr4JpJsSKiK+b9IPiLkP2Pyifjqq/NR/usUXBvvxLmYQe5PFbezsXo1LZ0xQQwaqdHGPC+R26SSr+9A7qmn/8hWhggnpNszWc8GVTc+i+nS1bghyGm6iBg3OMHkUXnEX4rs/sREM0xdqwRqxxCgAJADTxNOpi3pCmOZMhAEewFgovNuz/bqvz3MMcW3JKRTwTV5nbQQbZaJ0CXEjKm8N+ziM4jNPfZf+TqIc4CntzVo="
+  # SIGNING_PASSWORD
+  - secure: "RqngaD+YkMApJNd0+63OvXdUJH9j/6bAuxL2BKUgDBdZJKWh5iW6SSA5JGrZRjXGDKGKgasCttBLWzN5idqsDsyudUL5Qa0LMlEhaORi1u1e1KxhJTef5iDtdHagho0rSXcrsWPQ1HpAHMyk/v4Eu+4+pI4kGStNh+u93geyKoMNWraIVKdTQ9BjIe9ubVe9vTj45JcWLJET0BqjrWVk7/dRXlo6zCMnbSGS2vr7b/ctLCNqwUX3ih73ZR5OUu9u3mK/zB7k269sv0zX8POGgDLzXG6C/ystTndnGiQOmYBT27/dPDQ4adf8+jic/1tcat+Fsm2EIqUVWrwsllXZcvnO6fv1HO7WXXBAEq3fQSyQ7jMaynPL6ky+9H646y08AXEU+r09KCEb0enemVS/dwAzk9eGoIIOwy7/CPjXVe9lASPkURlGeRbDmYAAsjZaFjfa9EywTN8DY51/ZAxQzoOSw1KcII3sMcnMgwA/fnIn48icCcs2y9GoiBDn56Ti65050IR18fiQ0rkLqQ4YqVS8t444I2+xzgQaPiPHnVJuDEODJadFxKdoW+ADB/kwRtDtIgzLXiGUomvcNvvAWF9M+v9THUUYJP579xO46pOrH7mZwgLhRUBzTV/mEShSjcNZ4UqZyjxTs6xlLSXYbbz73buc0/XsVvlqHIsjBdk="
+  # SONATYPE_OSSRH_USERNAME
+  - secure: "q+lXCSq/zf9Wdgg3GpVo98OZ2WdizgImDc4gKv09L3z6ei7IUhwuzNjMxVTL7rW10fbVQKkn/3+vvE0EisYoi/q3c5ggg8sRsRhNbLfz0KxkgxmKjhmF5VRtDWkXLgiEGLpklOdEPq+NZ4Hw305M95NZvJKQmmV5Pjil5PndI4+LCEBaSqUXis3iKyPXiEdcuGi9udqRclWdOMqKiOCYDNtkpNPqOum9vEo99g8fz/m2+R+uCx5yW+AOz+wbJQGnv0GIbLXVAdVPreUnXYj8AtbLa/qeMuYis5k3gdT8bUU66KmZCaM0yHWq4bbjTum1vcQ/Q9qDlkcBk9LJvxXm2ojAPnyz5oosVmJGgk6y6l4NvhPCo4aZnHS6XzDN6s0PwNi/C2NO1tX4vayzl4p0ZpYIKNBA0kDmeVag0qbWiBtImBZqoSjQvmuW08w5N33751UPxlJ+vboHcxDSGioSeAo+hjRuCz/IeIffpMLzls19xUL40jLPHCGaMB48PcttvabKtj9w4UvvRsVdPJNEUms9N+H+D5Fl5EL/Ypb4XiIaTLpfv3p05lx/NeGmwmUkm+l8Zx0efOpKJ16DTHGiQyUlJVmElU7kkhsIf1nERCcVFB+ccs7nGlS3CjP/5FgeRuKLFCD8+srGZlxCAlOoIKHg0rpWiTSHre+gr0TOZZ0="
+  # SONATYPE_OSSRH_PASSWORD
+  - secure: "XWP+W7tBNv2w+GPRYlF52xCDBVjUO2UJ3hG4EkDt0PnswPIeuZ0rjVEAF5iHkpK6imMenj2ritIlfhGiQyFANFCkKcGChkISrRgK0/X1uWHlBmMU5sgSlQRtMk0UQCJ3jU2tHLl57x/CczrumncyOCaixnIVDz2FMA7E/woYmJofCyfQPKuYAzkOi2DsKBpIkgyQflgknGdX4QqDD8/ldvhcXqOPyqFOwBSoZRVwT/03q/VqbFrCYRUvTyKS4p4hSEkEh+tpQbtzIeIPhUK4PSwd3HmaO9mMD4XjAMQKn3qvT+Hzn4FWvIuzWuVVGM5G0JPYttkvRdEZnxBVyU0gxlY8s4CHx09Av1Q3KWvq2M+am2loMQNzwdxcbwvkninCBm8CfVG+kSoaOwK8aO5LcFsMZMAxy0P9CHuvTIsRJNRc8iRWzH2kSBjQPZ1okJUGrD0+TkREfcTIIkN/zyVUK2S67Y5aJm/GR3Aad96zG2fB5A5UgHmWPOfKdxKfCglSBNLP4LMsKlRmifxKDQdSK9A9rB2Ocee6RygXxrj34eVMZ8bbdKefBYGENmYuFwlc+YnitClao1FLnGB6yYO2t/KnpYNIoVQVRptN2BbewE2XRB53KEVRlz6NjcGhHZRELV5qi3ECWqMdlsKbWBx4DxDMHJOIqPlavUkI3Vi60/k="
