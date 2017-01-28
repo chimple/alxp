@@ -181,5 +181,6 @@ dependencies {
     compile 'net.hockeyapp.android:HockeySDK:3.5.0'
 
     compile 'com.github.QuadFlask:colorpicker:0.0.10'
+    compile 'org.json:json:20160810'
 
 }

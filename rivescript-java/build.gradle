@@ -163,7 +163,7 @@ configure(rootProject) {
 	description = "RiveScript"
 
 	// don't publish the default jar for the root project
-	configurations.archives.artifacts.clear()
+//	configurations.archives.artifacts.clear()
 
 	task api(type: Javadoc) {
 		group = "Documentation"
@@ -231,10 +231,10 @@ configure(rootProject) {
 		}
 	}
 
-	artifacts {
-		archives docsZip
-		archives distZip
-	}
+//	artifacts {
+//		archives docsZip
+//		archives distZip
+//	}
 
 	task wrapper(type: Wrapper) {
 		description = "Generates gradlew[.bat] scripts."

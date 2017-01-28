@@ -91,6 +91,8 @@ import org.chatsecure.pushsecure.PushSecureClient;
 import org.chatsecure.pushsecure.response.Account;
 import org.ironrabbit.type.CustomTypefaceManager;
 
+import com.rivescript.RiveScript;
+
 import android.support.multidex.MultiDex;
 import android.support.multidex.MultiDexApplication;
 
@@ -241,7 +243,10 @@ public class ImApp extends Application implements ICacheWordSubscriber {
             BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>(maximumPoolSize);
             sThreadPoolExecutor = new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, TimeUnit.SECONDS, workQueue);
         }
-
+        RiveScript rs = new RiveScript(mApplicationContext, true);
+        rs.loadDirectory("Aiden");
+        rs.sortReplies();
+        String reply = rs.reply("localuser", "Hello");
     }
 
     public boolean isThemeDark ()
