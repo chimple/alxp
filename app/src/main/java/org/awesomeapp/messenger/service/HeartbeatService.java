@@ -25,6 +25,8 @@ public class HeartbeatService extends Service {
     public static final String NETWORK_STATE_EXTRA = "state";
     public static final String NETWORK_INFO_EXTRA = "info";
 
+    public static final String SYNC_CONTACT_SERVICE_ACTION = "org.awesomeapp.messenger.SyncOfflineContactService.ACTION";
+
     private static final String TAG = "GB.HeartbeatService";
     private PendingIntent mPendingIntent;
     private Intent mRelayIntent;
@@ -106,6 +108,12 @@ public class HeartbeatService extends Service {
         intent.putExtra(NETWORK_INFO_EXTRA, mNetworkConnectivityListener.getNetworkInfo());
         intent.putExtra(NETWORK_STATE_EXTRA, mNetworkConnectivityListener.getState().ordinal());
         startService(intent);
+
+
+        //start Sync Contact Service TBD - start later after user is logged in (first time) or whenever networks is available
+        Intent syncOfflineContactIntent = new Intent(SYNC_CONTACT_SERVICE_ACTION, null, this, SyncOfflineContactService.class);
+        startService(syncOfflineContactIntent);
+
     }
 
     private final class ServiceHandler extends Handler {

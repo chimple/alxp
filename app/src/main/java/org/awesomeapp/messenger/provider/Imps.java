@@ -777,6 +777,10 @@ public class Imps {
         int OUTGOING_ENCRYPTED = 15;
         /* received message */
         int OUTGOING_ENCRYPTED_VERIFIED = 16;
+
+        int INCOMING_NON_ENCRYPTED_VERIFIED = 17;
+
+        int OUTGOING_NON_ENCRYPTED_VERIFIED = 18;
     }
 
     /** The common columns for messages table */

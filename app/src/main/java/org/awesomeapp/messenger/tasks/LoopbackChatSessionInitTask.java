@@ -8,23 +8,22 @@ import org.awesomeapp.messenger.service.IChatSession;
 import org.awesomeapp.messenger.service.IImConnection;
 
 /**
- * Created by n8fr8 on 10/23/15.
+ * Created by Shyamal.Upadhyaya on 29/01/17.
  */
-public class ChatSessionInitTask extends AsyncTask<String, Long, Long> {
+
+public class LoopbackChatSessionInitTask extends AsyncTask<String, Long, Long> {
 
     ImApp mApp;
     long mProviderId;
     long mAccountId;
     int mContactType;
-    boolean mStartCrypto = false;
 
-    public ChatSessionInitTask (ImApp app, long providerId, long accountId, int contactType, boolean startCrypto)
+    public LoopbackChatSessionInitTask (ImApp app, long providerId, long accountId, int contactType)
     {
         mApp = app;
         mProviderId = providerId;
         mAccountId = accountId;
         mContactType = contactType;
-        mStartCrypto = startCrypto;
     }
 
     public Long doInBackground (String... remoteAddresses)
@@ -37,6 +36,7 @@ public class ChatSessionInitTask extends AsyncTask<String, Long, Long> {
                     return -1L;
 
                 for (String address : remoteAddresses) {
+                    org.awesomeapp.messenger.service.IChatSessionManager manager = conn.getChatSessionManager();
 
                     IChatSession session = conn.getChatSessionManager().getChatSession(address);
 
@@ -46,11 +46,11 @@ public class ChatSessionInitTask extends AsyncTask<String, Long, Long> {
 
                     if (session != null && mContactType == Imps.Contacts.TYPE_NORMAL)
                     {
-                            if (mProviderId != 2 && session.getDefaultOtrChatSession() != null
+                        if (mProviderId != 2 && session.getDefaultOtrChatSession() != null
                                 && (!session.getDefaultOtrChatSession().isChatEncrypted()))
-                            {
-                                session.getDefaultOtrChatSession().startChatEncryption();
-                            }
+                        {
+                            session.getDefaultOtrChatSession().startChatEncryption();
+                        }
 
                     } else {
 

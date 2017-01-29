@@ -1,23 +1,15 @@
 package org.awesomeapp.messenger.ui;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.RemoteException;
-import android.preference.PreferenceManager;
-import android.provider.Settings;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
@@ -33,7 +25,6 @@ import android.widget.TextView;
 import org.awesomeapp.messenger.ImApp;
 import org.awesomeapp.messenger.MainActivity;
 import org.awesomeapp.messenger.crypto.IOtrChatSession;
-import org.awesomeapp.messenger.crypto.OtrAndroidKeyManagerImpl;
 import org.awesomeapp.messenger.crypto.OtrChatManager;
 import org.awesomeapp.messenger.model.Contact;
 import org.awesomeapp.messenger.model.ImErrorInfo;
@@ -44,14 +35,11 @@ import org.awesomeapp.messenger.service.IChatSessionManager;
 import org.awesomeapp.messenger.service.IContactListManager;
 import org.awesomeapp.messenger.service.IImConnection;
 import org.awesomeapp.messenger.tasks.ChatSessionInitTask;
+import org.awesomeapp.messenger.tasks.LoopbackChatSessionInitTask;
 import org.awesomeapp.messenger.ui.legacy.DatabaseUtils;
 import org.awesomeapp.messenger.ui.onboarding.OnboardingManager;
 import org.awesomeapp.messenger.ui.qr.QrDisplayActivity;
-import org.awesomeapp.messenger.ui.qr.QrGenAsyncTask;
-import org.awesomeapp.messenger.ui.qr.QrScanActivity;
 import org.awesomeapp.messenger.ui.qr.QrShareAsyncTask;
-import org.awesomeapp.messenger.util.LogCleaner;
-import org.ironrabbit.type.CustomTypefaceManager;
 
 import java.io.IOException;
 
@@ -203,8 +191,12 @@ public class ContactDisplayActivity extends BaseActivity {
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if(mProviderId != 2) {
+                    startChat();
+                } else {
+                    startLoopbackChat();
+                }
 
-                startChat();
 
             }
         });
@@ -306,11 +298,32 @@ public class ContactDisplayActivity extends BaseActivity {
         }
     }
 
-    public void startChat ()
+    private void startChat ()
     {
         boolean startCrypto = true;
 
         new ChatSessionInitTask(((ImApp)getApplication()),mProviderId, mAccountId, Imps.Contacts.TYPE_NORMAL, startCrypto)
+        {
+            @Override
+            protected void onPostExecute(Long chatId) {
+
+                if (chatId != -1) {
+                    Intent intent = new Intent(ContactDisplayActivity.this, ConversationDetailActivity.class);
+                    intent.putExtra("id", chatId);
+                    startActivity(intent);
+                }
+
+                super.onPostExecute(chatId);
+            }
+        }.executeOnExecutor(ImApp.sThreadPoolExecutor,mUsername);
+
+        finish();
+
+    }
+
+    private void startLoopbackChat ()
+    {
+        new LoopbackChatSessionInitTask(((ImApp)getApplication()),mProviderId, mAccountId, Imps.Contacts.TYPE_NORMAL)
         {
             @Override
             protected void onPostExecute(Long chatId) {

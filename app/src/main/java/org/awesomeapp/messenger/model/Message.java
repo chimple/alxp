@@ -17,10 +17,10 @@
 
 package org.awesomeapp.messenger.model;
 
-import java.util.Date;
-
 import android.os.Parcel;
 import android.os.Parcelable;
+
+import java.util.Date;
 
 /** Represents an instant message send between users. */
 public class Message implements Parcelable {
@@ -133,7 +133,8 @@ public class Message implements Parcelable {
     }
 
     public String toString() {
-        return "From: " + mFrom.getAddress() + " To: " + mTo.getAddress() + " " + mBody;
+//        return "From: " + mFrom.getAddress() + " To: " + mTo.getAddress() + " " + mBody;
+        return mBody;
     }
 
     public void writeToParcel(Parcel dest, int flags) {

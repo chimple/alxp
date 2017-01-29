@@ -1,5 +1,8 @@
 package org.awesomeapp.messenger.plugin.loopback;
 
+import android.content.ContentResolver;
+import android.os.Parcel;
+
 import org.awesomeapp.messenger.model.Address;
 import org.awesomeapp.messenger.model.ChatGroupManager;
 import org.awesomeapp.messenger.model.ChatSession;
@@ -9,7 +12,9 @@ import org.awesomeapp.messenger.model.ContactList;
 import org.awesomeapp.messenger.model.ContactListListener;
 import org.awesomeapp.messenger.model.ContactListManager;
 import org.awesomeapp.messenger.model.ImConnection;
+import org.awesomeapp.messenger.model.ImEntity;
 import org.awesomeapp.messenger.model.ImException;
+import org.awesomeapp.messenger.model.LoopbackChatSession;
 import org.awesomeapp.messenger.model.Message;
 import org.awesomeapp.messenger.model.Presence;
 import org.awesomeapp.messenger.plugin.xmpp.XmppAddress;
@@ -22,14 +27,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import android.content.ContentResolver;
-import android.os.Parcel;
-
 public class LoopbackConnection extends ImConnection {
 
     protected static final String TAG = "LoopbackConnection";
     private LoopbackContactList mContactListManager;
     private Contact mUser;
+    private ChatSessionManager chatSessionManager = null;
 
     public LoopbackConnection() {
         super(null);
@@ -61,6 +64,7 @@ public class LoopbackConnection extends ImConnection {
     {
 
         mUser = makeUser();
+        //this.setState(ImConnection.LOGGING_IN, null);
     }
 
     private Contact makeUser() {
@@ -82,18 +86,25 @@ public class LoopbackConnection extends ImConnection {
 
     @Override
     public ChatSessionManager getChatSessionManager() {
-        return new ChatSessionManager() {
+        if(chatSessionManager == null) {
+            chatSessionManager =  new ChatSessionManager() {
 
-            @Override
-            public void sendMessageAsync(ChatSession session, Message message) {
-                // Echo
-                Message rec = new Message(message.getBody());
-                rec.setFrom(message.getTo());
-                rec.setDateTime(new Date());
-                session.onReceiveMessage(rec);
-            }
+                @Override
+                public void sendMessageAsync(ChatSession session, Message message) {
+                    // Echo
+                    Message rec = new Message(message.getBody());
+                    rec.setFrom(message.getTo());
+                    rec.setDateTime(new Date());
+                    session.onReceiveMessage(rec);
+                }
 
-        };
+                public ChatSession initChatSession(ImEntity participant, ChatSessionManager manager) {
+                    return new LoopbackChatSession(participant, this);
+                }
+
+            };
+        }
+        return chatSessionManager;
     }
 
     @Override

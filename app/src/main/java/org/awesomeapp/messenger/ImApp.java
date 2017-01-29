@@ -41,6 +41,8 @@ import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.rivescript.RiveScript;
+
 import net.hockeyapp.android.CrashManager;
 import net.hockeyapp.android.CrashManagerListener;
 import net.sqlcipher.database.SQLiteDatabase;
@@ -64,11 +66,14 @@ import org.awesomeapp.messenger.ui.legacy.ImPluginHelper;
 import org.awesomeapp.messenger.ui.legacy.ProviderDef;
 import org.awesomeapp.messenger.ui.legacy.adapter.ConnectionListenerAdapter;
 import org.awesomeapp.messenger.util.Debug;
+import org.awesomeapp.messenger.util.Languages;
+import org.chatsecure.pushsecure.PushSecureClient;
+import org.chatsecure.pushsecure.response.Account;
+import org.ironrabbit.type.CustomTypefaceManager;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
@@ -79,22 +84,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import im.zom.messenger.BuildConfig;
+import im.zom.messenger.R;
 import info.guardianproject.cacheword.CacheWordHandler;
 import info.guardianproject.cacheword.ICacheWordSubscriber;
 import info.guardianproject.cacheword.PRNGFixes;
 import info.guardianproject.iocipher.VirtualFileSystem;
-import im.zom.messenger.R;
 import timber.log.Timber;
-
-import org.awesomeapp.messenger.util.Languages;
-import org.chatsecure.pushsecure.PushSecureClient;
-import org.chatsecure.pushsecure.response.Account;
-import org.ironrabbit.type.CustomTypefaceManager;
-
-import com.rivescript.RiveScript;
-
-import android.support.multidex.MultiDex;
-import android.support.multidex.MultiDexApplication;
 
 public class ImApp extends Application implements ICacheWordSubscriber {
 
@@ -156,7 +151,7 @@ public class ImApp extends Application implements ICacheWordSubscriber {
 
     /** A flag indicates that we have called tomServiceStarted start the service. */
 //    private boolean mServiceStarted;
-    private Context mApplicationContext;
+    private static Context mApplicationContext;
 
 
     PushManager mPushManager;
@@ -205,6 +200,10 @@ public class ImApp extends Application implements ICacheWordSubscriber {
         return mApplicationContext.getContentResolver();
     }
 
+    public static Context getAppContext() {
+        return ImApp.mApplicationContext;
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -224,7 +223,7 @@ public class ImApp extends Application implements ICacheWordSubscriber {
         VirtualFileSystem.get().isMounted();
 
        // mConnections = new HashMap<Long, IImConnection>();
-        mApplicationContext = this;
+        ImApp.mApplicationContext = this;
 
         //initTrustManager();
 
@@ -243,7 +242,7 @@ public class ImApp extends Application implements ICacheWordSubscriber {
             BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>(maximumPoolSize);
             sThreadPoolExecutor = new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, TimeUnit.SECONDS, workQueue);
         }
-        RiveScript rs = new RiveScript(mApplicationContext, true);
+        RiveScript rs = new RiveScript(ImApp.mApplicationContext, true);
         rs.loadDirectory("Aiden");
         rs.sortReplies();
         String reply = rs.reply("localuser", "Hello");
@@ -340,11 +339,11 @@ public class ImApp extends Application implements ICacheWordSubscriber {
             Intent serviceIntent = new Intent(this, RemoteImService.class);
 //        serviceIntent.putExtra(ImServiceConstants.EXTRA_CHECK_AUTO_LOGIN, isBoot);
 
-            mApplicationContext.startService(serviceIntent);
+            ImApp.mApplicationContext.startService(serviceIntent);
 
             mConnectionListener = new MyConnListener(new Handler());
 
-            mApplicationContext
+            ImApp.mApplicationContext
                     .bindService(serviceIntent, mImServiceConn, Context.BIND_AUTO_CREATE);
 
         }
@@ -391,7 +390,7 @@ public class ImApp extends Application implements ICacheWordSubscriber {
             {
 
             }
-            mApplicationContext.unbindService(mImServiceConn);
+            ImApp.mApplicationContext.unbindService(mImServiceConn);
 
             mImService = null;
         }
@@ -399,7 +398,7 @@ public class ImApp extends Application implements ICacheWordSubscriber {
 
         Intent serviceIntent = new Intent(this, RemoteImService.class);
         serviceIntent.putExtra(ImServiceConstants.EXTRA_CHECK_AUTO_LOGIN, true);
-        mApplicationContext.stopService(serviceIntent);
+        ImApp.mApplicationContext.stopService(serviceIntent);
 
 
     }

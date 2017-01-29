@@ -37,14 +37,14 @@ import android.util.Log;
  */
 public class ChatSession {
 
-    private ImEntity mParticipant;
-    private ChatSessionManager mManager;
+    protected ImEntity mParticipant;
+    protected ChatSessionManager mManager;
 
-    private MessageListener mListener = null;
+    protected MessageListener mListener = null;
 
-    private boolean mIsSubscribed = true;
+    protected boolean mIsSubscribed = true;
 
-    private boolean mPushSent = false;
+    protected boolean mPushSent = false;
     /**
      * Creates a new ChatSession with a particular participant.
      *

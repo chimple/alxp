@@ -16,7 +16,6 @@
  */
 
 package org.awesomeapp.messenger.model;
-
 import org.awesomeapp.messenger.service.adapters.ChatSessionAdapter;
 import org.awesomeapp.messenger.service.adapters.ChatSessionManagerAdapter;
 
@@ -29,8 +28,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public abstract class ChatSessionManager {
 
-    private CopyOnWriteArrayList<ChatSessionListener> mListeners;
-    private ChatSessionManagerAdapter mAdapter;
+    protected CopyOnWriteArrayList<ChatSessionListener> mListeners;
+    protected ChatSessionManagerAdapter mAdapter;
 
     /** Map session to the participant communicate with. */
     protected Hashtable<String,ChatSession> mSessions;
@@ -62,6 +61,10 @@ public abstract class ChatSessionManager {
         }
     }
 
+    public ChatSession initChatSession(ImEntity participant, ChatSessionManager manager) {
+        return new ChatSession(participant, this);
+    }
+
     /**
      * Removes a ChatSessionListener so that it will no longer be notified.
      *
@@ -83,7 +86,7 @@ public abstract class ChatSessionManager {
 
         if (session == null)
         {
-            session = new ChatSession(participant, this);
+            session = initChatSession(participant, this);
             ChatSessionAdapter csa = mAdapter.getChatSessionAdapter(session, isNewSession);
 
             //this is redundant, as the getAdapter() returns the session instance itself

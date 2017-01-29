@@ -21,6 +21,7 @@ package org.awesomeapp.messenger.model;
 import android.content.Context;
 
 import org.awesomeapp.messenger.plugin.ImConfigNames;
+import org.awesomeapp.messenger.plugin.loopback.LoopbackConnection;
 import org.awesomeapp.messenger.plugin.xmpp.XmppConnection;
 
 import java.util.Map;
@@ -68,9 +69,9 @@ public class ConnectionFactory {
             //return new LLXmppConnection(context);
             return null;
         }
-        /*else if ("LOOPBACK".equals(protocolName)) {
-        	return new SMSConnection();
-        } */
+        else if ("LOOPBACK".equals(protocolName)) {
+        	return new LoopbackConnection();
+        }
         else {
             throw new ImException("Unsupported protocol: " + protocolName);
         }

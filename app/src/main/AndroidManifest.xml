@@ -230,8 +230,8 @@
                 android:value="http://xmpp.org/services/" />
         </service>
 
-        <!--
-        <service android:name=".plugin.loopback.LoopbackImPlugin">
+
+        <service android:name="org.awesomeapp.messenger.plugin.loopback.LoopbackImPlugin">
             <intent-filter>
                 <action android:name="org.awesomeapp.messenger.plugin" />
             </intent-filter>
@@ -241,7 +241,7 @@
             <meta-data android:name="info.guardianproject.otr.app.im.signup_url"
                 android:value="http://xxx.xxx.xxx"/>
         </service>
-        -->
+
         <!--  -->
 
 
@@ -257,6 +257,10 @@
         </service>
         <service
             android:name="org.awesomeapp.messenger.service.HeartbeatService"
+            android:exported="false" />
+
+        <service
+            android:name="org.awesomeapp.messenger.service.SyncOfflineContactService"
             android:exported="false" />
 
         <provider

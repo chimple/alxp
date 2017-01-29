@@ -17,7 +17,23 @@
 
 package org.awesomeapp.messenger.service.adapters;
 
-import  org.awesomeapp.messenger.crypto.IOtrChatSession;
+import android.content.ContentResolver;
+import android.content.ContentUris;
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.RemoteCallbackList;
+import android.os.RemoteException;
+import android.provider.BaseColumns;
+import android.support.annotation.NonNull;
+import android.util.Log;
+
+import net.java.otr4j.OtrEngineListener;
+import net.java.otr4j.session.SessionID;
+import net.java.otr4j.session.SessionStatus;
+
+import org.awesomeapp.messenger.ImApp;
+import org.awesomeapp.messenger.crypto.IOtrChatSession;
 import org.awesomeapp.messenger.crypto.OtrChatListener;
 import org.awesomeapp.messenger.crypto.OtrChatManager;
 import org.awesomeapp.messenger.crypto.OtrChatSessionAdapter;
@@ -25,14 +41,6 @@ import org.awesomeapp.messenger.crypto.OtrDataHandler;
 import org.awesomeapp.messenger.crypto.OtrDataHandler.Transfer;
 import org.awesomeapp.messenger.crypto.OtrDebugLogger;
 import org.awesomeapp.messenger.model.Address;
-import org.awesomeapp.messenger.model.ContactListListener;
-import org.awesomeapp.messenger.plugin.xmpp.XmppAddress;
-import  org.awesomeapp.messenger.service.IChatListener;
-import org.awesomeapp.messenger.service.IChatSession;
-import org.awesomeapp.messenger.service.IDataListener;
-import im.zom.messenger.R;
-
-import org.awesomeapp.messenger.ImApp;
 import org.awesomeapp.messenger.model.ChatGroup;
 import org.awesomeapp.messenger.model.ChatGroupManager;
 import org.awesomeapp.messenger.model.ChatSession;
@@ -44,38 +52,21 @@ import org.awesomeapp.messenger.model.ImEntity;
 import org.awesomeapp.messenger.model.ImErrorInfo;
 import org.awesomeapp.messenger.model.MessageListener;
 import org.awesomeapp.messenger.model.Presence;
+import org.awesomeapp.messenger.plugin.loopback.NonOtrChatListener;
+import org.awesomeapp.messenger.plugin.xmpp.XmppAddress;
 import org.awesomeapp.messenger.provider.Imps;
-import org.awesomeapp.messenger.util.SystemServices;
-
-import java.io.IOException;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
-
-import net.java.otr4j.OtrEngineListener;
-import net.java.otr4j.session.SessionID;
-import net.java.otr4j.session.SessionStatus;
-
+import org.awesomeapp.messenger.service.IChatListener;
+import org.awesomeapp.messenger.service.IDataListener;
 import org.awesomeapp.messenger.service.RemoteImService;
 import org.awesomeapp.messenger.service.StatusBarNotifier;
+import org.awesomeapp.messenger.util.SystemServices;
 import org.jivesoftware.smack.util.StringUtils;
 
-import android.content.ContentResolver;
-import android.content.ContentUris;
-import android.content.ContentValues;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.RemoteCallbackList;
-import android.os.RemoteException;
-import android.provider.BaseColumns;
-import android.support.annotation.NonNull;
-import android.util.Log;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import im.zom.messenger.R;
 
 public class ChatSessionAdapter extends org.awesomeapp.messenger.service.IChatSession.Stub {
 
@@ -148,8 +139,27 @@ public class ChatSessionAdapter extends org.awesomeapp.messenger.service.IChatSe
             init((Contact) participant,isNewSession);
         }
 
-        initOtrChatSession(participant);
+        if(connection.getProviderId() != 2) {
+            initOtrChatSession(participant);
+        } else {
+            initNonOtrChatSession(participant);
+        }
 
+    }
+
+    private void initNonOtrChatSession (ImEntity participant)
+    {
+        try
+        {
+            if (mConnection != null)
+            {
+                mChatSession.setMessageListener(new NonOtrChatListener(mListenerAdapter));
+            }
+        }
+        catch (NullPointerException npe)
+        {
+            Log.e(ImApp.LOG_TAG,"error init Non OTR session",npe);
+        }
     }
 
     private void initOtrChatSession (ImEntity participant)
@@ -393,7 +403,8 @@ public class ChatSessionAdapter extends org.awesomeapp.messenger.service.IChatSe
 
     public void sendMessage(String text, boolean isResend) {
 
-        if (mConnection.getState() != ImConnection.LOGGED_IN) {
+        if (mConnection.getProviderId()  != 2 &&
+                mConnection.getState() != ImConnection.LOGGED_IN) {
             // connection has been suspended, save the message without send it
             long now = System.currentTimeMillis();
             insertMessageInDb(null, text, now, Imps.MessageType.POSTPONED);
@@ -766,7 +777,12 @@ public class ChatSessionAdapter extends org.awesomeapp.messenger.service.IChatSe
     Uri insertMessageInDb(String contact, String body, long time, int type, int errCode, String id) {
         boolean isEncrypted = true;
         try {
-            isEncrypted = getDefaultOtrChatSession().isChatEncrypted();
+            IOtrChatSession defaultChatSession = getDefaultOtrChatSession();
+            if(defaultChatSession != null) {
+                isEncrypted = getDefaultOtrChatSession().isChatEncrypted();
+            } else {
+                isEncrypted = false;
+            }
         } catch (RemoteException e) {
             // Leave it as encrypted so it gets stored in memory
             // FIXME(miron)

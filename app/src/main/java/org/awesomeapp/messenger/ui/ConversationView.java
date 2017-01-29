@@ -27,7 +27,6 @@ import android.content.ContentUris;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.database.CharArrayBuffer;
 import android.database.ContentObserver;
@@ -68,7 +67,6 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
-import android.view.TextureView;
 import android.view.View;
 import android.view.ViewAnimationUtils;
 import android.view.ViewGroup;
@@ -77,11 +75,9 @@ import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -99,7 +95,6 @@ import org.awesomeapp.messenger.model.ImErrorInfo;
 import org.awesomeapp.messenger.model.Presence;
 import org.awesomeapp.messenger.plugin.xmpp.XmppAddress;
 import org.awesomeapp.messenger.provider.Imps;
-import org.awesomeapp.messenger.provider.ImpsAddressUtils;
 import org.awesomeapp.messenger.service.IChatListener;
 import org.awesomeapp.messenger.service.IChatSession;
 import org.awesomeapp.messenger.service.IChatSessionManager;
@@ -126,7 +121,6 @@ import org.awesomeapp.messenger.util.Debug;
 import org.awesomeapp.messenger.util.GiphyAPI;
 import org.awesomeapp.messenger.util.LogCleaner;
 import org.awesomeapp.messenger.util.SystemServices;
-import org.ironrabbit.type.CustomTypefaceManager;
 import org.ironrabbit.type.CustomTypefaceSpan;
 
 import java.net.URLEncoder;
@@ -1780,7 +1774,7 @@ public class ConversationView {
                     IChatSessionManager sessionMgr = mConn.getChatSessionManager();
                     if (sessionMgr != null) {
 
-                            IChatSession session = sessionMgr.getChatSession(Address.stripResource(mRemoteAddress));
+                             IChatSession session = sessionMgr.getChatSession(Address.stripResource(mRemoteAddress));
 
                             return session;
 
@@ -2571,7 +2565,7 @@ public class ConversationView {
             Cursor c = getCursor();
             c.moveToPosition(position);
             int type = c.getInt(mTypeColumn);
-            boolean isLeft = (type == Imps.MessageType.INCOMING_ENCRYPTED)||(type == Imps.MessageType.INCOMING)||(type == Imps.MessageType.INCOMING_ENCRYPTED_VERIFIED);
+            boolean isLeft = (type == Imps.MessageType.INCOMING_ENCRYPTED)||(type == Imps.MessageType.INCOMING)||(type == Imps.MessageType.INCOMING_ENCRYPTED_VERIFIED || type == Imps.MessageType.INCOMING_NON_ENCRYPTED_VERIFIED);
 
             if (isLeft)
                 return 0;
@@ -2700,6 +2694,10 @@ public class ConversationView {
                 messageType = Imps.MessageType.INCOMING;
                  encState = EncryptionState.ENCRYPTED_AND_VERIFIED;
             }
+            else if (messageType == Imps.MessageType.INCOMING_NON_ENCRYPTED_VERIFIED)
+            {
+                messageType = Imps.MessageType.INCOMING;
+            }
             else if (messageType == Imps.MessageType.OUTGOING_ENCRYPTED)
             {
                 messageType = Imps.MessageType.OUTGOING;
@@ -2709,6 +2707,10 @@ public class ConversationView {
             {
                 messageType = Imps.MessageType.OUTGOING;
                  encState = EncryptionState.ENCRYPTED_AND_VERIFIED;
+            }
+            else if (messageType == Imps.MessageType.OUTGOING_NON_ENCRYPTED_VERIFIED)
+            {
+                messageType = Imps.MessageType.OUTGOING;
             }
 
             switch (messageType) {
