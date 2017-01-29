@@ -44,8 +44,8 @@ public class LoopbackChatSession extends ChatSession {
 
             //process incoming body with RivaScript - TODO
             String body = message.getBody();
-            String reply = riveScript.reply("localuser", "Hello");
-            body += reply;
+            String reply = riveScript.reply("localuser", body);
+            body = reply;
             message.setBody(body);
 
             return mListener.onIncomingMessage(this, message);
