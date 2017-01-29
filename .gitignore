@@ -44,3 +44,5 @@ build/
 
 #tfx
 .transifexrc
+
+*.alloc
