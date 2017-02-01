@@ -224,8 +224,12 @@ public class SyncOfflineContactService extends Service {
                         Gson gson = gsonBuilder.create();
                         List<SyncContact> contactInfos = Arrays.asList(gson.fromJson(reader, SyncContact[].class));
                         content.close();
-                        processSyncContacts(contactInfos);
-                        succeeded = true;
+                        ImApp app = (ImApp) getApplicationContext();
+                        //For now, only download contacts if user logged in...
+                        if(app.getDefaultAccountId() != -1) {
+                            processSyncContacts(contactInfos);
+                            succeeded = true;
+                        }
                     } catch (Exception ex) {
                         Log.e(DEBUG_TAG, "parse JSON issue: " + ex);
                         failedLoadingPosts();
