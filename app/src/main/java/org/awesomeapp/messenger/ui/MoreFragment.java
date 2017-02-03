@@ -76,7 +76,7 @@ public class MoreFragment extends Fragment {
             }
         });
 
-        btn = view.findViewById(R.id.btnOpenServices);
+       /* btn = view.findViewById(R.id.btnOpenServices);
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -84,7 +84,7 @@ public class MoreFragment extends Fragment {
                 openZomServices ();
 
             }
-        });
+        });*/
 
 
         btn = view.findViewById(R.id.btnOpenGroups);
