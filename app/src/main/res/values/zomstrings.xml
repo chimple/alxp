@@ -1,10 +1,10 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
-  <string name="app_name_zom">Zom</string> 
+  <string name="app_name_zom">Wikitaki</string>
   <string name="create_an_account">Create an Account</string>
-  <string name="create_id">Create a Zom ID</string>
+  <string name="create_id">Create a Wikitaki ID</string>
   <string name="advanced">Advanced</string>
-  <string name="account_congrats">Congratulations, you are ready to Zom!</string>
+  <string name="account_congrats">Congratulations, you are ready to Wikitaki!</string>
   <string name="account_congrats_details">You can find your password and account details on your profile page.</string>
   <string name="invite_friends">Add Friends!</string>
   <string name="invite_sms">SMS</string> 
@@ -15,7 +15,7 @@
   <string name="friends">Friends</string>
   <string name="add_friends">Add Friends</string>
   <string name="search_by_id">Search by ID</string>
-  <string name="invite_accepted">You are now friends on Zom</string>
+  <string name="invite_accepted">You are now friends on Wikitaki</string>
   <string name="chats">Chats</string>
   <string name="choose_friend">Choose a Friend</string>
   <string name="send_message">Send a message</string>
@@ -35,9 +35,9 @@
   <string name="add_account_action">Add Account</string>
   <string name="choose_photos">Choose from Photos</string>
   <string name="choose_language">Switch Language</string>
-  <string name="welcome_to_zom">WELCOME TO ZOM</string>
-  <string name="onboarding_generate">Create a Zom ID and we will generate a secure password for you.</string>
-  <string name="grant_perms">You must grant permission for Zom to use the camera</string>
+  <string name="welcome_to_zom">WELCOME TO Wikitaki</string>
+  <string name="onboarding_generate">Create a Wikitaki ID and we will generate a secure password for you.</string>
+  <string name="grant_perms">You must grant permission for Wikitaki to use the camera</string>
 
   <string name="menu_refresh">Refresh Session</string>
 
@@ -70,7 +70,7 @@
   <string name="menu_approve_friend">Approve Friend?</string>
 
   <string name="header_got_invited">GOT INVITED?</string>
-  <string name="action_tap_invite">Tap the Zom invite link from your friend or scan their QR code now</string>
+  <string name="action_tap_invite">Tap the Wikitaki invite link from your friend or scan their QR code now</string>
 
   <string name="action_invite_new_friends">Send an invite link to your friends via SMS or SHARE through any app</string>
 
@@ -80,7 +80,7 @@
 
   <string name="reset_passphrase">Reset Lock</string>
 
-  <string name="action_services">Zom Services</string>
+  <string name="action_services">Wikitaki Services</string>
 
 
 
