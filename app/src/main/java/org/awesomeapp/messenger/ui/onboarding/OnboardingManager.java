@@ -256,41 +256,7 @@ public class OnboardingManager {
         }
     }
 
-    public static OnboardingAccount offLineRegisterAccount (Activity context, Handler handler, String nickname, String username, String password, String domain, int port) throws JSONException {
-        if (password == null)
-            password = generatePassword();
-
-        final ContentResolver cr = context.getContentResolver();
-        ImPluginHelper helper = ImPluginHelper.getInstance(context);
-        long providerId = helper.createAdditionalProvider(helper.getProviderNames().get(0)); //xmpp FIXME
-
-        long accountId = ImApp.insertOrUpdateAccount(cr, providerId, -1, nickname, username, password);
-
-        final Uri accountUri = ContentUris.withAppendedId(Imps.Account.CONTENT_URI, accountId);
-        final String uName = username;
-        final String uDomain = domain;
-        final String uPassword = password;
-        final int uProviderId = (int) providerId;
-        final int uAccountId = (int) accountId;
-        final String uNickname = nickname;
-
-        OnboardingAccount result = new OnboardingAccount();
-        result.username = uName;
-        result.domain = uDomain;
-        result.password = uPassword;
-        result.providerId = uProviderId;
-        result.accountId = uAccountId;
-        result.nickname = uNickname;
-
-        //now keep this account signed-in
-        ContentValues values = new ContentValues();
-        values.put(Imps.AccountColumns.KEEP_SIGNED_IN, false);
-        cr.update(accountUri, values, null, null);
-        return result;
-
-    }
-
-    public static OnboardingAccount registerAccount (Activity context, Handler handler, String nickname, String username, String password, String domain, int port, boolean offline) throws JSONException {
+    public static OnboardingAccount registerAccount (Context context, Handler handler, String nickname, String username, String password, String domain, int port, boolean offline) throws JSONException {
 
         if (password == null)
             password = generatePassword();
@@ -355,8 +321,10 @@ public class OnboardingManager {
                         XmppConnection xmppConn = new XmppConnection(context);
                         xmppConn.initUser(providerId, accountId);
                         success = xmppConn.registerAccount(settings, username, password, aParams);
+                        ImApp.isXMPPAccountRegistered = true;
                     } else {
                         success = true;
+                        ImApp.isXMPPAccountRegistered = false;
                     }
 
 
@@ -438,7 +406,7 @@ public class OnboardingManager {
 
     }
 
-    public static OnboardingAccount addExistingAccount (Activity context, Handler handler, String nickname, String jabberId, String password) {
+    public static OnboardingAccount addExistingAccount (Context context, Handler handler, String nickname, String jabberId, String password) {
 
         OnboardingAccount result = null;
 

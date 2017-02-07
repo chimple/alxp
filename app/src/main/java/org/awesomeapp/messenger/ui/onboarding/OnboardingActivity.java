@@ -823,7 +823,7 @@ public class OnboardingActivity extends BaseActivity {
 
     }
 
-    private class ExistingAccountTask extends AsyncTask<String, Void, OnboardingAccount> {
+    public class ExistingAccountTask extends AsyncTask<String, Void, OnboardingAccount> {
         @Override
         protected OnboardingAccount doInBackground(String... account) {
             try {
