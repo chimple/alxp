@@ -1,8 +1,6 @@
 package org.awesomeapp.messenger.ui.onboarding;
 
 import android.Manifest;
-import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -38,7 +36,6 @@ import android.view.inputmethod.InputMethodInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -53,28 +50,27 @@ import org.awesomeapp.messenger.Preferences;
 import org.awesomeapp.messenger.crypto.OtrAndroidKeyManagerImpl;
 import org.awesomeapp.messenger.plugin.xmpp.XmppAddress;
 import org.awesomeapp.messenger.provider.Imps;
+import org.awesomeapp.messenger.service.NetworkConnectivityReceiver;
 import org.awesomeapp.messenger.tasks.AddContactAsyncTask;
+import org.awesomeapp.messenger.tasks.ContactSyncTask;
 import org.awesomeapp.messenger.ui.BaseActivity;
 import org.awesomeapp.messenger.ui.legacy.DatabaseUtils;
 import org.awesomeapp.messenger.ui.legacy.SignInHelper;
 import org.awesomeapp.messenger.ui.legacy.SimpleAlertHandler;
-import org.awesomeapp.messenger.ui.legacy.ThemeableActivity;
-import org.awesomeapp.messenger.ui.widgets.InstantAutoCompleteTextView;
 import org.awesomeapp.messenger.ui.widgets.RoundedAvatarDrawable;
 import org.awesomeapp.messenger.util.SecureMediaStore;
+import org.ironrabbit.type.CustomTypefaceManager;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.security.KeyPair;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import im.zom.messenger.R;
-import org.awesomeapp.messenger.util.Languages;
-import org.ironrabbit.type.CustomTypefaceManager;
 
 public class OnboardingActivity extends BaseActivity {
 
@@ -84,6 +80,7 @@ public class OnboardingActivity extends BaseActivity {
     //private View mSetupButton;
     private ImageView mImageAvatar;
 
+    View viewSplash = null;
     private MenuItem mItemSkip = null;
 
     private EditText mSpinnerDomains;
@@ -99,9 +96,9 @@ public class OnboardingActivity extends BaseActivity {
 
     private boolean mShowSplash = true;
     private ListPopupWindow mDomainList;
-
     private FindServerTask mCurrentFindServerTask;
 
+    private static final String CONTACT_INFO_SERVER_URL = "https://api.myjson.com/bins/bl9p5";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -126,7 +123,7 @@ public class OnboardingActivity extends BaseActivity {
 
         mHandler = new SimpleAlertHandler(this);
 
-        View viewSplash = findViewById(R.id.flipViewMain);
+        viewSplash = findViewById(R.id.flipViewMain);
         View viewRegister =  findViewById(R.id.flipViewRegister);
         View viewCreate = findViewById(R.id.flipViewCreateNew);
         View viewLogin = findViewById(R.id.flipViewLogin);
@@ -185,7 +182,7 @@ public class OnboardingActivity extends BaseActivity {
             public void onClick(View view) {
 
 
-               startAvatarTaker();
+               startAvatarTaker(getPickImageChooserIntent());
 
             }
         });
@@ -245,31 +242,6 @@ public class OnboardingActivity extends BaseActivity {
 
         });
 
-        // set up language chooser button
-        View languageButton = viewSplash.findViewById(R.id.languageButton);
-        languageButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                final Activity activity = OnboardingActivity.this;
-                final Languages languages = Languages.get(activity);
-                final ArrayAdapter<String> languagesAdapter = new ArrayAdapter<String>(activity,
-                        android.R.layout.simple_list_item_single_choice, languages.getAllNames());
-                AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-                builder.setIcon(R.drawable.ic_settings_language);
-                builder.setTitle(R.string.KEY_PREF_LANGUAGE_TITLE);
-                builder.setAdapter(languagesAdapter, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int position) {
-                        String[] languageCodes = languages.getSupportedLocales();
-                        ImApp.resetLanguage(activity, languageCodes[position]);
-                        checkCustomFont ();
-                        dialog.dismiss();
-                    }
-                });
-                builder.show();
-            }
-        });
-
         mEditUsername.setOnEditorActionListener(new OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -285,10 +257,8 @@ public class OnboardingActivity extends BaseActivity {
                             mNickname = mEditUsername.getText().toString();
 
                             if (mNickname.length() > 0) {
-                                startAccountSetup();
+                                startAccountSetup(mNickname);
                             }
-
-
                         }
                     });
                     return true;
@@ -463,10 +433,22 @@ public class OnboardingActivity extends BaseActivity {
     private void showOnboarding ()
     {
 
-        mViewFlipper.setDisplayedChild(1);
+//        mViewFlipper.setDisplayedChild(1);
+        startAvatarTakerForNewAccount(getPickCameraImageChooserIntent());
 
     }
 
+    public Intent getPickCameraImageChooserIntent() {
+        // Determine Uri of camera image to save.
+        Uri outputFileUri = getCaptureImageOutputUri();
+
+        // collect all camera intents
+        Intent captureIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+        if (outputFileUri != null) {
+            captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, outputFileUri);
+        }
+        return captureIntent;
+    }
 
     private void showSetupScreen ()
     {
@@ -523,11 +505,12 @@ public class OnboardingActivity extends BaseActivity {
             mCurrentFindServerTask.cancel(true);
 
         mCurrentFindServerTask = new FindServerTask ();
-        mCurrentFindServerTask.execute(mNickname, username, domain, password);
+        FindServerTaskParams fParams = new FindServerTaskParams(mNickname, username, domain, password, null);
+        mCurrentFindServerTask.execute(fParams);
 
     }
     
-    private void startAccountSetup()
+    private void startAccountSetup(String mNickname)
     {
         setAnimLeft();
 
@@ -542,7 +525,84 @@ public class OnboardingActivity extends BaseActivity {
             mCurrentFindServerTask.cancel(true);
 
         mCurrentFindServerTask = new FindServerTask ();
-        mCurrentFindServerTask.execute(mNickname,username);
+        FindServerTaskParams fParams = new FindServerTaskParams(mNickname, username, null, null, null);
+        mCurrentFindServerTask.execute(fParams);
+    }
+
+    private static class FindServerTaskParams {
+        String nickName;
+        String userName;
+        String domain;
+        String password;
+        Bitmap image;
+
+
+        FindServerTaskParams(String nickName, String userName, String domain, String password, Bitmap image) {
+            this.nickName = nickName;
+            this.userName = userName;
+            this.domain = domain;
+            this.password = password;
+            this.image = image;
+        }
+
+        public String getNickName() {
+            return nickName;
+        }
+
+        public void setNickName(String nickName) {
+            this.nickName = nickName;
+        }
+
+        public String getUserName() {
+            return userName;
+        }
+
+        public void setUserName(String userName) {
+            this.userName = userName;
+        }
+
+        public String getDomain() {
+            return domain;
+        }
+
+        public void setDomain(String domain) {
+            this.domain = domain;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
+        }
+
+        public Bitmap getImage() {
+            return image;
+        }
+
+        public void setImage(Bitmap image) {
+            this.image = image;
+        }
+    }
+
+    private void startAccountSetupWithImageData(String mNickname, Bitmap image)
+    {
+        setAnimLeft();
+
+        showSetupProgress ();
+
+        String username = mNickname.replaceAll(USERNAME_ONLY_ALPHANUM, "").toLowerCase();
+
+        if (TextUtils.isEmpty(username))
+            username = "zomuser"; //if there are no alphanum then just use "zomuser"
+
+        if (mCurrentFindServerTask != null)
+            mCurrentFindServerTask.cancel(true);
+
+        mCurrentFindServerTask = new FindServerTask ();
+        FindServerTaskParams fParams = new FindServerTaskParams(mNickname, username, null, null, image);
+        mCurrentFindServerTask.execute(fParams);
     }
 
     private void showSetupForm ()
@@ -563,33 +623,63 @@ public class OnboardingActivity extends BaseActivity {
 
     }
 
-    private class FindServerTask extends AsyncTask<String, Void, OnboardingAccount> {
+    private class FindServerTask extends AsyncTask<FindServerTaskParams, Void, OnboardingAccount> {
         @Override
-        protected OnboardingAccount doInBackground(String... setupValues) {
+        protected OnboardingAccount doInBackground(FindServerTaskParams... params) {
             try {
 
                 String domain = null;
                 String password = null;
 
-                if (setupValues.length > 2)
-                    domain = setupValues[2]; //user can specify the domain they want to be on for a new account
+                if(params[0].getDomain() != null) {
+                    domain = params[0].getDomain();
+                }
 
-                if (setupValues.length > 3)
-                    password = setupValues[3];
+                if (params[0].getPassword() != null) {
+                    password = params[0].getPassword();
+                }
 
                 OtrAndroidKeyManagerImpl keyMan = OtrAndroidKeyManagerImpl.getInstance(OnboardingActivity.this);
                 KeyPair keyPair = keyMan.generateLocalKeyPair();
                 mFingerprint = keyMan.getFingerprint(keyPair.getPublic());
 
-                String nickname = setupValues[0];
-                String username = setupValues[1] + '.' + mFingerprint.substring(mFingerprint.length()-8,mFingerprint.length()).toLowerCase();
+                String nickname = params[0].getNickName();
+                String username = params[0].getUserName() + '.' + mFingerprint.substring(mFingerprint.length()-8,mFingerprint.length()).toLowerCase();
+                ImApp app = (ImApp) getApplication();
+                NetworkConnectivityReceiver.State state = app.getmNetworkState();
+                OnboardingAccount result = null;
+                if(state == NetworkConnectivityReceiver.State.CONNECTED) {
+                    System.out.println("NETWORD IS CONNECTED WHILE CREATING ACCOUNT");
+                    result = OnboardingManager.registerAccount(OnboardingActivity.this, mHandler, nickname, username, null, domain, 5222, false);
+                } else {
+                    System.out.println("NETWORD IS NOT CONNECTED WHILE CREATING ACCOUNT");
+                    result = OnboardingManager.registerAccount(OnboardingActivity.this, mHandler, nickname, username, null, domain, 5222, true);
+                }
 
-                OnboardingAccount result = OnboardingManager.registerAccount(OnboardingActivity.this, mHandler, nickname, username, null, domain, 5222);
+                if(params[0].getImage() != null) {
+                    result.setImage(params[0].getImage());
+                }
+
+                try {
+                    runOnUiThread(new Runnable() {
+                          public void run() {
+                              ImApp app = (ImApp) getApplication();
+                              URL contactsPath = null;
+                              ContactSyncTask syncContactTask = new ContactSyncTask(app, CONTACT_INFO_SERVER_URL);
+                              syncContactTask.execute(contactsPath);
+                          }
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                //get off line contact information
+//                Intent syncOfflineContactIntent = new Intent(HeartbeatService.SYNC_CONTACT_SERVICE_ACTION, null, getApplication().getApplicationContext(), SyncOfflineContactService.class);
+//                startService(syncOfflineContactIntent);
 
                 if (result != null) {
                     String jabberId = result.username + '@' + result.domain;
                     keyMan.storeKeyPair(jabberId,keyPair);
-
                 }
 
                 return result;
@@ -632,15 +722,20 @@ public class OnboardingActivity extends BaseActivity {
                 signInHelper.activateAccount(account.providerId, account.accountId);
                 signInHelper.signIn(account.password, account.providerId, account.accountId, true);
 
-                mItemSkip.setVisible(true);
-                mItemSkip.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-                    @Override
-                    public boolean onMenuItemClick(MenuItem item) {
+                if(account.getImage() != null) {
+                    setAvatar(account.getImage(), account);
+                    showMainScreen();
+                }
 
-                        showInviteScreen();
-                        return false;
-                    }
-                });
+//                mItemSkip.setVisible(true);
+//                mItemSkip.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+//                    @Override
+//                    public boolean onMenuItemClick(MenuItem item) {
+//
+//                        showInviteScreen();
+//                        return false;
+//                    }
+//                });
             }
             else
             {
@@ -808,6 +903,51 @@ public class OnboardingActivity extends BaseActivity {
                 {
                     showMainScreen ();
                 }
+            }
+            else if (requestCode == OnboardingManager.REQUEST_CHOOSE_AVATAR_FOR_NEW_ACCOUNT)
+            {
+                mNickname = "TEST_GENERATED";
+                Uri imageUri = getPickImageResultUri(data);
+
+                if (imageUri == null)
+                    return;
+
+                mCropImageView = new CropImageView(OnboardingActivity.this);// (CropImageView)view.findViewById(R.id.CropImageView);
+                mCropImageView.setAspectRatio(1, 1);
+                mCropImageView.setFixedAspectRatio(true);
+                mCropImageView.setCropShape(CropImageView.CropShape.OVAL);
+                //  mCropImageView.setGuidelines(1);
+
+                try {
+                    Bitmap bmpThumbnail = SecureMediaStore.getThumbnailFile(OnboardingActivity.this, imageUri, 512);
+                    mCropImageView.setImageBitmap(bmpThumbnail);
+
+                    // Use the Builder class for convenient dialog construction
+                    android.support.v7.app.AlertDialog.Builder builder = new android.support.v7.app.AlertDialog.Builder(OnboardingActivity.this);
+                    builder.setView(mCropImageView)
+                            .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int id) {
+                                    //setAvatar(mCropImageView.getCroppedImage(), mNewAccount);
+                                    startAccountSetupWithImageData(mNickname, mCropImageView.getCroppedImage());
+                                    delete(mOutputFileUri);
+                                }
+                            })
+                            .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int id) {
+                                    // User cancelled the dialog
+                                    startAccountSetupWithImageData(mNickname, null);
+                                    delete(mOutputFileUri);
+                                }
+                            });
+                    // Create the AlertDialog object and return it
+                    android.support.v7.app.AlertDialog dialog = builder.create();
+                    dialog.show();
+
+                    ;
+                } catch (IOException ioe) {
+                    Log.e(ImApp.LOG_TAG, "couldn't load avatar", ioe);
+                }
+
             }
             else if (requestCode == OnboardingManager.REQUEST_CHOOSE_AVATAR)
             {
@@ -999,7 +1139,36 @@ public class OnboardingActivity extends BaseActivity {
 
     private final static int MY_PERMISSIONS_REQUEST_CAMERA = 1;
 
-    void startAvatarTaker() {
+    void startAvatarTaker(Intent intent) {
+        int permissionCheck = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.CAMERA);
+
+        if (permissionCheck ==PackageManager.PERMISSION_DENIED)
+        {
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.CAMERA)) {
+
+                // Show an expanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+                Snackbar.make(mViewFlipper, R.string.grant_perms, Snackbar.LENGTH_LONG).show();
+            } else {
+
+                // No explanation needed, we can request the permission.
+
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.CAMERA},
+                        MY_PERMISSIONS_REQUEST_CAMERA);
+            }
+        }
+        else {
+            startActivityForResult(intent, OnboardingManager.REQUEST_CHOOSE_AVATAR);
+        }
+    }
+
+
+    void startAvatarTakerForNewAccount(Intent intent) {
         int permissionCheck = ContextCompat.checkSelfPermission(this,
                 Manifest.permission.CAMERA);
 
@@ -1027,7 +1196,7 @@ public class OnboardingActivity extends BaseActivity {
             }
         }
         else {
-            startActivityForResult(getPickImageChooserIntent(), OnboardingManager.REQUEST_CHOOSE_AVATAR);
+            startActivityForResult(intent, OnboardingManager.REQUEST_CHOOSE_AVATAR_FOR_NEW_ACCOUNT);
         }
     }
 

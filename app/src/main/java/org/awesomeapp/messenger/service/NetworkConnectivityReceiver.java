@@ -17,19 +17,19 @@
 package org.awesomeapp.messenger.service;
 
 
-import java.util.HashMap;
-import java.util.Iterator;
-
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
-import android.net.Network;
 import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
+
+import org.awesomeapp.messenger.ImApp;
+
+import java.util.HashMap;
+import java.util.Iterator;
 
 /**
  * A wrapper for a broadcast receiver that provides network connectivity state
@@ -84,6 +84,8 @@ public class NetworkConnectivityReceiver extends BroadcastReceiver {
                 && mNetworkInfo.isConnectedOrConnecting())
         {
             mState = State.CONNECTED;
+            ImApp app = (ImApp)(context.getApplicationContext());
+            app.setmNetworkState(mState);
         }
 
         if (mHandlers != null)

@@ -61,6 +61,7 @@ import org.awesomeapp.messenger.service.IConnectionCreationListener;
 import org.awesomeapp.messenger.service.IImConnection;
 import org.awesomeapp.messenger.service.IRemoteImService;
 import org.awesomeapp.messenger.service.ImServiceConstants;
+import org.awesomeapp.messenger.service.NetworkConnectivityReceiver;
 import org.awesomeapp.messenger.service.RemoteImService;
 import org.awesomeapp.messenger.ui.legacy.ImPluginHelper;
 import org.awesomeapp.messenger.ui.legacy.ProviderDef;
@@ -154,6 +155,8 @@ public class ImApp extends Application implements ICacheWordSubscriber {
     private static Context mApplicationContext;
 
 
+    private  NetworkConnectivityReceiver.State mNetworkState;
+
     PushManager mPushManager;
 
     boolean mSupportPushReceive = false;
@@ -202,6 +205,14 @@ public class ImApp extends Application implements ICacheWordSubscriber {
 
     public static Context getAppContext() {
         return ImApp.mApplicationContext;
+    }
+
+    public NetworkConnectivityReceiver.State getmNetworkState() {
+        return mNetworkState;
+    }
+
+    public void setmNetworkState(NetworkConnectivityReceiver.State mNetworkState) {
+        this.mNetworkState = mNetworkState;
     }
 
     @Override

@@ -16,12 +16,26 @@
 
 package org.awesomeapp.messenger.provider;
 
-import info.guardianproject.cacheword.CacheWordHandler;
-import info.guardianproject.cacheword.ICacheWordSubscriber;
+import android.content.ContentProvider;
+import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.UriMatcher;
+import android.content.res.Configuration;
+import android.database.Cursor;
+import android.database.CursorWindow;
+import android.database.DatabaseUtils;
+import android.net.Uri;
+import android.os.ParcelFileDescriptor;
+import android.text.TextUtils;
+
+import net.sqlcipher.database.SQLiteConstraintException;
+import net.sqlcipher.database.SQLiteDatabase;
+import net.sqlcipher.database.SQLiteOpenHelper;
+import net.sqlcipher.database.SQLiteQueryBuilder;
 
 import org.awesomeapp.messenger.ImApp;
 import org.awesomeapp.messenger.provider.Imps.Contacts;
-
 import org.awesomeapp.messenger.push.model.PushDatabase;
 import org.awesomeapp.messenger.util.Debug;
 import org.awesomeapp.messenger.util.LogCleaner;
@@ -38,22 +52,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 
-import net.sqlcipher.database.SQLiteConstraintException;
-import net.sqlcipher.database.SQLiteDatabase;
-import net.sqlcipher.database.SQLiteOpenHelper;
-import net.sqlcipher.database.SQLiteQueryBuilder;
-import android.content.ContentProvider;
-import android.content.ContentResolver;
-import android.content.ContentValues;
-import android.content.Context;
-import android.content.UriMatcher;
-import android.content.res.Configuration;
-import android.database.Cursor;
-import android.database.CursorWindow;
-import android.database.DatabaseUtils;
-import android.net.Uri;
-import android.os.ParcelFileDescriptor;
-import android.text.TextUtils;
+import info.guardianproject.cacheword.CacheWordHandler;
+import info.guardianproject.cacheword.ICacheWordSubscriber;
 
 /** A content provider for IM */
 public class ImpsProvider extends ContentProvider implements ICacheWordSubscriber {
@@ -409,6 +409,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
                        + "locked INTEGER NOT NULL DEFAULT 0,"
                        + "keep_signed_in INTEGER NOT NULL DEFAULT 0,"
                        + "last_login_state INTEGER NOT NULL DEFAULT 0,"
+                        + "sync_state INTEGER NOT NULL DEFAULT 0,"
                        + "UNIQUE (provider, username)" + ");");
 
             createContactsTables(db);

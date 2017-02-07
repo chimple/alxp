@@ -1,21 +1,5 @@
 package org.awesomeapp.messenger.ui.legacy;
 
-import org.awesomeapp.messenger.service.IImConnection;
-import im.zom.messenger.R;
-import org.awesomeapp.messenger.ui.legacy.adapter.ConnectionListenerAdapter;
-import org.awesomeapp.messenger.model.ImConnection;
-import org.awesomeapp.messenger.model.ImErrorInfo;
-
-import org.awesomeapp.messenger.ImApp;
-import org.awesomeapp.messenger.provider.Imps;
-import org.awesomeapp.messenger.MainActivity;
-
-import org.awesomeapp.messenger.service.ImServiceConstants;
-import org.awesomeapp.messenger.util.LogCleaner;
-
-import java.util.Collection;
-import java.util.HashSet;
-
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -26,6 +10,21 @@ import android.os.Handler;
 import android.os.RemoteException;
 import android.util.Log;
 import android.widget.Toast;
+
+import org.awesomeapp.messenger.ImApp;
+import org.awesomeapp.messenger.MainActivity;
+import org.awesomeapp.messenger.model.ImConnection;
+import org.awesomeapp.messenger.model.ImErrorInfo;
+import org.awesomeapp.messenger.provider.Imps;
+import org.awesomeapp.messenger.service.IImConnection;
+import org.awesomeapp.messenger.service.ImServiceConstants;
+import org.awesomeapp.messenger.ui.legacy.adapter.ConnectionListenerAdapter;
+import org.awesomeapp.messenger.util.LogCleaner;
+
+import java.util.Collection;
+import java.util.HashSet;
+
+import im.zom.messenger.R;
 
 /**
  * Handle sign-in process for activities.

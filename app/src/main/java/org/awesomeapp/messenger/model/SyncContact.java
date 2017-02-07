@@ -20,4 +20,10 @@ public class SyncContact {
 
     }
 
+    public SyncContact(String nickName, String userName, String address) {
+        this.nickName = nickName;
+        this.userName = userName;
+        this.address = address;
+    }
+
 }
