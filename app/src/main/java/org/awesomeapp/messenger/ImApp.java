@@ -61,7 +61,9 @@ import org.awesomeapp.messenger.service.IConnectionCreationListener;
 import org.awesomeapp.messenger.service.IImConnection;
 import org.awesomeapp.messenger.service.IRemoteImService;
 import org.awesomeapp.messenger.service.ImServiceConstants;
+import org.awesomeapp.messenger.service.NetworkConnectivityReceiver;
 import org.awesomeapp.messenger.service.RemoteImService;
+import org.awesomeapp.messenger.tasks.RegisterExistingAccountTask;
 import org.awesomeapp.messenger.ui.legacy.ImPluginHelper;
 import org.awesomeapp.messenger.ui.legacy.ProviderDef;
 import org.awesomeapp.messenger.ui.legacy.adapter.ConnectionListenerAdapter;
@@ -94,7 +96,8 @@ import timber.log.Timber;
 public class ImApp extends Application implements ICacheWordSubscriber {
 
     public static final String LOG_TAG = "Zom";
-
+    public static boolean isXMPPAccountRegistered = false;
+    public static boolean isXMPPAccountRegisteredInProgress = false;
     public static final String EXTRA_INTENT_SEND_TO_USER = "Send2_U";
     public static final String EXTRA_INTENT_PASSWORD = "password";
 
@@ -154,6 +157,8 @@ public class ImApp extends Application implements ICacheWordSubscriber {
     private static Context mApplicationContext;
 
 
+    private  NetworkConnectivityReceiver.State mNetworkState;
+
     PushManager mPushManager;
 
     boolean mSupportPushReceive = false;
@@ -202,6 +207,17 @@ public class ImApp extends Application implements ICacheWordSubscriber {
 
     public static Context getAppContext() {
         return ImApp.mApplicationContext;
+    }
+
+    public NetworkConnectivityReceiver.State getmNetworkState() {
+        return mNetworkState;
+    }
+
+    public void setmNetworkState(NetworkConnectivityReceiver.State mNetworkState) {
+        this.mNetworkState = mNetworkState;
+        if(this.mNetworkState == NetworkConnectivityReceiver.State.CONNECTED) {
+            activateSuspendedRemoteXMPPAccount();
+        }
     }
 
     @Override
@@ -543,6 +559,18 @@ public class ImApp extends Application implements ICacheWordSubscriber {
         return conn;
     }
 
+    public void activateSuspendedRemoteXMPPAccount() {
+        try {
+            IImConnection connection = getConnection(mDefaultProviderId, mDefaultAccountId);
+            if(mDefaultAccountId != -1 && connection.getState() == ImConnection.SUSPENDED && !isXMPPAccountRegistered && !isXMPPAccountRegisteredInProgress) {
+                isXMPPAccountRegisteredInProgress = true;
+                new RegisterExistingAccountTask(this).execute(mDefaultNickname, mDefaultUsername);
+            }
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
     public IImConnection getConnection(long providerId,long accountId) {
 
         try {
@@ -830,7 +858,8 @@ public class ImApp extends Application implements ICacheWordSubscriber {
                 Imps.Provider._ID,
                 Imps.Provider.ACTIVE_ACCOUNT_ID,
                 Imps.Provider.ACTIVE_ACCOUNT_USERNAME,
-                Imps.Provider.ACTIVE_ACCOUNT_NICKNAME
+                Imps.Provider.ACTIVE_ACCOUNT_NICKNAME,
+                Imps.Provider.ACTIVE_ACCOUNT_PW
 
         };
 
@@ -847,6 +876,7 @@ public class ImApp extends Application implements ICacheWordSubscriber {
             mDefaultAccountId = cursorProviders.getLong(1);
             mDefaultUsername = cursorProviders.getString(2);
             mDefaultNickname = cursorProviders.getString(3);
+            mActiveAccountPassword = cursorProviders.getString(4);
 
             Cursor pCursor = getContentResolver().query(Imps.ProviderSettings.CONTENT_URI, new String[]{Imps.ProviderSettings.NAME, Imps.ProviderSettings.VALUE}, Imps.ProviderSettings.PROVIDER + "=?", new String[]{Long.toString(mDefaultProviderId)}, null);
 
@@ -878,7 +908,8 @@ public class ImApp extends Application implements ICacheWordSubscriber {
                     Imps.Provider._ID,
                     Imps.Provider.ACTIVE_ACCOUNT_ID,
                     Imps.Provider.ACTIVE_ACCOUNT_USERNAME,
-                    Imps.Provider.ACTIVE_ACCOUNT_NICKNAME
+                    Imps.Provider.ACTIVE_ACCOUNT_NICKNAME,
+                    Imps.Provider.ACTIVE_ACCOUNT_PW,
 
             };
 
@@ -893,6 +924,7 @@ public class ImApp extends Application implements ICacheWordSubscriber {
                 mDefaultAccountId = cursorProviders.getLong(1);
                 mDefaultUsername = cursorProviders.getString(2);
                 mDefaultNickname = cursorProviders.getString(3);
+                mActiveAccountPassword = cursorProviders.getString(4);
 
                 Cursor pCursor = getContentResolver().query(Imps.ProviderSettings.CONTENT_URI, new String[]{Imps.ProviderSettings.NAME, Imps.ProviderSettings.VALUE}, Imps.ProviderSettings.PROVIDER + "=?", new String[]{Long.toString(mDefaultProviderId)}, null);
 
@@ -922,6 +954,7 @@ public class ImApp extends Application implements ICacheWordSubscriber {
     private String mDefaultUsername = null;
     private String mDefaultOtrFingerprint = null;
     private String mDefaultNickname = null;
+    private String mActiveAccountPassword = null;
 
     public String getDefaultUsername ()
     {
@@ -946,6 +979,11 @@ public class ImApp extends Application implements ICacheWordSubscriber {
     public long getDefaultAccountId ()
     {
         return mDefaultAccountId;
+    }
+
+    public String getActiveAccontPassword ()
+    {
+        return mActiveAccountPassword;
     }
 
     @Override

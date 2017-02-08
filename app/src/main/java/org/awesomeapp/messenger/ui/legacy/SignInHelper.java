@@ -1,31 +1,31 @@
 package org.awesomeapp.messenger.ui.legacy;
 
-import org.awesomeapp.messenger.service.IImConnection;
-import im.zom.messenger.R;
-import org.awesomeapp.messenger.ui.legacy.adapter.ConnectionListenerAdapter;
-import org.awesomeapp.messenger.model.ImConnection;
-import org.awesomeapp.messenger.model.ImErrorInfo;
-
-import org.awesomeapp.messenger.ImApp;
-import org.awesomeapp.messenger.provider.Imps;
-import org.awesomeapp.messenger.MainActivity;
-
-import org.awesomeapp.messenger.service.ImServiceConstants;
-import org.awesomeapp.messenger.util.LogCleaner;
-
-import java.util.Collection;
-import java.util.HashSet;
-
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Handler;
 import android.os.RemoteException;
 import android.util.Log;
 import android.widget.Toast;
+
+import org.awesomeapp.messenger.ImApp;
+import org.awesomeapp.messenger.MainActivity;
+import org.awesomeapp.messenger.model.ImConnection;
+import org.awesomeapp.messenger.model.ImErrorInfo;
+import org.awesomeapp.messenger.provider.Imps;
+import org.awesomeapp.messenger.service.IImConnection;
+import org.awesomeapp.messenger.service.ImServiceConstants;
+import org.awesomeapp.messenger.ui.legacy.adapter.ConnectionListenerAdapter;
+import org.awesomeapp.messenger.util.LogCleaner;
+
+import java.util.Collection;
+import java.util.HashSet;
+
+import im.zom.messenger.R;
 
 /**
  * Handle sign-in process for activities.
@@ -39,7 +39,7 @@ import android.widget.Toast;
  * connection state is logged-in or disconnected (failed).
  */
 public class SignInHelper {
-    Activity mContext;
+    Context mContext;
     private Handler mHandler;
     private ImApp mApp;
     private MyConnectionListener mListener;
@@ -52,20 +52,20 @@ public class SignInHelper {
         void stateChanged(int state, long accountId);
     }
 
-    public SignInHelper(Activity context, Handler handler, SignInListener listener) {
+    public SignInHelper(Context context, Handler handler, SignInListener listener) {
         this.mContext = context;
         mHandler = handler;
         mListener = new MyConnectionListener(mHandler);
         mSignInListener = listener;
         if (mApp == null) {
 
-            mApp = (ImApp)mContext.getApplication();
+            mApp = (ImApp)mContext.getApplicationContext();
         }
 
         connections = new HashSet<IImConnection>();
     }
 
-    public SignInHelper(Activity context, Handler handler) {
+    public SignInHelper(Context context, Handler handler) {
         this(context, handler, null);
     }
 

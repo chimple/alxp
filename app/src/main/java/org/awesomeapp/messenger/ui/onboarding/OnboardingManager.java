@@ -1,21 +1,5 @@
 package org.awesomeapp.messenger.ui.onboarding;
 
-import org.awesomeapp.messenger.provider.Imps;
-import org.awesomeapp.messenger.ui.qr.QrScanActivity;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import org.awesomeapp.messenger.ImApp;
-import org.awesomeapp.messenger.ui.legacy.ImPluginHelper;
-import org.awesomeapp.messenger.plugin.xmpp.XmppConnection;
-import org.awesomeapp.messenger.util.LogCleaner;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.SecureRandom;
-import java.util.HashMap;
-
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -31,10 +15,29 @@ import android.util.Base64;
 import android.util.Log;
 import android.widget.Toast;
 
+import org.awesomeapp.messenger.ImApp;
+import org.awesomeapp.messenger.model.SyncContact;
+import org.awesomeapp.messenger.plugin.xmpp.XmppConnection;
+import org.awesomeapp.messenger.provider.Imps;
+import org.awesomeapp.messenger.ui.legacy.ImPluginHelper;
+import org.awesomeapp.messenger.ui.qr.QrScanActivity;
+import org.awesomeapp.messenger.util.LogCleaner;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
 public class OnboardingManager {
 
     public final static int REQUEST_SCAN = 1111;
     public final static int REQUEST_CHOOSE_AVATAR = REQUEST_SCAN+1;
+    public final static int REQUEST_CHOOSE_AVATAR_FOR_NEW_ACCOUNT = REQUEST_CHOOSE_AVATAR+1;
 
     public final static String BASE_INVITE_URL = "https://zom.im/i/#";
 
@@ -211,6 +214,33 @@ public class OnboardingManager {
         }
     }
 
+
+    public static List<SyncContact> getOffLineContacts (Context context)
+    {
+        try {
+            JSONObject obj = new JSONObject(loadOfflineContactsJSON(context));
+            JSONArray contacts = obj.getJSONArray("contacts");
+            List<SyncContact> offlineContacts = new ArrayList<SyncContact>();
+
+            for (int i = 0; i < contacts.length(); i++) {
+                JSONObject c = contacts.getJSONObject(i);
+                String userName = c.getString("userName");
+                String nickName = c.getString("nickName");
+                String address = c.getString("address");
+                SyncContact oSyncContact = new SyncContact(nickName, userName, address);
+                offlineContacts.add(oSyncContact);
+                System.out.println("got result:" + userName + " " + nickName + " " + address);
+            }
+
+            return offlineContacts;
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public static boolean changePassword (Activity context, long providerId, long accountId, String oldPassword, String newPassword)
     {
         try {
@@ -226,7 +256,7 @@ public class OnboardingManager {
         }
     }
 
-    public static OnboardingAccount registerAccount (Activity context, Handler handler, String nickname, String username, String password, String domain, int port) throws JSONException {
+    public static OnboardingAccount registerAccount (Context context, Handler handler, String nickname, String username, String password, String domain, int port, boolean offline) throws JSONException {
 
         if (password == null)
             password = generatePassword();
@@ -282,12 +312,21 @@ public class OnboardingManager {
                     settings.setPort(server.getInt("port"));
                     settings.requery();
 
-                    HashMap<String, String> aParams = new HashMap<String, String>();
 
-                    XmppConnection xmppConn = new XmppConnection(context);
-                    xmppConn.initUser(providerId, accountId);
+                    boolean success = false;
+                    if(!offline)
+                    {
+                        HashMap<String, String> aParams = new HashMap<String, String>();
 
-                    boolean success = xmppConn.registerAccount(settings, username, password, aParams);
+                        XmppConnection xmppConn = new XmppConnection(context);
+                        xmppConn.initUser(providerId, accountId);
+                        success = xmppConn.registerAccount(settings, username, password, aParams);
+                        ImApp.isXMPPAccountRegistered = true;
+                    } else {
+                        success = true;
+                        ImApp.isXMPPAccountRegistered = false;
+                    }
+
 
                     if (success) {
                         OnboardingAccount result = null;
@@ -318,12 +357,7 @@ public class OnboardingManager {
 
                 try { Thread.sleep(1000); }
                 catch (Exception e){}
-
-
-
             }
-
-
         }
         else
         {
@@ -372,7 +406,7 @@ public class OnboardingManager {
 
     }
 
-    public static OnboardingAccount addExistingAccount (Activity context, Handler handler, String nickname, String jabberId, String password) {
+    public static OnboardingAccount addExistingAccount (Context context, Handler handler, String nickname, String jabberId, String password) {
 
         OnboardingAccount result = null;
 
@@ -442,6 +476,31 @@ public class OnboardingManager {
         try {
 
             InputStream is = context.getAssets().open("servers.json");
+
+            int size = is.available();
+
+            byte[] buffer = new byte[size];
+
+            is.read(buffer);
+
+            is.close();
+
+            json = new String(buffer, "UTF-8");
+
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+        return json;
+
+    }
+
+    public static String loadOfflineContactsJSON(Context context) {
+        String json = null;
+        try {
+
+            InputStream is = context.getAssets().open("offlineContacts.json");
 
             int size = is.available();
 
