@@ -195,10 +195,17 @@ public class ContactListItem extends FrameLayout {
                     {
                         //int color = getAvatarBorder(presence);
                         int padding = 24;
-                        LetterAvatar lavatar = new LetterAvatar(getContext(), nickname, padding);
-                        
-                        holder.mAvatar.setImageDrawable(lavatar);
 
+                        String packageName = getContext().getPackageName();
+                        int resID = getResources().getIdentifier(packageName+":drawable/"+nickname, null, null);
+
+                        if(resID==0)
+                        {
+                            LetterAvatar lavatar = new LetterAvatar(getContext(), nickname, padding);
+                            holder.mAvatar.setImageDrawable(lavatar);
+                        }
+                        else
+                            holder.mAvatar.setImageDrawable(getResources().getDrawable(resID));
                     }
 
                     holder.mAvatar.setVisibility(View.VISIBLE);
