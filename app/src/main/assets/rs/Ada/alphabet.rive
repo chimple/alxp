@@ -1,0 +1,128 @@
+// A generic set of chatting responses. This set mimicks the classic Eliza bot.
+
+! local concat = newline
+
++ *
+- 🔤
+
++ (@alphabet) [*]
+- <call>alphabet_teacher <star></call>
+// - {@ teach <star>}
+
++ (@alphabet)* [*]
+- {@ <star>}
+
+// + [*] ask a [*]
+// - <set answer=apple><set a=0><set tries=0>what is 🍎 {topic=question} ?
+// - <set answer=ant><set a=0><set tries=0>what is 🐜 {topic=question} ?
+// - <set answer=alien><set a=0><set tries=0>what is 👽 {topic=question} ?
+// - <set answer=ambulance><set a=0><set tries=0>what is 🚑 {topic=question} ?
+// - <set answer=anchor><set a=0><set tries=0>what is ⚓ {topic=question} ?
+// - <set answer=airplane><set a=0><set tries=0>what is ✈ {topic=question} ?
+// - <set answer=atom><set a=0><set tries=0>what is ⚛ {topic=question} ?
+
+// + [*] ask b [*]
+// - <set answer=boy><set b=0><set tries=0>what is 👦 {topic=question} ?
+// - <set answer=baby><set b=0><set tries=0>what is 👶 {topic=question} ?
+
+// + teach a
+// * <get alnum> > 2 => {@ ask a}
+// - <add alnum=1><set aq=A for Apple 🍎
+// - <add alnum=1>A for Ant 🐜
+// - <add alnum=1>A for Alien 👽
+// - <add alnum=1>A for Ambulance 🚑
+// - <add alnum=1>A for Anchor ⚓
+// - <add alnum=1>A for Airplane ✈
+// - <add alnum=1>A for Atom ⚛
+
+
+// + teach b
+// * <get b> > 3 => {@ ask b}
+// - <add alnum=1>B for Boy 👦
+// - <add alnum=1>B for Baby 👶
+
+// + teach c
+// - C for Cat 🐈
+// - C for Chicken 🐔
+
+// + [*] chicken [*]
+// - 🐔
+
+// + a*
+// - Let us learn about A
+// ^ {@ a}
+
+> topic aquestion1
+
++ <get a1>
+- 👏\n<get o2> ?<set tries=0>{topic=aquestion2}
+
++ <get w1>
+- 👏\n<get o2> ?<set tries=0>{topic=aquestion2}
+
++ *
+* <add tries=1><get tries> < 3 => 👎
+- 👎\n<get a1> for <get w1> <get o1>\n<get o2> ?<set tries=0>{topic=aquestion2}
+
+< topic
+
+> topic aquestion2
+
++ <get a2>
+- 👏\n<get o3> ?<set tries=0>{topic=aquestion3}
+
++ <get w2>
+- 👏\n<get o3> ?<set tries=0>{topic=aquestion3}
+
++ *
+* <add tries=1><get tries> < 3 => 👎
+- 👎\n<get a2> for <get w2> <get o2>\n<get o3> ?<set tries=0>{topic=aquestion3}
+
+< topic
+
+> topic aquestion3
+
++ <get a3>
+- 👏<set tries=0>{topic=random}
+
++ <get w3>
+- 👏<set tries=0>{topic=random}
+
++ *
+* <add tries=1><get tries> < 3 => 👎
+- 👎\n<get a3> for <get w3> <get o3><set tries=0>{topic=random}
+
+< topic
+
+> topic oquestion1
+
++ <get w1>
+- 👏\n<get w2> ?<set tries=0>{topic=oquestion2}
+
++ *
+* <add tries=1><get tries> < 3 => 👎
+- 👎\n<get a1> for <get w1> <get o1>\n<get w2> ?<set tries=0>{topic=oquestion2}
+
+< topic
+
+> topic oquestion2
+
++ <get w2>
+- 👏\n<get w3> ?<set tries=0>{topic=oquestion3}
+
++ *
+* <add tries=1><get tries> < 3 => 👎
+- 👎\n<get a2> for <get w2> <get o2>\n<get w3> ?<set tries=0>{topic=oquestion3}
+
+< topic
+
+> topic oquestion3
+
++ <get w3>
+- 👏<set tries=0>{topic=random}
+
++ *
+* <add tries=1><get tries> < 3 => 👎
+- 👎\n<get a3> for <get w3> <get o3><set tries=0>{topic=random}
+
+< topic

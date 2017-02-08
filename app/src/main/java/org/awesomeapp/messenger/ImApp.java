@@ -258,10 +258,6 @@ public class ImApp extends Application implements ICacheWordSubscriber {
             BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>(maximumPoolSize);
             sThreadPoolExecutor = new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, TimeUnit.SECONDS, workQueue);
         }
-        RiveScript rs = new RiveScript(ImApp.mApplicationContext, true);
-        rs.loadDirectory("Aiden");
-        rs.sortReplies();
-        String reply = rs.reply("localuser", "Hello");
     }
 
     public boolean isThemeDark ()
