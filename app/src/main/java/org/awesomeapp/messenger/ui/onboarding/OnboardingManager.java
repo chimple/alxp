@@ -13,7 +13,6 @@ import android.os.Handler;
 import android.provider.Telephony;
 import android.util.Base64;
 import android.util.Log;
-import android.widget.Toast;
 
 import org.awesomeapp.messenger.ImApp;
 import org.awesomeapp.messenger.model.SyncContact;
@@ -256,6 +255,150 @@ public class OnboardingManager {
         }
     }
 
+    public static OnboardingAccount activateAlreadyRegisteredAccount (Context context, Handler handler, String nickname, String username, String password, String sProviderId, String sAccountId, String domain, int port) throws JSONException {
+
+        if (password == null)
+            password = generatePassword();
+
+        ContentResolver cr = context.getContentResolver();
+        ImPluginHelper helper = ImPluginHelper.getInstance(context);
+        long providerId = Long.parseLong(sProviderId);
+
+        long accountId = Long.parseLong(sAccountId);
+
+        Uri accountUri = ContentUris.withAppendedId(Imps.Account.CONTENT_URI, accountId);
+
+        Cursor pCursor = cr.query(Imps.ProviderSettings.CONTENT_URI, new String[]{Imps.ProviderSettings.NAME, Imps.ProviderSettings.VALUE}, Imps.ProviderSettings.PROVIDER + "=?", new String[]{Long.toString(providerId)}, null);
+
+        Imps.ProviderSettings.QueryMap settings = new Imps.ProviderSettings.QueryMap(
+                pCursor, cr, providerId, false /* don't keep updated */, null /* no handler */);
+
+        //should check to see if Orbot is installed and running
+
+        JSONObject obj = new JSONObject(loadServersJSON(context));
+        JSONArray servers = obj.getJSONArray("servers");
+
+        settings.setRequireTls(true);
+        settings.setTlsCertVerify(true);
+        settings.setAllowPlainAuth(false);
+
+        if (domain == null) {
+            int nameIdx = 0;
+
+            for (int i = 0; i < servers.length(); i++) {
+
+                JSONObject server = servers.getJSONObject(i);
+
+                try {
+
+                    domain = server.getString("domain");
+                    String host = server.getString("server");
+
+                    if (host != null) {
+                        settings.setServer(host); //if we have a host, then we should use it
+                        settings.setDoDnsSrv(false);
+
+                    }
+                    else
+                    {
+                        settings.setServer(null);
+                        settings.setDoDnsSrv(true);
+                        settings.setUseTor(false);
+
+                    }
+
+                    settings.setDomain(domain);
+                    settings.setPort(server.getInt("port"));
+                    settings.requery();
+
+
+                    boolean success = false;
+                    HashMap<String, String> aParams = new HashMap<String, String>();
+
+                    XmppConnection xmppConn = new XmppConnection(context);
+                    xmppConn.initUser(providerId, accountId);
+                    username = username.replaceAll("@home.zom.im","");
+                    success = xmppConn.registerAccount(settings, username, password, aParams);
+                    ImApp.isXMPPAccountRegistered = true;
+
+                    if (success) {
+                        OnboardingAccount result = null;
+
+                        result = new OnboardingAccount();
+                        result.username = username;
+                        result.domain = domain;
+                        result.password = password;
+                        result.providerId = providerId;
+                        result.accountId = accountId;
+                        result.nickname = nickname;
+
+                        //now keep this account signed-in
+                        ContentValues values = new ContentValues();
+                        values.put(Imps.AccountColumns.KEEP_SIGNED_IN, 1);
+                        cr.update(accountUri, values, null, null);
+                        settings.close();
+                        return result;
+                    }
+
+
+                } catch (Exception e) {
+                    LogCleaner.error(ImApp.LOG_TAG, "error registering new account", e);
+
+                }
+
+//                Toast.makeText(context,"Trying again...",Toast.LENGTH_SHORT).show();
+
+                try { Thread.sleep(1000); }
+                catch (Exception e){}
+            }
+        }
+        else
+        {
+            try
+            {
+                settings.setDomain(domain);
+                settings.setPort(port);
+                settings.requery();
+
+                HashMap<String, String> aParams = new HashMap<String, String>();
+
+                XmppConnection xmppConn = new XmppConnection(context);
+                xmppConn.initUser(providerId, accountId);
+
+                boolean success = xmppConn.registerAccount(settings, username, password, aParams);
+
+                if (success) {
+                    OnboardingAccount result = null;
+
+                    result = new OnboardingAccount();
+                    result.username = username;
+                    result.domain = domain;
+                    result.password = password;
+                    result.providerId = providerId;
+                    result.accountId = accountId;
+                    result.nickname = nickname;
+
+                    //now keep this account signed-in
+                    ContentValues values = new ContentValues();
+                    values.put(Imps.AccountColumns.KEEP_SIGNED_IN, 1);
+                    cr.update(accountUri, values, null, null);
+
+                    settings.close();
+
+                    return result;
+                }
+            } catch (Exception e) {
+                LogCleaner.error(ImApp.LOG_TAG, "error registering new account", e);
+
+
+            }
+        }
+
+        settings.close();
+        return null;
+
+    }
+
     public static OnboardingAccount registerAccount (Context context, Handler handler, String nickname, String username, String password, String domain, int port, boolean offline) throws JSONException {
 
         if (password == null)
@@ -353,7 +496,7 @@ public class OnboardingManager {
 
                 }
 
-                Toast.makeText(context,"Trying again...",Toast.LENGTH_SHORT).show();
+//                Toast.makeText(context,"Trying again...",Toast.LENGTH_SHORT).show();
 
                 try { Thread.sleep(1000); }
                 catch (Exception e){}

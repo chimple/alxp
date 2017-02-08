@@ -151,6 +151,7 @@ public class ContactSyncTask extends AsyncTask<URL, Void, List<SyncContact>> {
 
 
     private void deleteContactFromDataBase(Contact contact) {
+        System.out.println("IN delete contact infomation for offline contacts" + mContactUrl);
         String username = contact.getAddress().getAddress();
         String selection = Imps.Contacts.USERNAME + "=?";
         String[] selectionArgs = {username};
@@ -206,6 +207,7 @@ public class ContactSyncTask extends AsyncTask<URL, Void, List<SyncContact>> {
     }
 
     private void insertContactContent(Contact contact, long listId, int type) {
+        System.out.println("IN INSERT contact infomation for offline contacts" + mContactUrl);
         ContentValues values = getContactContentValues(contact, listId);
         values.put(Imps.Contacts.TYPE, type);
         Uri uri = mResolver.insert(mContactUrl, values);

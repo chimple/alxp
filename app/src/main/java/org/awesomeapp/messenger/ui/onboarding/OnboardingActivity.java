@@ -651,31 +651,17 @@ public class OnboardingActivity extends BaseActivity {
                 if(state == NetworkConnectivityReceiver.State.CONNECTED) {
                     System.out.println("NETWORD IS CONNECTED WHILE CREATING ACCOUNT");
                     result = OnboardingManager.registerAccount(OnboardingActivity.this, mHandler, nickname, username, null, domain, 5222, false);
+                    result.setOffLine(false);
                 } else {
                     System.out.println("NETWORD IS NOT CONNECTED WHILE CREATING ACCOUNT");
                     result = OnboardingManager.registerAccount(OnboardingActivity.this, mHandler, nickname, username, null, domain, 5222, true);
+                    result.setOffLine(true);
                 }
 
                 if(params[0].getImage() != null) {
                     result.setImage(params[0].getImage());
                 }
 
-                try {
-                    runOnUiThread(new Runnable() {
-                          public void run() {
-                              ImApp app = (ImApp) getApplication();
-                              URL contactsPath = null;
-                              ContactSyncTask syncContactTask = new ContactSyncTask(app, CONTACT_INFO_SERVER_URL);
-                              syncContactTask.execute(contactsPath);
-                          }
-                    });
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-                //get off line contact information
-//                Intent syncOfflineContactIntent = new Intent(HeartbeatService.SYNC_CONTACT_SERVICE_ACTION, null, getApplication().getApplicationContext(), SyncOfflineContactService.class);
-//                startService(syncOfflineContactIntent);
 
                 if (result != null) {
                     String jabberId = result.username + '@' + result.domain;
@@ -720,7 +706,27 @@ public class OnboardingActivity extends BaseActivity {
 
                 SignInHelper signInHelper = new SignInHelper(OnboardingActivity.this, mHandler);
                 signInHelper.activateAccount(account.providerId, account.accountId);
-                signInHelper.signIn(account.password, account.providerId, account.accountId, true);
+                if(!account.isOffLine()) {
+                    signInHelper.signIn(account.password, account.providerId, account.accountId, true);
+                }
+
+                System.out.println("Finished onPostExecute for FindServer task");
+                final ImApp app = (ImApp) getApplication();
+                app.setDefaultAccount(app.getDefaultProviderId(), mNewAccount.getAccountId());
+                System.out.println("provider ID" + app.getDefaultProviderId());
+                System.out.println("acccount ID" + app.getDefaultAccountId());
+                try {
+                    runOnUiThread(new Runnable() {
+                        public void run() {
+                            URL contactsPath = null;
+                            ContactSyncTask syncContactTask = new ContactSyncTask(app, CONTACT_INFO_SERVER_URL);
+                            syncContactTask.execute(contactsPath);
+                        }
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
 
                 if(account.getImage() != null) {
                     setAvatar(account.getImage(), account);
