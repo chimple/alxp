@@ -10,8 +10,6 @@ import org.awesomeapp.messenger.ui.legacy.SignInHelper;
 import org.awesomeapp.messenger.ui.onboarding.OnboardingAccount;
 import org.awesomeapp.messenger.ui.onboarding.OnboardingManager;
 
-import static org.awesomeapp.messenger.ImApp.isXMPPAccountRegisteredInProgress;
-
 /**
  * Created by Shyamal.Upadhyaya on 07/02/17.
  */
@@ -52,9 +50,9 @@ public class RegisterExistingAccountTask extends AsyncTask<String, Void, Onboard
             signInHelper.signIn(account.getPassword(), account.getProviderId(), account.getAccountId(), true);
 
             SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this.app);
-            this.app.isXMPPAccountRegisteredInProgress = true;
+            this.app.isXMPPAccountRegisteredInProgress = false;
             SharedPreferences.Editor editor = preferences.edit();
-            editor.putBoolean("isXMPPAccountRegistered", isXMPPAccountRegisteredInProgress);
+            editor.putBoolean("isXMPPAccountRegistered", true);
             editor.commit();
 
         }

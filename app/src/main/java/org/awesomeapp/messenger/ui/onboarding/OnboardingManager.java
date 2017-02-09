@@ -6,10 +6,12 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.provider.Telephony;
 import android.util.Base64;
 import android.util.Log;
@@ -226,7 +228,8 @@ public class OnboardingManager {
                 String userName = c.getString("userName");
                 String nickName = c.getString("nickName");
                 String address = c.getString("address");
-                SyncContact oSyncContact = new SyncContact(nickName, userName, address);
+                String version = c.getString("version");
+                SyncContact oSyncContact = new SyncContact(nickName, userName, address, version);
                 offlineContacts.add(oSyncContact);
                 System.out.println("got result:" + userName + " " + nickName + " " + address);
             }
@@ -320,6 +323,7 @@ public class OnboardingManager {
                     username = username.replaceAll("@home.zom.im","");
                     success = xmppConn.registerAccount(settings, username, password, aParams);
                     ImApp.isXMPPAccountRegistered = true;
+
 
                     if (success) {
                         OnboardingAccount result = null;
@@ -465,6 +469,12 @@ public class OnboardingManager {
                         xmppConn.initUser(providerId, accountId);
                         success = xmppConn.registerAccount(settings, username, password, aParams);
                         ImApp.isXMPPAccountRegistered = true;
+                        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+                        ImApp.isXMPPAccountRegisteredInProgress = false;
+                        SharedPreferences.Editor editor = preferences.edit();
+                        editor.putBoolean("isXMPPAccountRegistered", true);
+                        editor.commit();
+
                     } else {
                         success = true;
                         ImApp.isXMPPAccountRegistered = false;
@@ -543,6 +553,12 @@ public class OnboardingManager {
 
             }
         }
+
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+        ImApp.isXMPPAccountRegisteredInProgress = false;
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("isXMPPAccountRegistered", true);
+        editor.commit();
 
         settings.close();
         return null;

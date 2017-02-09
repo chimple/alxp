@@ -48,11 +48,12 @@ import org.awesomeapp.messenger.ImApp;
 import org.awesomeapp.messenger.MainActivity;
 import org.awesomeapp.messenger.Preferences;
 import org.awesomeapp.messenger.crypto.OtrAndroidKeyManagerImpl;
+import org.awesomeapp.messenger.model.SyncContact;
 import org.awesomeapp.messenger.plugin.xmpp.XmppAddress;
 import org.awesomeapp.messenger.provider.Imps;
 import org.awesomeapp.messenger.service.NetworkConnectivityReceiver;
 import org.awesomeapp.messenger.tasks.AddContactAsyncTask;
-import org.awesomeapp.messenger.tasks.ContactSyncTask;
+import org.awesomeapp.messenger.tasks.ContactSyncProcessor;
 import org.awesomeapp.messenger.ui.BaseActivity;
 import org.awesomeapp.messenger.ui.legacy.DatabaseUtils;
 import org.awesomeapp.messenger.ui.legacy.SignInHelper;
@@ -65,12 +66,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.List;
 
 import im.zom.messenger.R;
+
+import static org.awesomeapp.messenger.ImApp.isXMPPAccountRegisteredInProgress;
 
 public class OnboardingActivity extends BaseActivity {
 
@@ -98,7 +100,7 @@ public class OnboardingActivity extends BaseActivity {
     private ListPopupWindow mDomainList;
     private FindServerTask mCurrentFindServerTask;
 
-    private static final String CONTACT_INFO_SERVER_URL = "https://api.myjson.com/bins/bl9p5";
+    private static final String CONTACT_INFO_SERVER_URL = "https://api.myjson.com/bins/m5mtx";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -648,12 +650,14 @@ public class OnboardingActivity extends BaseActivity {
                 ImApp app = (ImApp) getApplication();
                 NetworkConnectivityReceiver.State state = app.getmNetworkState();
                 OnboardingAccount result = null;
-                if(state == NetworkConnectivityReceiver.State.CONNECTED) {
+                if(state == NetworkConnectivityReceiver.State.CONNECTED && !isXMPPAccountRegisteredInProgress) {
                     System.out.println("NETWORD IS CONNECTED WHILE CREATING ACCOUNT");
+                    isXMPPAccountRegisteredInProgress = true;
                     result = OnboardingManager.registerAccount(OnboardingActivity.this, mHandler, nickname, username, null, domain, 5222, false);
                     result.setOffLine(false);
                 } else {
                     System.out.println("NETWORD IS NOT CONNECTED WHILE CREATING ACCOUNT");
+                    isXMPPAccountRegisteredInProgress = true;
                     result = OnboardingManager.registerAccount(OnboardingActivity.this, mHandler, nickname, username, null, domain, 5222, true);
                     result.setOffLine(true);
                 }
@@ -715,18 +719,12 @@ public class OnboardingActivity extends BaseActivity {
                 app.setDefaultAccount(app.getDefaultProviderId(), mNewAccount.getAccountId());
                 System.out.println("provider ID" + app.getDefaultProviderId());
                 System.out.println("acccount ID" + app.getDefaultAccountId());
-                try {
-                    runOnUiThread(new Runnable() {
-                        public void run() {
-                            URL contactsPath = null;
-                            ContactSyncTask syncContactTask = new ContactSyncTask(app, CONTACT_INFO_SERVER_URL);
-                            syncContactTask.execute(contactsPath);
-                        }
-                    });
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
 
+                ContactSyncProcessor contactSyncProcessor = new ContactSyncProcessor(app, CONTACT_INFO_SERVER_URL);
+                List<SyncContact> contacts = contactSyncProcessor.parseContacts();
+                contactSyncProcessor.processSyncContacts(contacts);
+
+                ImApp.isXMPPAccountRegisteredInProgress = false;
 
                 if(account.getImage() != null) {
                     setAvatar(account.getImage(), account);

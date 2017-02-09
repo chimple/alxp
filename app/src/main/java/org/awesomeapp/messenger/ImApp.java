@@ -134,6 +134,10 @@ public class ImApp extends Application implements ICacheWordSubscriber {
 
     public final static String ZOM_SERVICES_ADDRESS = "zombot@home.zom.im";
 
+    public final static String BASE_CONVERSATION_URL = "http://chimple.org/wikitaki/";
+
+    public final static String BASE_CONVERSATION_FILE_EXT = ".zip";
+
     private Locale locale = null;
 
     public static ImApp sImApp;
@@ -569,6 +573,8 @@ public class ImApp extends Application implements ICacheWordSubscriber {
             e.printStackTrace();
         }
     }
+
+
 
     public IImConnection getConnection(long providerId,long accountId) {
 
