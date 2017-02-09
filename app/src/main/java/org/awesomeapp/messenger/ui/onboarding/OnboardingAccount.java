@@ -13,7 +13,17 @@ public class OnboardingAccount {
     String password;
     long providerId;
     long accountId;
+
+    public boolean isOffLine() {
+        return isOffLine;
+    }
+
+    public void setOffLine(boolean offLine) {
+        isOffLine = offLine;
+    }
+
     Bitmap image;
+    boolean isOffLine;
 
     public String getNickname() {
         return nickname;

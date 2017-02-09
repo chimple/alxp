@@ -134,6 +134,10 @@ public class ImApp extends Application implements ICacheWordSubscriber {
 
     public final static String ZOM_SERVICES_ADDRESS = "zombot@home.zom.im";
 
+    public final static String BASE_CONVERSATION_URL = "http://chimple.org/wikitaki/";
+
+    public final static String BASE_CONVERSATION_FILE_EXT = ".zip";
+
     private Locale locale = null;
 
     public static ImApp sImApp;
@@ -258,10 +262,6 @@ public class ImApp extends Application implements ICacheWordSubscriber {
             BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>(maximumPoolSize);
             sThreadPoolExecutor = new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, TimeUnit.SECONDS, workQueue);
         }
-        RiveScript rs = new RiveScript(ImApp.mApplicationContext, true);
-        rs.loadDirectory("Aiden");
-        rs.sortReplies();
-        String reply = rs.reply("localuser", "Hello");
     }
 
     public boolean isThemeDark ()
@@ -561,15 +561,20 @@ public class ImApp extends Application implements ICacheWordSubscriber {
 
     public void activateSuspendedRemoteXMPPAccount() {
         try {
-            IImConnection connection = getConnection(mDefaultProviderId, mDefaultAccountId);
-            if(mDefaultAccountId != -1 && connection.getState() == ImConnection.SUSPENDED && !isXMPPAccountRegistered && !isXMPPAccountRegisteredInProgress) {
-                isXMPPAccountRegisteredInProgress = true;
-                new RegisterExistingAccountTask(this).execute(mDefaultNickname, mDefaultUsername);
+            SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+            isXMPPAccountRegistered = preferences.getBoolean("isXMPPAccountRegistered", false);
+
+
+            if(mDefaultAccountId != -1 && !isXMPPAccountRegistered && !isXMPPAccountRegisteredInProgress) {
+                IImConnection connection = getConnection(mDefaultProviderId, mDefaultAccountId);
+                new RegisterExistingAccountTask(this).execute(mDefaultNickname, mDefaultUsername,""+mDefaultProviderId, ""+mDefaultAccountId, mActiveAccountPassword);
             }
-        } catch (RemoteException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
+
 
     public IImConnection getConnection(long providerId,long accountId) {
 

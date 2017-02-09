@@ -27,6 +27,8 @@ import com.rivescript.lang.Java;
 import android.content.Context;
 import android.content.res.AssetManager;
 
+import org.chimple.rivescript.AlphabetTeacher;
+
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.File;
@@ -130,6 +132,9 @@ public class RiveScript {
 
 		// Set the default Java macro handler.
 		this.setHandler("java", new Java(this));
+
+		// MOD: 08/02/17
+		this.setSubroutine("alphabet_teacher", new AlphabetTeacher(context));
 	}
 
 	/**
