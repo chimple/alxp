@@ -9,8 +9,8 @@
 ! var master = localuser
 
 // Bot Variables
-! var name     = Aiden
-! var fullname = Aiden Rive
+! var name     = rs.Aiden
+! var fullname = rs.Aiden Rive
 ! var age      = 5
 ! var birthday = October 12
 ! var sex      = male

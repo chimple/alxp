@@ -1,1 +1,16 @@
-{"contacts":[{"userName":"Aiden","nickName":"Aiden","address":"Aiden@google.com","version":"1.0"}]}
+{
+  "contacts": [
+    {
+      "userName": "Aiden",
+      "nickName": "Aiden",
+      "address": "Aiden@google.com",
+      "version": "1.0"
+    },
+    {
+      "userName": "Ada",
+      "nickName": "Ada",
+      "address": "Ada@google.com",
+      "version": "1.0"
+    }
+  ]
+}
