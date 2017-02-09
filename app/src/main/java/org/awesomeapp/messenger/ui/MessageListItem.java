@@ -41,6 +41,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 
+import android.app.Dialog;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -55,6 +56,8 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.shapes.RoundRectShape;
 import android.net.Uri;
 import android.os.Build;
 import android.preference.PreferenceManager;
@@ -71,9 +74,14 @@ import android.text.style.StyleSpan;
 import android.text.style.URLSpan;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.Display;
+import android.view.Gravity;
 import android.view.View;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
@@ -175,6 +183,77 @@ public class MessageListItem extends FrameLayout {
         mHolder.mTextViewForMessages.setVisibility(View.VISIBLE);
         mHolder.mAudioContainer.setVisibility(View.GONE);
         mHolder.mMediaContainer.setVisibility(View.GONE);
+
+
+        mHolder.mTextViewForMessages.setOnClickListener(new OnClickListener() {
+             @Override
+             public void onClick(View v) {
+                 Dialog dialog = new Dialog(getContext());
+                 dialog.setContentView(R.layout.conversation_dialog);
+                 int width = Resources.getSystem().getDisplayMetrics().widthPixels - 30;
+
+
+                 LinearLayout linearlayout = (LinearLayout) dialog.findViewById(R.id.linearlayout);
+                 linearlayout.setOrientation(LinearLayout.VERTICAL);
+
+                 LinearLayout innerLayout;
+                 innerLayout = new LinearLayout(getContext());
+                 innerLayout.setOrientation(LinearLayout.HORIZONTAL);
+                 int widthSoFar = 0;
+
+                 String []Message = mHolder.mTextViewForMessages.getText().toString().split("\\s+");
+                 for(int i=0; i<Message.length; i++)
+                 {
+                     RoundRectShape rect = new RoundRectShape(
+                             new float[] {30,30, 30,30, 30,30, 30,30},
+                             null,
+                             null);
+                     ShapeDrawable bg = new ShapeDrawable(rect);
+
+                     Button btn = new Button(getContext());
+                     btn.setText(Message[i]);
+//                     bg.getPaint().setColor(Color.WHITE);
+//                     btn.setBackgroundColor(Color.WHITE);
+                     btn.setBackgroundDrawable(bg);
+//                     btn.setPadding(10, 10, 10, 10);
+
+                     btn.setOnClickListener(new OnClickListener() {
+                         @Override
+                         public void onClick(View v) {
+
+                         }
+                     });
+
+                     btn.measure(0, 0);
+                     widthSoFar += btn.getMeasuredWidth();
+                     int wi = linearlayout.getMeasuredWidth();
+                     Log.d("width" , " "+btn.getMeasuredWidth());
+
+                     if (widthSoFar >= width) {
+                         linearlayout.addView(innerLayout);
+                         innerLayout = new LinearLayout(getContext());
+                         innerLayout.setOrientation(LinearLayout.HORIZONTAL);
+                         innerLayout.addView(btn);
+                         widthSoFar = 0;
+                     }
+                     else
+                     {
+                         innerLayout.addView(btn);
+                     }
+
+                     if(i==Message.length - 1)
+                     {
+                         linearlayout.addView(innerLayout);
+                     }
+
+//                     linearlayout.addView(btn);
+//                     int idx = linearlayout.indexOfChild(btn);
+//                     btn.setTag(Integer.toString(idx));
+
+                 }
+                 dialog.show();
+             }
+        });
 
         if (nickname == null)
             nickname = address;
@@ -671,6 +750,76 @@ public class MessageListItem extends FrameLayout {
         mHolder.mMediaContainer.setVisibility(View.GONE);
         mHolder.mAudioButton.setImageResource(R.drawable.media_audio_play);
 
+        mHolder.mTextViewForMessages.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Dialog dialog = new Dialog(getContext());
+                dialog.setContentView(R.layout.conversation_dialog);
+                int width = Resources.getSystem().getDisplayMetrics().widthPixels - 30;
+
+
+                LinearLayout linearlayout = (LinearLayout) dialog.findViewById(R.id.linearlayout);
+                linearlayout.setOrientation(LinearLayout.VERTICAL);
+
+                LinearLayout innerLayout;
+                innerLayout = new LinearLayout(getContext());
+                innerLayout.setOrientation(LinearLayout.HORIZONTAL);
+                int widthSoFar = 0;
+
+                String []Message = mHolder.mTextViewForMessages.getText().toString().split("\\s+");
+                for(int i=0; i<Message.length; i++)
+                {
+                    RoundRectShape rect = new RoundRectShape(
+                            new float[] {30,30, 30,30, 30,30, 30,30},
+                            null,
+                            null);
+                    ShapeDrawable bg = new ShapeDrawable(rect);
+                    bg.getPaint().setColor(Color.WHITE);
+                    bg.getPaint().setColor(Color.WHITE);
+                    Button btn = new Button(getContext());
+                    btn.setText(Message[i]);
+                    btn.setBackgroundDrawable(bg);
+//                    btn.setBackgroundColor(Color.WHITE);
+                    btn.measure(0, 0);
+
+                    btn.setOnClickListener(new OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+
+                        }
+                    });
+
+                    widthSoFar += btn.getMeasuredWidth();
+                    int wi = linearlayout.getMeasuredWidth();
+                    Log.d("width" , " "+btn.getMeasuredWidth());
+
+                    if (widthSoFar >= width) {
+                        linearlayout.addView(innerLayout);
+                        innerLayout = new LinearLayout(getContext());
+                        innerLayout.setOrientation(LinearLayout.HORIZONTAL);
+                        innerLayout.addView(btn);
+                        widthSoFar = 0;
+                    }
+                    else
+                    {
+                        innerLayout.addView(btn);
+                    }
+
+                    if(i==Message.length - 1)
+                    {
+                        linearlayout.addView(innerLayout);
+                    }
+
+//                     linearlayout.addView(btn);
+//                     int idx = linearlayout.indexOfChild(btn);
+//                     btn.setTag(Integer.toString(idx));
+
+                }
+                dialog.show();
+            }
+        });
+
+
         mHolder.resetOnClickListenerMediaThumbnail();
 
         lastMessage = body;
@@ -817,10 +966,20 @@ public class MessageListItem extends FrameLayout {
                 int padding = 24;
 
                 if (nickname.length() > 0) {
-                    LetterAvatar lavatar = new LetterAvatar(getContext(), nickname, padding);
+//                    LetterAvatar lavatar = new LetterAvatar(getContext(), nickname, padding);
+//                    mHolder.mAvatar.setVisibility(View.VISIBLE);
+//                    mHolder.mAvatar.setImageDrawable(getResources().getDrawable(R.drawable.ad_btn_check_off_pressed_holo_light));
 
+                    String packageName = getContext().getPackageName();
+                    int resID = getResources().getIdentifier(packageName+":drawable/"+nickname, null, null);
                     mHolder.mAvatar.setVisibility(View.VISIBLE);
-                    mHolder.mAvatar.setImageDrawable(lavatar);
+                    if(resID==0)
+                    {
+                        LetterAvatar lavatar = new LetterAvatar(getContext(), nickname, padding);
+                        mHolder.mAvatar.setImageDrawable(lavatar);
+                    }
+                    else
+                        mHolder.mAvatar.setImageDrawable(getResources().getDrawable(resID));
                 }
             }
         }

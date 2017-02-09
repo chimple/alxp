@@ -15,7 +15,7 @@ public class LoopbackChatSession extends ChatSession {
     public LoopbackChatSession(ImEntity participant, ChatSessionManager manager) {
         super(participant, manager);
         riveScript = new RiveScript(ImApp.getAppContext(), true);
-        riveScript.loadDirectory("Aiden");
+        riveScript.loadDirectory("rs/Ada");
         riveScript.sortReplies();
     }
 

@@ -43,33 +43,31 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.awesomeapp.messenger.ImApp;
+import org.awesomeapp.messenger.crypto.IOtrChatSession;
+import org.awesomeapp.messenger.crypto.OtrAndroidKeyManagerImpl;
+import org.awesomeapp.messenger.model.ImConnection;
+import org.awesomeapp.messenger.plugin.xmpp.XmppConnection;
+import org.awesomeapp.messenger.provider.Imps;
+import org.awesomeapp.messenger.provider.Imps.AccountColumns;
+import org.awesomeapp.messenger.provider.Imps.AccountStatusColumns;
+import org.awesomeapp.messenger.provider.Imps.CommonPresenceColumns;
+import org.awesomeapp.messenger.service.IImConnection;
+import org.awesomeapp.messenger.service.ImServiceConstants;
 import org.awesomeapp.messenger.ui.legacy.AccountSettingsActivity;
 import org.awesomeapp.messenger.ui.legacy.ImPluginHelper;
 import org.awesomeapp.messenger.ui.legacy.ProviderDef;
 import org.awesomeapp.messenger.ui.legacy.SignInHelper;
 import org.awesomeapp.messenger.ui.legacy.SimpleAlertHandler;
 import org.awesomeapp.messenger.ui.onboarding.OnboardingManager;
-import org.awesomeapp.messenger.crypto.IOtrChatSession;
-import org.awesomeapp.messenger.crypto.OtrAndroidKeyManagerImpl;
-import org.awesomeapp.messenger.service.IImConnection;
-
-import info.guardianproject.netcipher.proxy.OrbotHelper;
-import im.zom.messenger.R;
-
-import org.awesomeapp.messenger.model.ImConnection;
-import org.awesomeapp.messenger.plugin.xmpp.XmppConnection;
-
-import org.awesomeapp.messenger.ImApp;
-import org.awesomeapp.messenger.provider.Imps;
-import org.awesomeapp.messenger.provider.Imps.AccountColumns;
-import org.awesomeapp.messenger.provider.Imps.AccountStatusColumns;
-import org.awesomeapp.messenger.provider.Imps.CommonPresenceColumns;
-import org.awesomeapp.messenger.service.ImServiceConstants;
 import org.awesomeapp.messenger.util.LogCleaner;
 import org.awesomeapp.messenger.util.XmppUriHelper;
 
 import java.util.HashMap;
 import java.util.Locale;
+
+import im.zom.messenger.R;
+import info.guardianproject.netcipher.proxy.OrbotHelper;
 
 public class AccountViewFragment extends Fragment {
 

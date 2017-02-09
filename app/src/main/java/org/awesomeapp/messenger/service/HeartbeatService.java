@@ -9,7 +9,9 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.SystemClock;
+import android.util.Log;
 
+import org.awesomeapp.messenger.ImApp;
 import org.awesomeapp.messenger.Preferences;
 
 /**
@@ -110,10 +112,15 @@ public class HeartbeatService extends Service {
         startService(intent);
 
 
+        //if net is connected
         //start Sync Contact Service TBD - start later after user is logged in (first time) or whenever networks is available
         Intent syncOfflineContactIntent = new Intent(SYNC_CONTACT_SERVICE_ACTION, null, this, SyncOfflineContactService.class);
         startService(syncOfflineContactIntent);
 
+        //if account is not sync then sync to XMPP Connection
+        ImApp app = (ImApp)getApplicationContext();
+        Log.d("getDefaultAccountId", ""+app.getDefaultAccountId());
+        Log.d("getDefaultProviderId", ""+app.getDefaultProviderId());
     }
 
     private final class ServiceHandler extends Handler {

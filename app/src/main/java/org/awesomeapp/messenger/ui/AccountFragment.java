@@ -28,47 +28,31 @@ import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Switch;
 import android.widget.TextView;
 
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.WriterException;
-import com.google.zxing.encode.Contents;
-import com.google.zxing.encode.QRCodeEncoder;
 import com.theartofdev.edmodo.cropper.CropImageView;
 
 import org.awesomeapp.messenger.ImApp;
-import org.awesomeapp.messenger.MainActivity;
-import org.awesomeapp.messenger.crypto.OtrAndroidKeyManagerImpl;
 import org.awesomeapp.messenger.model.ImConnection;
-import org.awesomeapp.messenger.plugin.xmpp.XmppAddress;
 import org.awesomeapp.messenger.provider.Imps;
 import org.awesomeapp.messenger.service.IImConnection;
 import org.awesomeapp.messenger.ui.legacy.DatabaseUtils;
 import org.awesomeapp.messenger.ui.legacy.SignInHelper;
-import org.awesomeapp.messenger.ui.onboarding.OnboardingAccount;
-import org.awesomeapp.messenger.ui.onboarding.OnboardingActivity;
 import org.awesomeapp.messenger.ui.onboarding.OnboardingManager;
 import org.awesomeapp.messenger.ui.qr.QrDisplayActivity;
-import org.awesomeapp.messenger.ui.qr.QrGenAsyncTask;
 import org.awesomeapp.messenger.ui.qr.QrShareAsyncTask;
-import org.awesomeapp.messenger.ui.widgets.ImageViewActivity;
-import org.awesomeapp.messenger.ui.widgets.RoundedAvatarDrawable;
 import org.awesomeapp.messenger.util.SecureMediaStore;
-import org.w3c.dom.Text;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -432,6 +416,20 @@ public class AccountFragment extends Fragment {
     }
 
 
+    public Intent getPickCameraImageChooserIntent() {
+
+        // Determine Uri of camera image to save.
+        Uri outputFileUri = getCaptureImageOutputUri();
+
+
+        // collect all camera intents
+        Intent captureIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+        if (outputFileUri != null) {
+            captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, outputFileUri);
+        }
+        return captureIntent;
+    }
+
     /**
      * Create a chooser intent to select the source to get image from.<br/>
      * The source can be camera's (ACTION_IMAGE_CAPTURE) or gallery's (ACTION_GET_CONTENT).<br/>
@@ -634,7 +632,7 @@ public class AccountFragment extends Fragment {
         }
         else {
 
-            startActivityForResult(getPickImageChooserIntent(), 200);
+            startActivityForResult(getPickCameraImageChooserIntent(), 200);
         }
     }
 
