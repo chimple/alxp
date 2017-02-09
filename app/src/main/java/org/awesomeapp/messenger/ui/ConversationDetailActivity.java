@@ -316,6 +316,12 @@ public class ConversationDetailActivity extends BaseActivity {
             case R.id.menu_group_info:
                 mConvoView.showGroupInfo();
                 return true;
+            case R.id.plus:
+                mConvoView.increaseFont();
+                return true;
+            case R.id.minus:
+                mConvoView.decreaseFont();
+                return true;
         }
         return super.onOptionsItemSelected(item);
     }

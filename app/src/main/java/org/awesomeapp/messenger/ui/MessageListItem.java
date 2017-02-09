@@ -38,6 +38,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.net.URLConnection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 
 import android.app.Dialog;
@@ -85,8 +86,15 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import java.util.HashSet;
+
+
+
 
 public class MessageListItem extends FrameLayout {
+
+    public static HashSet<MessageViewHolder> myMessageView = new HashSet<MessageViewHolder>();
+    public static float FONTSIZE = 21.0f;
 
     public enum DeliveryState {
         NEUTRAL, DELIVERED, UNDELIVERED
@@ -168,8 +176,10 @@ public class MessageListItem extends FrameLayout {
     public void bindIncomingMessage(MessageViewHolder holder, int id, int messageType, String address, String nickname, final String mimeType, final String body, Date date, Markup smileyRes,
             boolean scrolling, EncryptionState encryption, boolean showContact, int presenceStatus) {
 
+        myMessageView.add(holder);
         mHolder = holder;
         applyStyleColors();
+        mHolder.mTextViewForMessages.setTextSize(FONTSIZE);
         mHolder.mTextViewForMessages.setVisibility(View.VISIBLE);
         mHolder.mAudioContainer.setVisibility(View.GONE);
         mHolder.mMediaContainer.setVisibility(View.GONE);
@@ -730,9 +740,11 @@ public class MessageListItem extends FrameLayout {
     public void bindOutgoingMessage(MessageViewHolder holder, int id, int messageType, String address, final String mimeType, final String body, Date date, Markup smileyRes, boolean scrolling,
             DeliveryState delivery, EncryptionState encryption) {
 
+        myMessageView.add(holder);
         mHolder = holder;
         applyStyleColors();
 
+        mHolder.mTextViewForMessages.setTextSize(FONTSIZE);
         mHolder.mTextViewForMessages.setVisibility(View.VISIBLE);
         mHolder.mAudioContainer.setVisibility(View.GONE);
         mHolder.mMediaContainer.setVisibility(View.GONE);
