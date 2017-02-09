@@ -27,7 +27,7 @@ public class RivescriptManager {
             }
             currentChattee = chattee;
             rs = new RiveScript(ImApp.getAppContext(), true);
-            rs.loadDirectory("rs/" + chattee);
+            rs.loadDirectory(chattee);
             rs.sortReplies();
             rs.setSubroutine("alphabet_teacher", new AlphabetTeacher(ImApp.getAppContext()));
             SharedPreferences sp = ImApp.getAppContext().getSharedPreferences(currentChattee, 0);
