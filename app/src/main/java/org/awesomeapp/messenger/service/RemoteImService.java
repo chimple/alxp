@@ -942,8 +942,9 @@ public class RemoteImService extends Service implements OtrEngineListener, ImSer
         else if (tempKey != null)
         {
             openEncryptedStores(tempKey, true);
-
-            ((ImApp)getApplication()).initAccountInfo();
+            ImApp app = (ImApp)getApplication();
+            app.initAccountInfo();
+            app.setmNetworkState(mNetworkState);
 
             // Check and login accounts if network is ready, otherwise it's checked
             // when the network becomes available.
@@ -963,9 +964,9 @@ public class RemoteImService extends Service implements OtrEngineListener, ImSer
 
        tempKey = mCacheWord.getEncryptionKey();
        openEncryptedStores(tempKey, true);
-
-        ((ImApp)getApplication()).initAccountInfo();
-
+        ImApp app = (ImApp)getApplication();
+        app.initAccountInfo();
+        app.setmNetworkState(mNetworkState);
         // Check and login accounts if network is ready, otherwise it's checked
         // when the network becomes available.
         if (mNeedCheckAutoLogin && mNetworkState != NetworkConnectivityReceiver.State.NOT_CONNECTED) {
