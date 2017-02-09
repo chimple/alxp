@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
+    android:keyWidth="33.33%p"
+    android:keyHeight="10%p">
+    <Row>
+        <Key android:codes="65"    android:keyLabel="A" android:keyEdgeFlags="left"  />
+        <Key android:codes="66"    android:keyLabel="B" />
+        <Key android:codes="67"    android:keyLabel="C" android:keyEdgeFlags="right"/>
+    </Row>
+    <Row>
+        <Key android:codes="68"    android:keyLabel="D" android:keyEdgeFlags="left"  />
+        <Key android:codes="69"    android:keyLabel="E" />
+        <Key android:codes="70"    android:keyLabel="F" android:keyEdgeFlags="right"/>
+    </Row>
+    <Row>
+        <Key android:codes="71"    android:keyLabel="G" android:keyEdgeFlags="left"  />
+        <Key android:codes="72"    android:keyLabel="H" />
+        <Key android:codes="73"    android:keyLabel="I" android:keyEdgeFlags="right"/>
+    </Row>
+</Keyboard>

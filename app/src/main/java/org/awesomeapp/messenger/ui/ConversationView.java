@@ -127,6 +127,7 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 
 import cn.pedant.SweetAlert.SweetAlertDialog;
 import im.zom.messenger.R;
@@ -231,9 +232,13 @@ public class ConversationView {
     private static final long DEFAULT_QUERY_INTERVAL = 2000;
     private static final long FAST_QUERY_INTERVAL = 200;
 
+    CustomKeyboard mcustomKeyboard;
 
     private RequeryCallback mRequeryCallback = null;
 
+    public CustomKeyboard getCustomKeyBoard() {
+        return mcustomKeyboard;
+    }
     public SimpleAlertHandler getHandler() {
         return mHandler;
     }
@@ -690,7 +695,12 @@ public class ConversationView {
         llm.setStackFromEnd(true);
         mHistory.setLayoutManager(llm);
 
-        mComposeMessage = (EditText) mActivity.findViewById(R.id.composeMessage);
+        mHistory.setMinimumWidth(1);
+
+        mcustomKeyboard = new CustomKeyboard((Activity) mActivity,R.id.keyboardview,R.xml.custom_keyboard);
+        mComposeMessage = mcustomKeyboard.registerEditText(R.id.composeMessage);
+
+       // mComposeMessage = (EditText) mActivity.findViewById(R.id.composeMessage);
         mSendButton = (ImageButton) mActivity.findViewById(R.id.btnSend);
         mMicButton = (ImageButton) mActivity.findViewById(R.id.btnMic);
         mButtonTalk = (TextView)mActivity.findViewById(R.id.buttonHoldToTalk);
@@ -779,6 +789,7 @@ public class ConversationView {
                 //this is the tap to change to hold to talk mode
                 if (mMicButton.getVisibility() == View.VISIBLE) {
                     mComposeMessage.setVisibility(View.GONE);
+                    mcustomKeyboard.hideCustomKeyboard();
                     mMicButton.setVisibility(View.GONE);
 
                     // Check if no view has focus:
@@ -905,7 +916,8 @@ public class ConversationView {
 
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
-
+                String[] testing = {"A","B","C"};
+             //  mcustomKeyboard.dyanamicKeyBoard(testing);
                 sendTypingStatus (true);
 
                 return false;
@@ -979,7 +991,7 @@ public class ConversationView {
 
         mSendButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-
+            //   mcustomKeyboard.hideCustomKeyboard();
                 if (mComposeMessage.getVisibility() == View.VISIBLE)
                     sendMessage();
                 else
@@ -1683,6 +1695,35 @@ public class ConversationView {
         mContext.startActivity(intent);
     }
 
+
+    public void increaseFont () {
+
+        HashSet<MessageViewHolder> fontPlus = MessageListItem.myMessageView;
+        for(MessageViewHolder msg: fontPlus)
+        {
+            float i = msg.mTextViewForMessages.getTextSize();
+
+            if(i<60 ) {
+                MessageListItem.FONTSIZE = i+5.0f;
+                msg.mTextViewForMessages.setTextSize(i + 5.0f);
+            }
+        }
+    }
+
+    public void decreaseFont () {
+
+        HashSet<MessageViewHolder> fontPlus = MessageListItem.myMessageView;
+
+        for(MessageViewHolder msg: fontPlus)
+        {
+            float i = msg.mTextViewForMessages.getTextSize();
+
+            if(i> 20 ) {
+                MessageListItem.FONTSIZE = i- 5.0f;
+                msg.mTextViewForMessages.setTextSize(i - 5.0f);
+            }
+        }
+    }
 
 
     public void blockContact() {
@@ -2521,6 +2562,8 @@ public class ConversationView {
         private ActionMode mActionMode;
         private View mLastSelectedView;
 
+
+
         public ConversationRecyclerViewAdapter(Activity context, Cursor c) {
             super(context, c);
             if (c != null) {
@@ -2666,6 +2709,10 @@ public class ConversationView {
             if (!mExpectingDelivery && isDelivered) {
                 mExpectingDelivery = true;
             } else if (cursor.getPosition() == cursor.getCount() - 1) {
+                System.out.println("counter at last message" + body);
+                String[] keys = {"A","B","E"};
+                mApp.displayKeyBoard(keys);
+                //mcustomKeyboard.dyanamicKeyBoard(keys);
                 /*
                 // if showTimeStamp is false for the latest message, then set a timer to query the
                 // cursor again in a minute, so we can update the last message timestamp if no new

@@ -113,7 +113,7 @@ public class ConversationDetailActivity extends BaseActivity {
 
         Intent intent = getIntent();
         mApp = (ImApp)getApplication();
-
+        mApp.setCurrentActivity(this);
         mChatId = intent.getLongExtra("id", -1);
         mAddress = intent.getStringExtra("address");
         mNickname = intent.getStringExtra("nickname");
@@ -244,6 +244,11 @@ public class ConversationDetailActivity extends BaseActivity {
         appBarLayout.setExpanded(true);
     }
 
+    public ConversationView getmConvoView()
+    {
+        return mConvoView;
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -315,6 +320,12 @@ public class ConversationDetailActivity extends BaseActivity {
                 return true;
             case R.id.menu_group_info:
                 mConvoView.showGroupInfo();
+                return true;
+            case R.id.plus:
+                mConvoView.increaseFont();
+                return true;
+            case R.id.minus:
+                mConvoView.decreaseFont();
                 return true;
         }
         return super.onOptionsItemSelected(item);
