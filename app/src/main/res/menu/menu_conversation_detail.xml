@@ -22,12 +22,23 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-             <item android:id="@+id/menu_verify_or_view"
+             <item android:id="@+id/minus"
         android:title="@string/menu_verify"
-        android:icon="@drawable/ic_info_outline_white_24dp"
+        android:icon="@drawable/avatar_unknown"
          app:showAsAction="always"
          />
 
+    <item android:id="@+id/plus"
+        android:title="@string/menu_verify"
+        android:icon="@drawable/broken_image_large"
+        app:showAsAction="always"
+        />
+
+    <item android:id="@+id/menu_verify_or_view"
+        android:title="@string/menu_verify"
+        android:icon="@drawable/ic_info_outline_white_24dp"
+        app:showAsAction="always"
+        />
 
     <item android:id="@+id/menu_refresh_encryption"
         android:title="@string/menu_refresh"
@@ -43,6 +54,5 @@
          app:showAsAction="never"
         
          />
-
 
 </menu>

@@ -127,6 +127,7 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 
 import cn.pedant.SweetAlert.SweetAlertDialog;
 import im.zom.messenger.R;
@@ -1684,6 +1685,35 @@ public class ConversationView {
     }
 
 
+    public void increaseFont () {
+
+        HashSet<MessageViewHolder> fontPlus = MessageListItem.myMessageView;
+        for(MessageViewHolder msg: fontPlus)
+        {
+            float i = msg.mTextViewForMessages.getTextSize();
+
+            if(i<60 ) {
+                MessageListItem.FONTSIZE = i+5.0f;
+                msg.mTextViewForMessages.setTextSize(i + 5.0f);
+            }
+        }
+    }
+
+    public void decreaseFont () {
+
+        HashSet<MessageViewHolder> fontPlus = MessageListItem.myMessageView;
+
+        for(MessageViewHolder msg: fontPlus)
+        {
+            float i = msg.mTextViewForMessages.getTextSize();
+
+            if(i> 20 ) {
+                MessageListItem.FONTSIZE = i- 5.0f;
+                msg.mTextViewForMessages.setTextSize(i - 5.0f);
+            }
+        }
+    }
+
 
     public void blockContact() {
         // TODO: unify with codes in ContactListView
@@ -2520,6 +2550,8 @@ public class ConversationView {
 
         private ActionMode mActionMode;
         private View mLastSelectedView;
+
+
 
         public ConversationRecyclerViewAdapter(Activity context, Cursor c) {
             super(context, c);
