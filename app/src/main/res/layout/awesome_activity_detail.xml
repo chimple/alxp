@@ -248,7 +248,10 @@
                 android:layout_margin="6dp"
                 />
 
-            <org.ironrabbit.type.CustomTypefaceEditText
+
+
+            <!--<org.ironrabbit.type.CustomTypefaceEditText-->
+            <EditText
                 android:id="@+id/composeMessage"
                 android:layout_width="0dip"
                 android:layout_height="wrap_content"
@@ -262,6 +265,7 @@
                 android:textColor="?messageTextPrimary"
 
                 />
+
 
             <org.ironrabbit.type.CustomTypefaceTextView
                 android:layout_width="0dip"
@@ -300,10 +304,45 @@
                 android:visibility="gone"
                 />
 
+
         </LinearLayout>
 
 
+       <LinearLayout
+           android:layout_width="match_parent"
+           android:layout_height="wrap_content">
 
+           <android.inputmethodservice.KeyboardView
+               android:id="@+id/keyboardview"
+               android:layout_width="match_parent"
+               android:layout_height="wrap_content"
+               android:layout_alignParentBottom="true"
+               android:layout_centerHorizontal="true"
+               android:focusable="true"
+               android:focusableInTouchMode="true"
+               android:keyTextSize="30sp"
+               android:visibility="gone" />
+           <android.inputmethodservice.KeyboardView
+               android:id="@+id/keyboardview_1x3"
+               android:layout_width="match_parent"
+               android:layout_height="wrap_content"
+               android:layout_alignParentBottom="true"
+               android:layout_centerHorizontal="true"
+               android:focusable="true"
+               android:focusableInTouchMode="true"
+               android:keyTextSize="80sp"
+               android:visibility="gone" />
+           <android.inputmethodservice.KeyboardView
+               android:id="@+id/keyboardview_2x3"
+               android:layout_width="match_parent"
+               android:layout_height="wrap_content"
+               android:layout_alignParentBottom="true"
+               android:layout_centerHorizontal="true"
+               android:focusable="true"
+               android:focusableInTouchMode="true"
+               android:keyTextSize="50sp"
+               android:visibility="gone" />
+       </LinearLayout>
 
 
         <LinearLayout android:id="@+id/invitationPanel"
