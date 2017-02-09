@@ -805,10 +805,20 @@ public class MessageListItem extends FrameLayout {
                 int padding = 24;
 
                 if (nickname.length() > 0) {
-                    LetterAvatar lavatar = new LetterAvatar(getContext(), nickname, padding);
+//                    LetterAvatar lavatar = new LetterAvatar(getContext(), nickname, padding);
+//                    mHolder.mAvatar.setVisibility(View.VISIBLE);
+//                    mHolder.mAvatar.setImageDrawable(getResources().getDrawable(R.drawable.ad_btn_check_off_pressed_holo_light));
 
+                    String packageName = getContext().getPackageName();
+                    int resID = getResources().getIdentifier(packageName+":drawable/"+nickname, null, null);
                     mHolder.mAvatar.setVisibility(View.VISIBLE);
-                    mHolder.mAvatar.setImageDrawable(lavatar);
+                    if(resID==0)
+                    {
+                        LetterAvatar lavatar = new LetterAvatar(getContext(), nickname, padding);
+                        mHolder.mAvatar.setImageDrawable(lavatar);
+                    }
+                    else
+                        mHolder.mAvatar.setImageDrawable(getResources().getDrawable(resID));
                 }
             }
         }
