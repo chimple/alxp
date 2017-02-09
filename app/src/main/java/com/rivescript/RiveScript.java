@@ -27,8 +27,6 @@ import com.rivescript.lang.Java;
 import android.content.Context;
 import android.content.res.AssetManager;
 
-import org.chimple.rivescript.AlphabetTeacher;
-
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.File;
@@ -133,8 +131,6 @@ public class RiveScript {
 		// Set the default Java macro handler.
 		this.setHandler("java", new Java(this));
 
-		// MOD: 08/02/17
-		this.setSubroutine("alphabet_teacher", new AlphabetTeacher(context));
 	}
 
 	/**
@@ -204,9 +200,15 @@ public class RiveScript {
 //				loadFile(path + "/" + files[j]);
 //			}
 //		}
-		AssetManager assets = mContext.getAssets();
 		try {
-			String[] files = assets.list(path);
+			File dir = new File(mContext.getFilesDir(), path);
+			String[] files;
+			if(dir.exists()) {
+				files = dir.list();
+			} else {
+				AssetManager assets = mContext.getAssets();
+				files = assets.list(path);
+			}
 			for (int i = 0; i < files.length; i++) {
 				say("Opening " + files[i]);
 				loadFile(path + "/" + files[i]);
