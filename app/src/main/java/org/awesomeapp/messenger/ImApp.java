@@ -41,8 +41,6 @@ import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.rivescript.RiveScript;
-
 import net.hockeyapp.android.CrashManager;
 import net.hockeyapp.android.CrashManagerListener;
 import net.sqlcipher.database.SQLiteDatabase;
@@ -139,6 +137,8 @@ public class ImApp extends Application implements ICacheWordSubscriber {
     public final static String BASE_CONVERSATION_URL = "http://chimple.org/wikitaki/";
 
     public final static String BASE_CONVERSATION_FILE_EXT = ".zip";
+
+    public static boolean readyForSyncContactWhenNetworkIsAvailable = false;
 
     private Locale locale = null;
 
@@ -472,6 +472,21 @@ public class ImApp extends Application implements ICacheWordSubscriber {
 
     public boolean serviceConnected() {
         return mImService != null;
+    }
+
+    public static long insertWord(ContentResolver cr, String name, String meaning, String imageUrl, String spName, String spMeaning) {
+        ContentValues values = new ContentValues(5);
+        values.put(Imps.Word.NAME, name);
+        values.put(Imps.Word.MEANING, meaning);
+        values.put(Imps.Word.IMAGE_URL, imageUrl);
+        values.put(Imps.Word.SP_NAME, spName);
+        values.put(Imps.Word.SP_MEANING, spMeaning);
+
+        Uri result = cr.insert(Imps.Word.CONTENT_URI, values);
+        if(result != null) {
+            return ContentUris.parseId(result);
+        }
+        return -1;
     }
 
     public static long insertOrUpdateAccount(ContentResolver cr, long providerId, long accountId, String nickname, String username,

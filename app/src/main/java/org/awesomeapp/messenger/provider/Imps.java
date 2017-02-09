@@ -153,6 +153,56 @@ public class Imps {
     }
 
     /**
+     * The columns for IM words.
+     */
+    public interface WordColumns {
+        /** The name of the word <P>Type: TEXT</P> */
+        String NAME = "name";
+
+        /** The IM provider for this word <P>Type: TEXT</P> */
+        String MEANING = "meaning";
+
+        /** The username for this word <P>Type: TEXT</P> */
+        String IMAGE_URL = "image_url";
+
+        /** The password for this word <P>Type: TEXT</P> */
+        String SP_NAME = "sp_name";
+
+        /** The password for this word <P>Type: TEXT</P> */
+        String SP_MEANING = "sp_meaning";
+
+    }
+
+
+    /** This table contains the IM accounts. */
+    public static final class Word implements BaseColumns, WordColumns {
+        private Word() {
+
+        }
+
+        /** The content:// style URL for this table */
+        public static final Uri CONTENT_URI = Uri
+                .parse("content://org.awesomeapp.messenger.provider.Imps/words");
+
+        /**
+         * The MIME type of {@link #CONTENT_URI} providing a directory of
+         * account.
+         */
+        public static final String CONTENT_TYPE = "vnd.android.cursor.dir/imps-words";
+
+        /**
+         * The MIME type of a {@link #CONTENT_URI} subdirectory of a single
+         * account.
+         */
+        public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/imps-words";
+
+        /** The default sort order for this table */
+        public static final String DEFAULT_SORT_ORDER = "name ASC";
+
+    }
+
+
+    /**
      * The columns for IM accounts. There can be more than one account for each
      * IM provider.
      */

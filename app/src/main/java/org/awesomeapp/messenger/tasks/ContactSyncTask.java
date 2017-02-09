@@ -36,6 +36,8 @@ public class ContactSyncTask extends AsyncTask<URL, Void, List<SyncContact>> {
         if (contactSyncProcessor.getmApp().getDefaultAccountId() != -1 && contacts != null) {
             contactSyncProcessor.processSyncContacts(contacts);
         }
+
+        ImApp.readyForSyncContactWhenNetworkIsAvailable = false;
     }
 }
 

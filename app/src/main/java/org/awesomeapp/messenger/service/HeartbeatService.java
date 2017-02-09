@@ -31,6 +31,7 @@ public class HeartbeatService extends Service {
 
     private static final String TAG = "GB.HeartbeatService";
     private PendingIntent mPendingIntent;
+    private PendingIntent mSyncContactPendingIntent;
     private Intent mRelayIntent;
     private ServiceHandler mServiceHandler;
     private NetworkConnectivityReceiver mNetworkConnectivityListener;
@@ -48,6 +49,7 @@ public class HeartbeatService extends Service {
         super.onCreate();
         this.mPendingIntent = PendingIntent.getService(this, 0, new Intent(HEARTBEAT_ACTION, null,
                 this, HeartbeatService.class), 0);
+        this.mSyncContactPendingIntent = PendingIntent.getBroadcast(this.getApplicationContext(), 0, new Intent(this, SyncContactUpdateReceiver.class), 0);
         this.mRelayIntent = new Intent(HEARTBEAT_ACTION, null, this, RemoteImService.class);
         mHeartbeatInterval = Preferences.getHeartbeatInterval() * HEARTBEAT_INTERVAL;
 
@@ -63,10 +65,12 @@ public class HeartbeatService extends Service {
     void startHeartbeat(long interval) {
         AlarmManager alarmManager = (AlarmManager)this.getSystemService(ALARM_SERVICE);
         alarmManager.cancel(mPendingIntent);
+        alarmManager.cancel(this.mSyncContactPendingIntent);
         if (interval > 0)
         {
             //alarmManager.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + interval, interval, mPendingIntent);
             alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + interval, interval, mPendingIntent);
+            alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + interval, interval, mSyncContactPendingIntent);
         }
     }
 
@@ -114,8 +118,10 @@ public class HeartbeatService extends Service {
 
         //if net is connected
         //start Sync Contact Service TBD - start later after user is logged in (first time) or whenever networks is available
-        Intent syncOfflineContactIntent = new Intent(SYNC_CONTACT_SERVICE_ACTION, null, this, SyncOfflineContactService.class);
-        startService(syncOfflineContactIntent);
+        if(ImApp.readyForSyncContactWhenNetworkIsAvailable) {
+            Intent syncOfflineContactIntent = new Intent(SYNC_CONTACT_SERVICE_ACTION, null, this, SyncOfflineContactService.class);
+            startService(syncOfflineContactIntent);
+        }
 
         //if account is not sync then sync to XMPP Connection
         ImApp app = (ImApp)getApplicationContext();

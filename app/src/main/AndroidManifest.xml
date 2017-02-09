@@ -359,6 +359,13 @@
             android:exported="false"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
+        <receiver android:name="org.awesomeapp.messenger.service.SyncContactUpdateReceiver"
+            android:enabled="true"
+            android:exported="true">
+
+        </receiver>
+
+
         <receiver
             android:name="org.awesomeapp.messenger.service.NetworkConnectivityReceiver"
             android:enabled="true"
