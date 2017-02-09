@@ -76,6 +76,7 @@ import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.View;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -175,21 +176,24 @@ public class MessageListItem extends FrameLayout {
         mHolder.mMediaContainer.setVisibility(View.GONE);
 
 
-        mHolder.mTextViewForMessages.setOnClickListener(new OnClickListener() {
+        mHolder.mContainer.setOnClickListener(new OnClickListener() {
              @Override
              public void onClick(View v) {
-                 Dialog dialog = new Dialog(getContext());
+                 final Dialog dialog = new Dialog(getContext());
+                 dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
                  dialog.setContentView(R.layout.conversation_dialog);
                  int width = Resources.getSystem().getDisplayMetrics().widthPixels - 30;
 
-
                  LinearLayout linearlayout = (LinearLayout) dialog.findViewById(R.id.linearlayout);
                  linearlayout.setOrientation(LinearLayout.VERTICAL);
+                 linearlayout.setBackgroundColor(Color.RED);
+                 linearlayout.setMinimumWidth(width);
 
                  LinearLayout innerLayout;
                  innerLayout = new LinearLayout(getContext());
                  innerLayout.setOrientation(LinearLayout.HORIZONTAL);
-                 int widthSoFar = 0;
+                 innerLayout.setGravity(Gravity.CENTER);
+                 int widthSoFar = 30;
 
                  String []Message = mHolder.mTextViewForMessages.getText().toString().split("\\s+");
                  for(int i=0; i<Message.length; i++)
@@ -200,22 +204,36 @@ public class MessageListItem extends FrameLayout {
                              null);
                      ShapeDrawable bg = new ShapeDrawable(rect);
 
+                     LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                             LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+                     params.setMargins(5, 5, 0, 5);
+
                      Button btn = new Button(getContext());
                      btn.setText(Message[i]);
-//                     bg.getPaint().setColor(Color.WHITE);
+                     bg.getPaint().setColor(Color.WHITE);
+                     btn.setLayoutParams(params);
+                     btn.setTag(Message[i]);
 //                     btn.setBackgroundColor(Color.WHITE);
                      btn.setBackgroundDrawable(bg);
-//                     btn.setPadding(10, 10, 10, 10);
 
                      btn.setOnClickListener(new OnClickListener() {
                          @Override
                          public void onClick(View v) {
+                            Dialog details = new Dialog(getContext());
+                             details.requestWindowFeature(Window.FEATURE_NO_TITLE);
+                             details.setContentView(R.layout.conversation_dialog_fulldetails);
 
+                             LinearLayout dialog_details = (LinearLayout)details.findViewById(R.id.dialog_details);
+                             int height = Resources.getSystem().getDisplayMetrics().heightPixels;
+                             dialog_details.setMinimumHeight(height / 2);
+
+                             details.show();
                          }
                      });
 
                      btn.measure(0, 0);
                      widthSoFar += btn.getMeasuredWidth();
+                     widthSoFar+= 5;
                      int wi = linearlayout.getMeasuredWidth();
                      Log.d("width" , " "+btn.getMeasuredWidth());
 
@@ -224,7 +242,7 @@ public class MessageListItem extends FrameLayout {
                          innerLayout = new LinearLayout(getContext());
                          innerLayout.setOrientation(LinearLayout.HORIZONTAL);
                          innerLayout.addView(btn);
-                         widthSoFar = 0;
+                         widthSoFar = 30;
                      }
                      else
                      {
@@ -738,21 +756,24 @@ public class MessageListItem extends FrameLayout {
         mHolder.mMediaContainer.setVisibility(View.GONE);
         mHolder.mAudioButton.setImageResource(R.drawable.media_audio_play);
 
-        mHolder.mTextViewForMessages.setOnClickListener(new OnClickListener() {
+        mHolder.mContainer.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 Dialog dialog = new Dialog(getContext());
+                dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
                 dialog.setContentView(R.layout.conversation_dialog);
                 int width = Resources.getSystem().getDisplayMetrics().widthPixels - 30;
 
-
                 LinearLayout linearlayout = (LinearLayout) dialog.findViewById(R.id.linearlayout);
                 linearlayout.setOrientation(LinearLayout.VERTICAL);
+                linearlayout.setBackgroundColor(Color.RED);
+                linearlayout.setMinimumWidth(width);
 
                 LinearLayout innerLayout;
                 innerLayout = new LinearLayout(getContext());
                 innerLayout.setOrientation(LinearLayout.HORIZONTAL);
-                int widthSoFar = 0;
+                innerLayout.setGravity(Gravity.CENTER);
+                int widthSoFar = 30;
 
                 String []Message = mHolder.mTextViewForMessages.getText().toString().split("\\s+");
                 for(int i=0; i<Message.length; i++)
@@ -762,13 +783,17 @@ public class MessageListItem extends FrameLayout {
                             null,
                             null);
                     ShapeDrawable bg = new ShapeDrawable(rect);
-                    bg.getPaint().setColor(Color.WHITE);
-                    bg.getPaint().setColor(Color.WHITE);
+
+                    LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                            LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+                    params.setMargins(5, 5, 0, 5);
+
                     Button btn = new Button(getContext());
                     btn.setText(Message[i]);
+                    bg.getPaint().setColor(Color.WHITE);
+                    btn.setLayoutParams(params);
+//                     btn.setBackgroundColor(Color.WHITE);
                     btn.setBackgroundDrawable(bg);
-//                    btn.setBackgroundColor(Color.WHITE);
-                    btn.measure(0, 0);
 
                     btn.setOnClickListener(new OnClickListener() {
                         @Override
@@ -777,7 +802,9 @@ public class MessageListItem extends FrameLayout {
                         }
                     });
 
+                    btn.measure(0, 0);
                     widthSoFar += btn.getMeasuredWidth();
+                    widthSoFar+= 5;
                     int wi = linearlayout.getMeasuredWidth();
                     Log.d("width" , " "+btn.getMeasuredWidth());
 
@@ -786,7 +813,7 @@ public class MessageListItem extends FrameLayout {
                         innerLayout = new LinearLayout(getContext());
                         innerLayout.setOrientation(LinearLayout.HORIZONTAL);
                         innerLayout.addView(btn);
-                        widthSoFar = 0;
+                        widthSoFar = 30;
                     }
                     else
                     {
