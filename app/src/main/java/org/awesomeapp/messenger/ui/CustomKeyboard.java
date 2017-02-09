@@ -24,7 +24,7 @@ import java.util.Random;
 
 import im.zom.messenger.R;
 
-class CustomKeyboard {
+public class CustomKeyboard {
 
     /** A link to the KeyboardView that is used to render this CustomKeyboard. */
     private KeyboardView mKeyboardView;
@@ -34,15 +34,15 @@ class CustomKeyboard {
     /** The key (code) handler. */
     private OnKeyboardActionListener mOnKeyboardActionListener = new OnKeyboardActionListener() {
 
-        public final static int CodeDelete   = -5; // Keyboard.KEYCODE_DELETE
-        public final static int CodeCancel   = -3; // Keyboard.KEYCODE_CANCEL
-        public final static int CodePrev     = 55000;
-        public final static int CodeAllLeft  = 55001;
-        public final static int CodeLeft     = 55002;
-        public final static int CodeRight    = 55003;
-        public final static int CodeAllRight = 55004;
-        public final static int CodeNext     = 55005;
-        public final static int CodeClear    = 55006;
+//        public final static int CodeDelete   = -5; // Keyboard.KEYCODE_DELETE
+//        public final static int CodeCancel   = -3; // Keyboard.KEYCODE_CANCEL
+//        public final static int CodePrev     = 55000;
+//        public final static int CodeAllLeft  = 55001;
+//        public final static int CodeLeft     = 55002;
+//        public final static int CodeRight    = 55003;
+//        public final static int CodeAllRight = 55004;
+//        public final static int CodeNext     = 55005;
+//        public final static int CodeClear    = 55006;
 
         @Override public void onKey(int primaryCode, int[] keyCodes) {
             // NOTE We can say '<Key android:codes="49,50" ... >' in the xml file; all codes come in keyCodes, the first in this list in primaryCode
@@ -183,30 +183,30 @@ class CustomKeyboard {
     public void dyanamicKeyBoard ( String[] userKeys){
 
         Keyboard updatedKeyboard = null;
-        if (userKeys.length == 9)
+        if (userKeys.length >6 && userKeys.length < 10) // for 9 keys
                 updatedKeyboard = new Keyboard(mHostActivity,R.xml.custom_keyboard);
 
-        if(userKeys.length ==6) {
+        if(userKeys.length > 3 && userKeys.length < 7) { //for 6 keys
             updatedKeyboard = new Keyboard(mHostActivity, R.xml.custom_keyboard_2x3);
             mKeyboardView = (KeyboardView) mHostActivity.findViewById(R.id.keyboardview_2x3);
         }
-        if (userKeys.length ==3){
+        if (userKeys.length < 4 ){ // for 3 keys
             updatedKeyboard = new Keyboard(mHostActivity,R.xml.custom_keyboard_1x3);
             mKeyboardView= (KeyboardView)mHostActivity.findViewById(R.id.keyboardview_1x3);
         }
 
 
      //   Keyboard.Row updatedRow = new Keyboard.Row(updatedKeyboard);
-         mKeyboardView.setKeyboard(updatedKeyboard);
+        mKeyboardView.setKeyboard(updatedKeyboard);
         mKeyboardView.setPreviewEnabled(false);
         mKeyboardView.setOnKeyboardActionListener(mOnKeyboardActionListener);
         mKeyboardView.setVisibility(View.VISIBLE);
         mKeyboardView.setEnabled(true);
         mHostActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+        mHostActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
         //mKeyboardView.keyTextSize
         List<Keyboard.Key> keys = mKeyboardView.getKeyboard().getKeys();
 
-         Random rand = new Random(2017);
         int count = 0;
         for (Keyboard.Key key : keys) {
             int [] codes = {49};
@@ -214,6 +214,10 @@ class CustomKeyboard {
             key.codes = codes;
             key.label = userKeys[count++];
         }
+    }
+
+    public void showDefalutKeyboard(){
+       // mHostActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
     }
 
 }

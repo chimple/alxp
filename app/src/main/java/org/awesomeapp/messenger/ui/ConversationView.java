@@ -235,6 +235,9 @@ public class ConversationView {
 
     private RequeryCallback mRequeryCallback = null;
 
+    public CustomKeyboard getCustomKeyBoard() {
+        return mcustomKeyboard;
+    }
     public SimpleAlertHandler getHandler() {
         return mHandler;
     }
@@ -913,7 +916,7 @@ public class ConversationView {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 String[] testing = {"A","B","C"};
-               mcustomKeyboard.dyanamicKeyBoard(testing);
+             //  mcustomKeyboard.dyanamicKeyBoard(testing);
                 sendTypingStatus (true);
 
                 return false;
@@ -2674,6 +2677,10 @@ public class ConversationView {
             if (!mExpectingDelivery && isDelivered) {
                 mExpectingDelivery = true;
             } else if (cursor.getPosition() == cursor.getCount() - 1) {
+                System.out.println("counter at last message" + body);
+                String[] keys = {"A","B","E"};
+                mApp.displayKeyBoard(keys);
+                //mcustomKeyboard.dyanamicKeyBoard(keys);
                 /*
                 // if showTimeStamp is false for the latest message, then set a timer to query the
                 // cursor again in a minute, so we can update the last message timestamp if no new

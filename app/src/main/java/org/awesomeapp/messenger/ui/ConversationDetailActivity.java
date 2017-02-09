@@ -113,7 +113,7 @@ public class ConversationDetailActivity extends BaseActivity {
 
         Intent intent = getIntent();
         mApp = (ImApp)getApplication();
-
+        mApp.setCurrentActivity(this);
         mChatId = intent.getLongExtra("id", -1);
         mAddress = intent.getStringExtra("address");
         mNickname = intent.getStringExtra("nickname");
@@ -242,6 +242,11 @@ public class ConversationDetailActivity extends BaseActivity {
     public void expandToolbar(){
 
         appBarLayout.setExpanded(true);
+    }
+
+    public ConversationView getmConvoView()
+    {
+        return mConvoView;
     }
 
     @Override

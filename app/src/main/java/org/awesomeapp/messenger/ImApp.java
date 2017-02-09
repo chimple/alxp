@@ -64,6 +64,8 @@ import org.awesomeapp.messenger.service.ImServiceConstants;
 import org.awesomeapp.messenger.service.NetworkConnectivityReceiver;
 import org.awesomeapp.messenger.service.RemoteImService;
 import org.awesomeapp.messenger.tasks.RegisterExistingAccountTask;
+import org.awesomeapp.messenger.ui.ConversationDetailActivity;
+import org.awesomeapp.messenger.ui.CustomKeyboard;
 import org.awesomeapp.messenger.ui.legacy.ImPluginHelper;
 import org.awesomeapp.messenger.ui.legacy.ProviderDef;
 import org.awesomeapp.messenger.ui.legacy.adapter.ConnectionListenerAdapter;
@@ -160,6 +162,13 @@ public class ImApp extends Application implements ICacheWordSubscriber {
 //    private boolean mServiceStarted;
     private static Context mApplicationContext;
 
+    private Activity mCurrentActivity = null;
+    public Activity getCurrentActivity(){
+        return mCurrentActivity;
+    }
+    public void setCurrentActivity(Activity mCurrentActivity){
+        this.mCurrentActivity = mCurrentActivity;
+    }
 
     private  NetworkConnectivityReceiver.State mNetworkState;
 
@@ -262,6 +271,15 @@ public class ImApp extends Application implements ICacheWordSubscriber {
             BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>(maximumPoolSize);
             sThreadPoolExecutor = new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, TimeUnit.SECONDS, workQueue);
         }
+    }
+
+    public void displayKeyBoard(String...params) {
+       if(getCurrentActivity() != null && getCurrentActivity() instanceof ConversationDetailActivity) {
+           ConversationDetailActivity conversationDetailActivity = (ConversationDetailActivity)getCurrentActivity();
+           CustomKeyboard board = conversationDetailActivity.getmConvoView().getCustomKeyBoard();
+           board.dyanamicKeyBoard(params);
+
+       }
     }
 
     public boolean isThemeDark ()
