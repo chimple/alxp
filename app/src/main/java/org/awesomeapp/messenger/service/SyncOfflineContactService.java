@@ -27,6 +27,7 @@ public class SyncOfflineContactService extends Service {
             ImApp app = (ImApp) getApplication();
             syncContactTask = new ContactSyncTask(app, CONTACT_INFO_SERVER_URL);
             syncContactTask.execute(contactsPath);
+
         } catch (Exception e) {
             e.printStackTrace();
             Log.d(DEBUG_TAG, "bad Url", e);
