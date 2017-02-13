@@ -20,6 +20,7 @@ package org.awesomeapp.messenger.ui;
 import im.zom.messenger.R;
 
 import org.awesomeapp.messenger.ImUrlActivity;
+import org.awesomeapp.messenger.tasks.FetchWordTask;
 import org.awesomeapp.messenger.ui.widgets.MessageViewHolder;
 import org.awesomeapp.messenger.util.SecureMediaStore;
 import org.awesomeapp.messenger.ui.legacy.DatabaseUtils;
@@ -237,7 +238,10 @@ public class MessageListItem extends FrameLayout {
                              int height = Resources.getSystem().getDisplayMetrics().heightPixels;
                              dialog_details.setMinimumHeight(height / 2);
 
-                             details.show();
+                             FetchWordTask f1 = new FetchWordTask(ImApp.sImApp, "cat", details);
+                             f1.execute("cat");
+
+//                             details.show();
                          }
                      });
 
