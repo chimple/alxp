@@ -1,6 +1,6 @@
 package org.awesomeapp.messenger.model;
 
-import com.rivescript.RiveScript;
+import org.chimple.rivescript.RivescriptManager;
 
 import org.awesomeapp.messenger.ImApp;
 import org.awesomeapp.messenger.provider.Imps;
@@ -10,13 +10,9 @@ import org.awesomeapp.messenger.provider.Imps;
  */
 
 public class LoopbackChatSession extends ChatSession {
-    private RiveScript riveScript = null;
 
     public LoopbackChatSession(ImEntity participant, ChatSessionManager manager) {
         super(participant, manager);
-        riveScript = new RiveScript(ImApp.getAppContext(), true);
-        riveScript.loadDirectory("rs/Ada");
-        riveScript.sortReplies();
     }
 
     /**
@@ -42,15 +38,16 @@ public class LoopbackChatSession extends ChatSession {
         if (mListener != null) {
             message.setType(Imps.MessageType.INCOMING_NON_ENCRYPTED_VERIFIED);
 
-            //process incoming body with RivaScript - TODO
             String body = message.getBody();
-            String reply = riveScript.reply("localuser", body);
-            body = reply;
-            message.setBody(body);
-
-            return mListener.onIncomingMessage(this, message);
-        }
-        else {
+            String reply = RivescriptManager.reply(message.getFrom().getUser(), body);
+            String[] replies = reply.split("\n");
+            boolean status = true;
+            for (String r: replies) {
+                message.setBody(r);
+                status &= mListener.onIncomingMessage(this, message);
+            }
+            return status;
+        } else {
             return false;
         }
     }

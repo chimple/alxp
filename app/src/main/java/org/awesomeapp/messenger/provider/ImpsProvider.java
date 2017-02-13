@@ -66,6 +66,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
     //private static final String AUTHORITY = "org.awesomeapp.messenger.provider.Imps";
     private static final String AUTHORITY = "org.awesomeapp.messenger.provider.Imps";
 
+    private static final String TABLE_WORDS = "words";
     private static final String TABLE_ACCOUNTS = "accounts";
     private static final String TABLE_PROVIDERS = "providers";
     private static final String TABLE_PROVIDER_SETTINGS = "providerSettings";
@@ -168,6 +169,8 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
     protected static final int MATCH_ACCOUNTS_STATUS = 104;
     protected static final int MATCH_ACCOUNT_STATUS = 105;
     protected static final int MATCH_BRANDING_RESOURCE_MAP_CACHE = 106;
+    protected static final int MATCH_WORDS = 107;
+    protected static final int MATCH_WORDS_BY_NAME = 108;
 
     // mcs url matcher
     protected static final int MATCH_OUTGOING_RMQ_MESSAGES = 200;
@@ -402,6 +405,11 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
                        "category TEXT," + // a category used for forming intent
                        "signup_url TEXT" + // web url to visit to create a new account
                        ");");
+
+            db.execSQL("CREATE TABLE " + TABLE_WORDS + " (" + "_id INTEGER PRIMARY KEY,"
+                    + "name TEXT," + "meaning TEXT," + "image_url TEXT,"
+                    + "sp_name TEXT," + "sp_meaning TEXT" + ");");
+
 
             db.execSQL("CREATE TABLE " + TABLE_ACCOUNTS + " (" + "_id INTEGER PRIMARY KEY,"
                        + "name TEXT," + "provider INTEGER," + "username TEXT," + "pw TEXT,"
@@ -673,6 +681,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
         }
 
         private void destroyOldTables(SQLiteDatabase db) {
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_WORDS);
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_PROVIDERS);
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_ACCOUNTS);
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_CONTACT_LIST);
@@ -1135,6 +1144,10 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
         mUrlMatcher.addURI(authority, "providers/#", MATCH_PROVIDERS_BY_ID);
         mUrlMatcher.addURI(authority, "providers/account", MATCH_PROVIDERS_WITH_ACCOUNT);
 
+        mUrlMatcher.addURI(authority, "words", MATCH_WORDS);
+        mUrlMatcher.addURI(authority, "words/#", MATCH_WORDS_BY_NAME);
+
+
         mUrlMatcher.addURI(authority, "accounts", MATCH_ACCOUNTS);
         mUrlMatcher.addURI(authority, "domainAccounts", MATCH_ACCOUNTS_WITH_DOMAIN);
         mUrlMatcher.addURI(authority, "accounts/#", MATCH_ACCOUNTS_BY_ID);
@@ -1472,10 +1485,17 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
             qb.setTables(TABLE_ACCOUNTS);
             break;
 
-        case MATCH_CONTACTS:
-            qb.setTables(CONTACT_JOIN_PRESENCE_CHAT_AVATAR_TABLE);
-            qb.setProjectionMap(sContactsProjectionMap);
+        case MATCH_WORDS_BY_NAME:
+            appendWhere(whereClause, Imps.Word.NAME, "=", url.getPathSegments().get(1));
+            // falls down
+        case MATCH_WORDS:
+            qb.setTables(TABLE_WORDS);
             break;
+
+        case MATCH_CONTACTS:
+        qb.setTables(CONTACT_JOIN_PRESENCE_CHAT_AVATAR_TABLE);
+        qb.setProjectionMap(sContactsProjectionMap);
+        break;
 
         case MATCH_CONTACTS_JOIN_PRESENCE:
             qb.setTables(CONTACT_JOIN_PRESENCE_TABLE);
@@ -1822,6 +1842,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
 
         case MATCH_CSP_TOKEN:
             appendWhere(whereClause, PushDatabase.Tokens._ID, "=", url.getPathSegments().get(1));
+
         case MATCH_CSP_TOKENS:
             qb.setTables(TABLE_CSP_TOKENS);
             break;
@@ -2046,8 +2067,15 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
         case MATCH_ACCOUNT_STATUS:
             return Imps.AccountStatus.CONTENT_ITEM_TYPE;
 
+
+        case MATCH_WORDS:
+            return Imps.Word.CONTENT_TYPE;
+
+        case MATCH_WORDS_BY_NAME:
+            return Imps.Word.CONTENT_ITEM_TYPE;
+
         default:
-            throw new IllegalArgumentException("Unknown URL");
+        throw new IllegalArgumentException("Unknown URL");
         }
     }
 
@@ -2631,8 +2659,16 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
             notifyProviderAccountContentUri = true;
             break;
 
+        case MATCH_WORDS:
+            // Insert into the accounts table
+            rowID = db.insert(TABLE_WORDS, "name", initialValues);
+            if (rowID > 0) {
+                resultUri = Uri.parse(Imps.Word.CONTENT_URI + "/" + rowID);
+            }
+            break;
+
         case MATCH_CONTACTS_BY_PROVIDER:
-            appendValuesFromUrl(initialValues, url, Imps.Contacts.PROVIDER, Imps.Contacts.ACCOUNT);
+        appendValuesFromUrl(initialValues, url, Imps.Contacts.PROVIDER, Imps.Contacts.ACCOUNT);
             // fall through
         case MATCH_CONTACTS:
         case MATCH_CONTACTS_BAREBONE:

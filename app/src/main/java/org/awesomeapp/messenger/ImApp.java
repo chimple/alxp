@@ -41,8 +41,6 @@ import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.rivescript.RiveScript;
-
 import net.hockeyapp.android.CrashManager;
 import net.hockeyapp.android.CrashManagerListener;
 import net.sqlcipher.database.SQLiteDatabase;
@@ -64,6 +62,8 @@ import org.awesomeapp.messenger.service.ImServiceConstants;
 import org.awesomeapp.messenger.service.NetworkConnectivityReceiver;
 import org.awesomeapp.messenger.service.RemoteImService;
 import org.awesomeapp.messenger.tasks.RegisterExistingAccountTask;
+import org.awesomeapp.messenger.ui.ConversationDetailActivity;
+import org.awesomeapp.messenger.ui.CustomKeyboard;
 import org.awesomeapp.messenger.ui.legacy.ImPluginHelper;
 import org.awesomeapp.messenger.ui.legacy.ProviderDef;
 import org.awesomeapp.messenger.ui.legacy.adapter.ConnectionListenerAdapter;
@@ -138,6 +138,8 @@ public class ImApp extends Application implements ICacheWordSubscriber {
 
     public final static String BASE_CONVERSATION_FILE_EXT = ".zip";
 
+    public static boolean readyForSyncContactWhenNetworkIsAvailable = false;
+
     private Locale locale = null;
 
     public static ImApp sImApp;
@@ -160,6 +162,13 @@ public class ImApp extends Application implements ICacheWordSubscriber {
 //    private boolean mServiceStarted;
     private static Context mApplicationContext;
 
+    private Activity mCurrentActivity = null;
+    public Activity getCurrentActivity(){
+        return mCurrentActivity;
+    }
+    public void setCurrentActivity(Activity mCurrentActivity){
+        this.mCurrentActivity = mCurrentActivity;
+    }
 
     private  NetworkConnectivityReceiver.State mNetworkState;
 
@@ -262,6 +271,15 @@ public class ImApp extends Application implements ICacheWordSubscriber {
             BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>(maximumPoolSize);
             sThreadPoolExecutor = new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, TimeUnit.SECONDS, workQueue);
         }
+    }
+
+    public void displayKeyBoard(String...params) {
+       if(getCurrentActivity() != null && getCurrentActivity() instanceof ConversationDetailActivity) {
+           ConversationDetailActivity conversationDetailActivity = (ConversationDetailActivity)getCurrentActivity();
+           CustomKeyboard board = conversationDetailActivity.getmConvoView().getCustomKeyBoard();
+           board.dyanamicKeyBoard(params);
+
+       }
     }
 
     public boolean isThemeDark ()
@@ -454,6 +472,57 @@ public class ImApp extends Application implements ICacheWordSubscriber {
 
     public boolean serviceConnected() {
         return mImService != null;
+    }
+
+    public static long insertOrUpdateWord(ContentResolver cr, String name, String meaning, String imageUrl, String spName, String spMeaning) {
+
+        String where = Imps.Word.NAME + " = ?";
+        String[] selectionArgs = new String[]{name.toLowerCase()};
+
+        Cursor c = cr.query(Imps.Word.CONTENT_URI, null, where,
+                selectionArgs, null);
+
+        try {
+            if (c != null && c.getCount() > 0) {
+                c.moveToFirst();
+                long id = c.getLong(0);
+
+                ContentValues values = new ContentValues(5);
+                values.put(Imps.Word.NAME, name);
+
+                if (!TextUtils.isEmpty(meaning))
+                    values.put(Imps.Word.MEANING, meaning);
+
+                if (!TextUtils.isEmpty(imageUrl))
+                    values.put(Imps.Word.IMAGE_URL, imageUrl);
+
+                if (!TextUtils.isEmpty(spName))
+                    values.put(Imps.Word.SP_NAME, spName);
+
+                if (!TextUtils.isEmpty(spMeaning))
+                    values.put(Imps.Word.SP_NAME, spMeaning);
+
+                Uri wordUri = ContentUris.withAppendedId(Imps.Word.CONTENT_URI, id);
+                cr.update(wordUri, values, null, null);
+                c.close();
+                return id;
+            } else {
+                ContentValues values = new ContentValues(5);
+                values.put(Imps.Word.NAME, name);
+                values.put(Imps.Word.MEANING, meaning);
+                values.put(Imps.Word.IMAGE_URL, imageUrl);
+                values.put(Imps.Word.SP_NAME, spName);
+                values.put(Imps.Word.SP_MEANING, spMeaning);
+
+                Uri result = cr.insert(Imps.Word.CONTENT_URI, values);
+                if(result != null) {
+                    return ContentUris.parseId(result);
+                }
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        return -1;
     }
 
     public static long insertOrUpdateAccount(ContentResolver cr, long providerId, long accountId, String nickname, String username,

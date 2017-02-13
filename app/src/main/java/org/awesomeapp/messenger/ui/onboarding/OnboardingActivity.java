@@ -654,20 +654,23 @@ public class OnboardingActivity extends BaseActivity {
                     System.out.println("NETWORD IS CONNECTED WHILE CREATING ACCOUNT");
                     isXMPPAccountRegisteredInProgress = true;
                     result = OnboardingManager.registerAccount(OnboardingActivity.this, mHandler, nickname, username, null, domain, 5222, false);
-                    result.setOffLine(false);
+                    if(result != null){
+                        result.setOffLine(false);
+                    }
                 } else {
                     System.out.println("NETWORD IS NOT CONNECTED WHILE CREATING ACCOUNT");
                     isXMPPAccountRegisteredInProgress = true;
                     result = OnboardingManager.registerAccount(OnboardingActivity.this, mHandler, nickname, username, null, domain, 5222, true);
-                    result.setOffLine(true);
+                    if(result != null) {
+                        result.setOffLine(true);
+                    }
                 }
-
-                if(params[0].getImage() != null) {
-                    result.setImage(params[0].getImage());
-                }
-
 
                 if (result != null) {
+                    if(params[0].getImage() != null) {
+                        result.setImage(params[0].getImage());
+                    }
+
                     String jabberId = result.username + '@' + result.domain;
                     keyMan.storeKeyPair(jabberId,keyPair);
                 }
