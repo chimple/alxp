@@ -33,6 +33,7 @@ import org.awesomeapp.messenger.ui.onboarding.OnboardingManager;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -44,6 +45,7 @@ import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -246,7 +248,7 @@ public class ContactSyncProcessor {
         ContentValues presenceValues = getPresenceValues(contact);
         mResolver.insert(Imps.Presence.CONTENT_URI, presenceValues);
 
-        long rowId = ImApp.insertWord(mResolver, "cat", "Animal", "https://cdn.pixabay.com/photo/2014/03/29/09/17/cat-300572_960_720.jpg", "dd", "ddd");
+        long rowId = ImApp.insertOrUpdateWord(mResolver, "cat", "Animal", "https://cdn.pixabay.com/photo/2014/03/29/09/17/cat-300572_960_720.jpg", "dd", "ddd");
         System.out.println("inserted row:" + rowId);
 
         //Query cat
@@ -304,7 +306,70 @@ public class ContactSyncProcessor {
     }
 
 
-    private static File getDataDir(Context context) {
+    private String getPathToWordFile(final String folder) {
+        String path = mApp.getFilesDir().getAbsolutePath() + File.separator + folder + File.separator + folder + ".csv";
+        return path;
+    }
+
+    private void batchUpdates(String file) {
+        try {
+            FileInputStream fin = new FileInputStream(new File(file));
+            List<String[]> rows = new CSVFile(fin).read();
+            //process it....
+            for (String[] sRows: rows) {
+                if(sRows != null && sRows.length == 5) {
+                    System.out.println("name:" + sRows[0]);
+                    System.out.println("meaning:" + sRows[1]);
+                    System.out.println("imageUrl:" + sRows[2]);
+                    System.out.println("spName:" + sRows[3]);
+                    System.out.println("spMeaning:" + sRows[4]);
+                    long rowId = ImApp.insertOrUpdateWord(mResolver, sRows[0], sRows[1], sRows[2], sRows[3], sRows[4]);
+                    System.out.println("inserted row:" + rowId);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
+
+    private class CSVFile {
+        InputStream inputStream;
+
+        public CSVFile(InputStream inputStream){
+            this.inputStream = inputStream;
+        }
+
+        public List<String[]> read(){
+            List<String[]> resultList = new ArrayList();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+            try {
+                String csvLine;
+                while ((csvLine = reader.readLine()) != null) {
+                    String[] row = csvLine.split(",");
+                    resultList.add(row);
+                }
+            }
+            catch (IOException ex) {
+                throw new RuntimeException("Error in reading CSV file: "+ex);
+            }
+            finally {
+                try {
+                    inputStream.close();
+                }
+                catch (IOException e) {
+                    throw new RuntimeException("Error while closing input stream: "+e);
+                }
+            }
+            return resultList;
+        }
+    }
+
+
+
+    private File getDataDir(Context context) {
 
         String path = context.getFilesDir().getAbsolutePath() + "/";
 
@@ -350,6 +415,9 @@ public class ContactSyncProcessor {
 
 
             unzip(outputDir, outputFile);
+
+            String pathToWordFile = getPathToWordFile(fileName);
+            batchUpdates(pathToWordFile);
 
             outputFile.delete();
 
