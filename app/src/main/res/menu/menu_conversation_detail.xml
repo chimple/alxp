@@ -24,35 +24,16 @@
 
              <item android:id="@+id/minus"
         android:title="@string/menu_verify"
-        android:icon="@drawable/avatar_unknown"
-         app:showAsAction="always"
+        android:icon="@drawable/ic_remove_circle_outline_black_24dp"
+        app:showAsAction="always"
          />
 
     <item android:id="@+id/plus"
         android:title="@string/menu_verify"
-        android:icon="@drawable/broken_image_large"
+        android:icon="@drawable/ic_add_circle_outline_black_24dp"
         app:showAsAction="always"
         />
 
-    <item android:id="@+id/menu_verify_or_view"
-        android:title="@string/menu_verify"
-        android:icon="@drawable/ic_info_outline_white_24dp"
-        app:showAsAction="always"
-        />
 
-    <item android:id="@+id/menu_refresh_encryption"
-        android:title="@string/menu_refresh"
-        android:icon="@drawable/ic_menu_encrypt"
-        app:showAsAction="never"
-
-        />
-
-
-    <item android:id="@+id/menu_end_conversation"
-        android:title="@string/menu_end_conversation" 
-        android:icon="@drawable/ic_menu_close"
-         app:showAsAction="never"
-        
-         />
 
 </menu>

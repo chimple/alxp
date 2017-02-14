@@ -312,9 +312,6 @@ public class ConversationDetailActivity extends BaseActivity {
                 mConvoView.closeChatSession(true);
                 finish();
                 return true;
-            case R.id.menu_refresh_encryption:
-                mConvoView.refreshSession();
-                return true;
             case R.id.menu_verify_or_view:
                 mConvoView.showVerifyDialog();
                 return true;
@@ -335,7 +332,7 @@ public class ConversationDetailActivity extends BaseActivity {
         final ImageView imageView = (ImageView) findViewById(R.id.backdrop);
 
         if (mConvoView.getHeader()!=null)
-            imageView.setImageDrawable(mConvoView.getHeader());
+          imageView.setImageDrawable(mConvoView.getHeader());
 
     }
 
