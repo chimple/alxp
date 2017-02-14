@@ -25,6 +25,7 @@ import org.awesomeapp.messenger.model.Address;
 import org.awesomeapp.messenger.model.Contact;
 import org.awesomeapp.messenger.model.Presence;
 import org.awesomeapp.messenger.model.SyncContact;
+import org.awesomeapp.messenger.model.WordInformation;
 import org.awesomeapp.messenger.provider.Imps;
 import org.awesomeapp.messenger.service.NetworkConnectivityReceiver;
 import org.awesomeapp.messenger.service.adapters.CustomHttpClient;
@@ -245,6 +246,13 @@ public class ContactSyncProcessor {
         ContentValues presenceValues = getPresenceValues(contact);
         mResolver.insert(Imps.Presence.CONTENT_URI, presenceValues);
 
+        long rowId = ImApp.insertWord(mResolver, "cat", "Animal", "https://cdn.pixabay.com/photo/2014/03/29/09/17/cat-300572_960_720.jpg", "dd", "ddd");
+        System.out.println("inserted row:" + rowId);
+
+        //Query cat
+        FetchWordProcessor fetchWordProcessor = new FetchWordProcessor(this.getmApp(), "cat");
+        WordInformation wordInformation = fetchWordProcessor.fetchWord();
+
 
     }
 
@@ -342,6 +350,9 @@ public class ContactSyncProcessor {
 
 
             unzip(outputDir, outputFile);
+
+            outputFile.delete();
+
 
         } catch(FileNotFoundException e) {
             return; // swallow a 404
