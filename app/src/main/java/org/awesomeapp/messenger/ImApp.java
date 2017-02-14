@@ -474,17 +474,53 @@ public class ImApp extends Application implements ICacheWordSubscriber {
         return mImService != null;
     }
 
-    public static long insertWord(ContentResolver cr, String name, String meaning, String imageUrl, String spName, String spMeaning) {
-        ContentValues values = new ContentValues(5);
-        values.put(Imps.Word.NAME, name);
-        values.put(Imps.Word.MEANING, meaning);
-        values.put(Imps.Word.IMAGE_URL, imageUrl);
-        values.put(Imps.Word.SP_NAME, spName);
-        values.put(Imps.Word.SP_MEANING, spMeaning);
+    public static long insertOrUpdateWord(ContentResolver cr, String name, String meaning, String imageUrl, String spName, String spMeaning) {
 
-        Uri result = cr.insert(Imps.Word.CONTENT_URI, values);
-        if(result != null) {
-            return ContentUris.parseId(result);
+        String where = Imps.Word.NAME + " = ?";
+        String[] selectionArgs = new String[]{name.toLowerCase()};
+
+        Cursor c = cr.query(Imps.Word.CONTENT_URI, null, where,
+                selectionArgs, null);
+
+        try {
+            if (c != null && c.getCount() > 0) {
+                c.moveToFirst();
+                long id = c.getLong(0);
+
+                ContentValues values = new ContentValues(5);
+                values.put(Imps.Word.NAME, name);
+
+                if (!TextUtils.isEmpty(meaning))
+                    values.put(Imps.Word.MEANING, meaning);
+
+                if (!TextUtils.isEmpty(imageUrl))
+                    values.put(Imps.Word.IMAGE_URL, imageUrl);
+
+                if (!TextUtils.isEmpty(spName))
+                    values.put(Imps.Word.SP_NAME, spName);
+
+                if (!TextUtils.isEmpty(spMeaning))
+                    values.put(Imps.Word.SP_NAME, spMeaning);
+
+                Uri wordUri = ContentUris.withAppendedId(Imps.Word.CONTENT_URI, id);
+                cr.update(wordUri, values, null, null);
+                c.close();
+                return id;
+            } else {
+                ContentValues values = new ContentValues(5);
+                values.put(Imps.Word.NAME, name);
+                values.put(Imps.Word.MEANING, meaning);
+                values.put(Imps.Word.IMAGE_URL, imageUrl);
+                values.put(Imps.Word.SP_NAME, spName);
+                values.put(Imps.Word.SP_MEANING, spMeaning);
+
+                Uri result = cr.insert(Imps.Word.CONTENT_URI, values);
+                if(result != null) {
+                    return ContentUris.parseId(result);
+                }
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
         }
         return -1;
     }
