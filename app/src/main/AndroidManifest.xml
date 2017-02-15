@@ -365,6 +365,13 @@
 
         </receiver>
 
+        <receiver
+            android:name="org.awesomeapp.messenger.tts.TTSDataInstalledBroadcastReceiver">
+            <intent-filter>
+                <action
+                    android:name="android.speech.tts.engine.TTS_DATA_INSTALLED"/>
+            </intent-filter>
+        </receiver>
 
         <receiver
             android:name="org.awesomeapp.messenger.service.NetworkConnectivityReceiver"

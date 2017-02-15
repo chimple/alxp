@@ -17,6 +17,7 @@
 
 package org.awesomeapp.messenger;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.content.ComponentName;
@@ -36,6 +37,8 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.RemoteException;
 import android.preference.PreferenceManager;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
@@ -62,6 +65,8 @@ import org.awesomeapp.messenger.service.ImServiceConstants;
 import org.awesomeapp.messenger.service.NetworkConnectivityReceiver;
 import org.awesomeapp.messenger.service.RemoteImService;
 import org.awesomeapp.messenger.tasks.RegisterExistingAccountTask;
+import org.awesomeapp.messenger.tts.TextToSpeechEventListener;
+import org.awesomeapp.messenger.tts.TextToSpeechRecognizer;
 import org.awesomeapp.messenger.ui.ConversationDetailActivity;
 import org.awesomeapp.messenger.ui.CustomKeyboard;
 import org.awesomeapp.messenger.ui.legacy.ImPluginHelper;
@@ -76,6 +81,7 @@ import org.ironrabbit.type.CustomTypefaceManager;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
@@ -93,7 +99,7 @@ import info.guardianproject.cacheword.PRNGFixes;
 import info.guardianproject.iocipher.VirtualFileSystem;
 import timber.log.Timber;
 
-public class ImApp extends Application implements ICacheWordSubscriber {
+public class ImApp extends Application implements ICacheWordSubscriber, TextToSpeechEventListener {
 
     public static final String LOG_TAG = "Zom";
     public static boolean isXMPPAccountRegistered = false;
@@ -143,6 +149,9 @@ public class ImApp extends Application implements ICacheWordSubscriber {
     private Locale locale = null;
 
     public static ImApp sImApp;
+
+    private TextToSpeech tts;
+    private boolean supportForTTSEnabled = false;
 
     IRemoteImService mImService;
 
@@ -271,6 +280,10 @@ public class ImApp extends Application implements ICacheWordSubscriber {
             BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>(maximumPoolSize);
             sThreadPoolExecutor = new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, TimeUnit.SECONDS, workQueue);
         }
+
+        List<Locale> locals = new ArrayList<Locale>();
+        locals.add(new Locale("hi", "IN"));
+        TextToSpeechRecognizer textToSpeechRecognizer = new TextToSpeechRecognizer(this, locals, this);
     }
 
     public void displayKeyBoard(String...params) {
@@ -805,6 +818,80 @@ public class ImApp extends Application implements ICacheWordSubscriber {
         }
     };
 
+    @SuppressLint("NewApi")
+    private void setTTSListener()
+    {
+        if (Build.VERSION.SDK_INT >= 15)
+        {
+            int listenerResult =
+                    tts.setOnUtteranceProgressListener(new UtteranceProgressListener()
+                    {
+                        @Override
+                        public void onDone(String utteranceId)
+                        {
+                        }
+
+                        @Override
+                        public void onError(String utteranceId)
+                        {
+                            Log.e(LOG_TAG, "TTS error");
+                        }
+
+                        @Override
+                        public void onStart(String utteranceId)
+                        {
+                            Log.d(LOG_TAG, "TTS start");
+                        }
+                    });
+            if (listenerResult != TextToSpeech.SUCCESS)
+            {
+                Log.e(LOG_TAG, "failed to add utterance progress listener");
+            }
+        }
+        else
+        {
+            int listenerResult =
+                    tts.setOnUtteranceCompletedListener(
+                            new TextToSpeech.OnUtteranceCompletedListener()
+                            {
+                                @Override
+                                public void onUtteranceCompleted(String utteranceId)
+                                {
+
+                                }
+                            });
+            if (listenerResult != TextToSpeech.SUCCESS)
+            {
+                Log.e(LOG_TAG, "failed to add utterance completed listener");
+            }
+        }
+    }
+
+    private void onDone(final String utteranceId)
+    {
+    }
+
+    @Override
+    public void onSuccessfulInitiated(TextToSpeech tts) {
+        this.tts = tts;
+        setTTSListener();
+    }
+
+    @Override
+    public void onDownloadRequiredForLanguageData(List<Locale> missingLocals) {
+        TextToSpeechRecognizer.installLanguageData(this);
+    }
+
+    @Override
+    public void onDownloadNotCompletedForLanguageData() {
+
+    }
+
+    @Override
+    public void onErrorToInitialize() {
+
+    }
+
     private final class MyConnListener extends ConnectionListenerAdapter {
         public MyConnListener(Handler handler) {
             super(handler);
@@ -1182,4 +1269,15 @@ public class ImApp extends Application implements ICacheWordSubscriber {
         }).start();
     }
 
+
+    public void speakOut(String word, Locale locale) {
+        try {
+            if(tts != null && tts.getAvailableLanguages().contains(locale)) {
+                tts.setLanguage(locale);
+                tts.speak(word, TextToSpeech.QUEUE_FLUSH, null);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
