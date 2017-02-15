@@ -181,6 +181,7 @@ public class MessageListItem extends FrameLayout {
         myMessageView.add(holder);
         mHolder = holder;
         applyStyleColors();
+        mHolder.mTextViewForMessages.setTypeface(Typeface.createFromAsset(context.getAssets(), "fonts/AddEmoji.ttf"));
         mHolder.mTextViewForMessages.setTextSize(FONTSIZE);
         mHolder.mTextViewForMessages.setVisibility(View.VISIBLE);
         mHolder.mAudioContainer.setVisibility(View.GONE);
@@ -786,6 +787,7 @@ public class MessageListItem extends FrameLayout {
         mHolder = holder;
         applyStyleColors();
 
+        mHolder.mTextViewForMessages.setTypeface(Typeface.createFromAsset(context.getAssets(), "fonts/AddEmoji.ttf"));
         mHolder.mTextViewForMessages.setTextSize(FONTSIZE);
         mHolder.mTextViewForMessages.setVisibility(View.VISIBLE);
         mHolder.mAudioContainer.setVisibility(View.GONE);
