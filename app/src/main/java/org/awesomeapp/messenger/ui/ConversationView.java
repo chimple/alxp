@@ -44,6 +44,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Message;
 import android.os.RemoteException;
+import android.os.SystemClock;
 import android.provider.Browser;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
@@ -74,6 +75,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewAnimationUtils;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
@@ -202,7 +204,7 @@ public class ConversationView {
     private View mStatusWarningView;
     private TextView mWarningText;
 
-
+    boolean mDynamicKeyboardIsVisible;
     private ImageView mDeliveryIcon;
     private boolean mExpectingDelivery;
 
@@ -242,7 +244,7 @@ public class ConversationView {
     private static final long DEFAULT_QUERY_INTERVAL = 2000;
     private static final long FAST_QUERY_INTERVAL = 200;
 
-    CustomKeyboard mcustomKeyboard;
+    CustomKeyboard mcustomKeyboard = null;
 
     private RequeryCallback mRequeryCallback = null;
 
@@ -717,10 +719,8 @@ public class ConversationView {
 
         mHistory.setMinimumWidth(1);
 
-        mcustomKeyboard = new CustomKeyboard((Activity) mActivity,R.id.keyboardview,R.xml.custom_keyboard);
-        mComposeMessage = mcustomKeyboard.registerEditText(R.id.composeMessage);
 
-       // mComposeMessage = (EditText) mActivity.findViewById(R.id.composeMessage);
+        mComposeMessage = (EditText) mActivity.findViewById(R.id.composeMessage);
         mSendButton = (ImageButton) mActivity.findViewById(R.id.btnSend);
         mMicButton = (ImageButton) mActivity.findViewById(R.id.btnMic);
         mButtonTalk = (TextView)mActivity.findViewById(R.id.buttonHoldToTalk);
@@ -963,7 +963,14 @@ public class ConversationView {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 String[] testing = {"A","B","C"};
-             //  mcustomKeyboard.dyanamicKeyBoard(testing);
+              //
+                if (mDynamicKeyboardIsVisible){
+                    mcustomKeyboard.hideCustomKeyboard();
+                    mcustomKeyboard.dyanamicKeyBoard(testing);
+                }
+                else {
+                    System.out.print("default keyboard");
+                }
                 sendTypingStatus (true);
 
                 return false;
@@ -2818,8 +2825,33 @@ public class ConversationView {
                 mExpectingDelivery = true;
             } else if (cursor.getPosition() == cursor.getCount() - 1) {
                 System.out.println("counter at last message" + body);
+                String[] str = body.split("");
+                int temp = str.length;
+
                 String[] keys = {"A","B","E"};
-                mApp.displayKeyBoard(keys);
+                if (body.length() < 8 ){
+                   // mComposeMessage.setInputType(InputType.TYPE_NULL);
+                    InputMethodManager imm = (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(mComposeMessage.getWindowToken(), 0);
+                    mActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+                    mcustomKeyboard = new CustomKeyboard((Activity) mActivity,R.id.keyboardview,R.xml.custom_keyboard);
+                    mComposeMessage = (EditText) mcustomKeyboard.registerEditText(R.id.composeMessage);
+                    mcustomKeyboard.dyanamicKeyBoard(keys);
+                   // mApp.displayKeyBoard(keys);
+                    mDynamicKeyboardIsVisible = true;
+
+                }
+                else
+                {
+                    mDynamicKeyboardIsVisible = false;
+                    if (mcustomKeyboard != null) {
+                        mcustomKeyboard.hideCustomKeyboard();
+                    }
+                    InputMethodManager imm = (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.showSoftInput(mComposeMessage, InputMethodManager.SHOW_IMPLICIT);
+                  //  mActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+                }
+
                 //mcustomKeyboard.dyanamicKeyBoard(keys);
                 /*
                 // if showTimeStamp is false for the latest message, then set a timer to query the

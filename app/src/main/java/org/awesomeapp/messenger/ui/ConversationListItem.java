@@ -28,6 +28,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -312,6 +313,7 @@ public class ConversationListItem extends FrameLayout {
 
                     try {
                         holder.mLine2.setText(android.text.Html.fromHtml(message).toString());
+                        holder.mLine2.setTypeface(Typeface.createFromAsset(getContext().getAssets(), "fonts/AddEmoji.ttf"));
                     }
                     catch (RuntimeException re){}
                 }
