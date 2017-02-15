@@ -345,6 +345,28 @@
        </LinearLayout>
 
 
+        <LinearLayout
+            android:id="@+id/speechLayout"
+            android:layout_width="match_parent"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            android:layout_height="wrap_content">
+
+            <Button
+                android:id="@+id/record"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Record" />
+
+            <Button
+                android:id="@+id/delete"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="delete" />
+
+        </LinearLayout>
+
+
         <LinearLayout android:id="@+id/invitationPanel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

@@ -45,6 +45,9 @@ import android.os.Bundle;
 import android.os.Message;
 import android.os.RemoteException;
 import android.provider.Browser;
+import android.speech.RecognitionListener;
+import android.speech.RecognizerIntent;
+import android.speech.SpeechRecognizer;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -53,6 +56,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
+import android.text.InputType;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -75,9 +79,11 @@ import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -133,6 +139,7 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
 import im.zom.messenger.R;
 
 public class ConversationView {
+
     // This projection and index are set for the query of active chats
     public static final String[] CHAT_PROJECTION = { Imps.Contacts._ID, Imps.Contacts.ACCOUNT,
                                              Imps.Contacts.PROVIDER, Imps.Contacts.USERNAME,
@@ -185,6 +192,9 @@ public class ConversationView {
     private TextView mButtonTalk;
     private ImageButton mButtonAttach;
     private View mViewAttach;
+
+    private LinearLayout speechLayout;
+    private Button record, delete;
 
     private ImageView mButtonDeleteVoice;
     private View mViewDeleteVoice;
@@ -687,6 +697,16 @@ public class ConversationView {
     }
 
     protected void initViews() {
+
+
+        mActivity.mSpeechRecognizer = SpeechRecognizer.createSpeechRecognizer(mActivity.getApplicationContext());
+        mActivity.mSpeechRecognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        mActivity.mSpeechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        mActivity.mSpeechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, mActivity.getPackageName());
+
+        SpeechRecognitionListener listener = new SpeechRecognitionListener();
+        mActivity.mSpeechRecognizer.setRecognitionListener(listener);
+
       //  mStatusIcon = (ImageView) mActivity.findViewById(R.id.statusIcon);
      //   mDeliveryIcon = (ImageView) mActivity.findViewById(R.id.deliveryIcon);
        // mTitle = (TextView) mActivity.findViewById(R.id.title);
@@ -705,8 +725,33 @@ public class ConversationView {
         mMicButton = (ImageButton) mActivity.findViewById(R.id.btnMic);
         mButtonTalk = (TextView)mActivity.findViewById(R.id.buttonHoldToTalk);
 
+        speechLayout = (LinearLayout) mActivity.findViewById(R.id.speechLayout);
+        record = (Button) mActivity.findViewById(R.id.record);
+        delete = (Button)mActivity.findViewById(R.id.delete);
+
         mButtonDeleteVoice = (ImageView)mActivity.findViewById(R.id.btnDeleteVoice);
         mViewDeleteVoice = mActivity.findViewById(R.id.viewDeleteVoice);
+
+        delete.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                if(mComposeMessage.getText().toString().length() >= 1)
+                {
+                    mComposeMessage.setText(mComposeMessage.getText().toString().substring(0, mComposeMessage.getText().toString().length() - 1));
+                }
+            }
+
+        });
+
+        record.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                mActivity.mSpeechRecognizer.startListening(mActivity.mSpeechRecognizerIntent);
+            }
+
+        });
 
         mButtonDeleteVoice.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -788,9 +833,9 @@ public class ConversationView {
 
                 //this is the tap to change to hold to talk mode
                 if (mMicButton.getVisibility() == View.VISIBLE) {
-                    mComposeMessage.setVisibility(View.GONE);
+//                    mComposeMessage.setVisibility(View.GONE);
                     mcustomKeyboard.hideCustomKeyboard();
-                    mMicButton.setVisibility(View.GONE);
+//                    mMicButton.setVisibility(View.GONE);
 
                     // Check if no view has focus:
                     View view = mActivity.getCurrentFocus();
@@ -798,10 +843,11 @@ public class ConversationView {
                         InputMethodManager imm = (InputMethodManager)mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
                         imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
                     }
-
-                    mSendButton.setImageResource(R.drawable.ic_keyboard_black_36dp);
-                    mSendButton.setVisibility(View.VISIBLE);
-                    mButtonTalk.setVisibility(View.VISIBLE);
+                    speechLayout.setVisibility(View.VISIBLE);
+                    mComposeMessage.setInputType(InputType.TYPE_NULL);
+//                    mSendButton.setImageResource(R.drawable.ic_keyboard_black_36dp);
+//                    mSendButton.setVisibility(View.VISIBLE);
+//                    mButtonTalk.setVisibility(View.VISIBLE);
 
                 }
             }
@@ -1015,6 +1061,68 @@ public class ConversationView {
         mHistory.setAdapter(mMessageAdapter);
 
     }
+
+    protected class SpeechRecognitionListener implements RecognitionListener
+    {
+
+        @Override
+        public void onBeginningOfSpeech()
+        {
+            //Log.d(TAG, "onBeginingOfSpeech");
+        }
+
+        @Override
+        public void onBufferReceived(byte[] buffer)
+        {
+
+        }
+
+        @Override
+        public void onEndOfSpeech()
+        {
+            //Log.d(TAG, "onEndOfSpeech");
+        }
+
+        @Override
+        public void onError(int error)
+        {
+//            mActivity.startListening(mActivity.mSpeechRecognizerIntent);
+            //Log.d(TAG, "error = " + error);
+        }
+
+        @Override
+        public void onEvent(int eventType, Bundle params)
+        {
+
+        }
+
+        @Override
+        public void onPartialResults(Bundle partialResults)
+        {
+
+        }
+
+        @Override
+        public void onReadyForSpeech(Bundle params)
+        {
+        }
+
+        @Override
+        public void onResults(Bundle results)
+        {
+            //Log.d(TAG, "onResults"); //$NON-NLS-1$
+            ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+            mComposeMessage.setText(mComposeMessage.getText() +" "+ matches.get(0));
+            // matches are the return values of speech guptarecognition engine
+            // Use these values for whatever you wish to do
+        }
+
+        @Override
+        public void onRmsChanged(float rmsdB)
+        {
+        }
+    }
+
 
     private boolean mLastIsTyping = false;
 
