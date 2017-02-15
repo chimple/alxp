@@ -181,6 +181,7 @@ public class MessageListItem extends FrameLayout {
         myMessageView.add(holder);
         mHolder = holder;
         applyStyleColors();
+        mHolder.mTextViewForMessages.setTypeface(Typeface.createFromAsset(context.getAssets(), "fonts/AddEmoji.ttf"));
         mHolder.mTextViewForMessages.setTextSize(FONTSIZE);
         mHolder.mTextViewForMessages.setVisibility(View.VISIBLE);
         mHolder.mAudioContainer.setVisibility(View.GONE);
@@ -207,19 +208,19 @@ public class MessageListItem extends FrameLayout {
                  int widthSoFar = 30;
 
                  String []Message = mHolder.mTextViewForMessages.getText().toString().split("\\s+");
+                 RoundRectShape rect = new RoundRectShape(
+                         new float[] {30,30, 30,30, 30,30, 30,30},
+                         null,
+                         null);
+                 ShapeDrawable bg = new ShapeDrawable(rect);
+
+                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                         LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+                 params.setMargins(5, 5, 0, 5);
+                 Button btn;
                  for(int i=0; i<Message.length; i++)
                  {
-                     RoundRectShape rect = new RoundRectShape(
-                             new float[] {30,30, 30,30, 30,30, 30,30},
-                             null,
-                             null);
-                     ShapeDrawable bg = new ShapeDrawable(rect);
-
-                     LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                             LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-                     params.setMargins(5, 5, 0, 5);
-
-                     Button btn = new Button(getContext());
+                     btn = new Button(getContext());
                      btn.setText(Message[i]);
                      bg.getPaint().setColor(Color.WHITE);
                      btn.setLayoutParams(params);
@@ -273,6 +274,26 @@ public class MessageListItem extends FrameLayout {
 //                     btn.setTag(Integer.toString(idx));
 
                  }
+
+                 Button Spellbtn = new Button(getContext());
+                 Spellbtn.setText("Spell");
+                 bg.getPaint().setColor(Color.WHITE);
+                 Spellbtn.setLayoutParams(params);
+                 Spellbtn.setTag("Spell");
+//                     btn.setBackgroundColor(Color.WHITE);
+                 Spellbtn.setBackgroundDrawable(bg);
+
+                 Spellbtn.setOnClickListener(new OnClickListener() {
+                     @Override
+                     public void onClick(View v) {
+                     }
+                 });
+
+                 innerLayout = new LinearLayout(getContext());
+                 innerLayout.setGravity(Gravity.CENTER);
+                 innerLayout.addView(Spellbtn);
+                 linearlayout.addView(innerLayout);
+
                  dialog.show();
              }
         });
@@ -766,6 +787,7 @@ public class MessageListItem extends FrameLayout {
         mHolder = holder;
         applyStyleColors();
 
+        mHolder.mTextViewForMessages.setTypeface(Typeface.createFromAsset(context.getAssets(), "fonts/AddEmoji.ttf"));
         mHolder.mTextViewForMessages.setTextSize(FONTSIZE);
         mHolder.mTextViewForMessages.setVisibility(View.VISIBLE);
         mHolder.mAudioContainer.setVisibility(View.GONE);
@@ -792,19 +814,19 @@ public class MessageListItem extends FrameLayout {
                 int widthSoFar = 30;
 
                 String []Message = mHolder.mTextViewForMessages.getText().toString().split("\\s+");
+                RoundRectShape rect = new RoundRectShape(
+                        new float[] {30,30, 30,30, 30,30, 30,30},
+                        null,
+                        null);
+                ShapeDrawable bg = new ShapeDrawable(rect);
+
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                        LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+                params.setMargins(5, 5, 0, 5);
+                Button btn;
                 for(int i=0; i<Message.length; i++)
                 {
-                    RoundRectShape rect = new RoundRectShape(
-                            new float[] {30,30, 30,30, 30,30, 30,30},
-                            null,
-                            null);
-                    ShapeDrawable bg = new ShapeDrawable(rect);
-
-                    LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                            LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-                    params.setMargins(5, 5, 0, 5);
-
-                    Button btn = new Button(getContext());
+                    btn = new Button(getContext());
                     btn.setText(Message[i]);
                     bg.getPaint().setColor(Color.WHITE);
                     btn.setLayoutParams(params);
@@ -846,6 +868,27 @@ public class MessageListItem extends FrameLayout {
 //                     btn.setTag(Integer.toString(idx));
 
                 }
+
+                Button Spellbtn = new Button(getContext());
+                Spellbtn.setText("Spell");
+                bg.getPaint().setColor(Color.WHITE);
+                Spellbtn.setLayoutParams(params);
+                Spellbtn.setTag("Spell");
+//                     btn.setBackgroundColor(Color.WHITE);
+                Spellbtn.setBackgroundDrawable(bg);
+
+                Spellbtn.setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+
+                    }
+                });
+
+                innerLayout = new LinearLayout(getContext());
+                innerLayout.setGravity(Gravity.CENTER);
+                innerLayout.addView(Spellbtn);
+                linearlayout.addView(innerLayout);
+
                 dialog.show();
             }
         });

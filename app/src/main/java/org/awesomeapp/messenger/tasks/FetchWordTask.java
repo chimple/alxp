@@ -11,9 +11,9 @@ import com.bumptech.glide.Glide;
 import org.awesomeapp.messenger.ImApp;
 import org.awesomeapp.messenger.model.WordInformation;
 
-import im.zom.messenger.R;
+import java.util.Locale;
 
-import static android.R.attr.onClick;
+import im.zom.messenger.R;
 
 /**
  * Created by Shyamal.Upadhyaya on 09/02/17.
@@ -46,7 +46,7 @@ public class FetchWordTask extends AsyncTask<String, Void, WordInformation> {
     protected void onPostExecute(WordInformation wordInformation) {
 
         TextView engword = (TextView) this.dialog.findViewById(R.id.engword);
-        ImageView engvoice = (ImageView) this.dialog.findViewById(R.id.engvoice);
+        final ImageView engvoice = (ImageView) this.dialog.findViewById(R.id.engvoice);
         TextView engmeaning = (TextView) this.dialog.findViewById(R.id.engmeaning);
         ImageView engimage = (ImageView) this.dialog.findViewById(R.id.engimage);
         TextView otherword = (TextView) this.dialog.findViewById(R.id.otherword);
@@ -65,14 +65,16 @@ public class FetchWordTask extends AsyncTask<String, Void, WordInformation> {
         engvoice.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                System.out.println("english speaking cat");
+                app.speakOut("cat", new Locale("en", "US"));
             }
         });
 
         othervoice.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                System.out.println("spanish speaking cat");
+                app.speakOut("cat", new Locale("es", "US"));
             }
         });
 
