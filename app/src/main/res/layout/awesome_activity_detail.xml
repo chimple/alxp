@@ -335,6 +335,7 @@
                android:focusable="true"
                android:focusableInTouchMode="true"
                android:keyTextSize="80sp"
+               android:labelTextSize="30sp"
                android:visibility="gone" />
            <android.inputmethodservice.KeyboardView
                android:id="@+id/keyboardview_2x3"

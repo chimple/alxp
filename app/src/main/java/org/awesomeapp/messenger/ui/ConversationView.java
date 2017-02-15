@@ -195,6 +195,7 @@ public class ConversationView {
     private View mStatusWarningView;
     private TextView mWarningText;
 
+    public ConversationView mConversationView;
     boolean mDynamicKeyboardIsVisible;
     private ImageView mDeliveryIcon;
     private boolean mExpectingDelivery;
@@ -678,8 +679,11 @@ public class ConversationView {
         mApp = (ImApp)mActivity.getApplication();
         mHandler = new ChatViewHandler(mActivity);
 
+        mConversationView= this;
         initViews();
     }
+
+
 
     void registerForConnEvents() {
         mApp.registerForConnEvents(mHandler);
@@ -1844,6 +1848,8 @@ public class ConversationView {
         return this.mContactType == Imps.Contacts.TYPE_GROUP;
     }
 
+
+
     void sendMessage() {
 
         String msg = mComposeMessage.getText().toString();
@@ -2721,7 +2727,7 @@ public class ConversationView {
                 String[] str = body.split("");
                 int temp = str.length;
 
-                String[] keys = {"A","B","E"};
+                String[] keys = {"Apple","Ball","Cat"};
                 if (body.length() < 8 ){
                    // mComposeMessage.setInputType(InputType.TYPE_NULL);
                     InputMethodManager imm = (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -2731,6 +2737,7 @@ public class ConversationView {
                     mComposeMessage = (EditText) mcustomKeyboard.registerEditText(R.id.composeMessage);
                     mcustomKeyboard.dyanamicKeyBoard(keys);
                    // mApp.displayKeyBoard(keys);
+                    mcustomKeyboard.setConversationViewObject(mConversationView);
                     mDynamicKeyboardIsVisible = true;
 
                 }
