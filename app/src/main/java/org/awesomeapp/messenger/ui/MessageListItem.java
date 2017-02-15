@@ -17,31 +17,6 @@
 
 package org.awesomeapp.messenger.ui;
 
-import im.zom.messenger.R;
-
-import org.awesomeapp.messenger.ImUrlActivity;
-import org.awesomeapp.messenger.tasks.FetchWordTask;
-import org.awesomeapp.messenger.ui.widgets.MessageViewHolder;
-import org.awesomeapp.messenger.util.SecureMediaStore;
-import org.awesomeapp.messenger.ui.legacy.DatabaseUtils;
-import org.awesomeapp.messenger.ImApp;
-import org.awesomeapp.messenger.ui.legacy.Markup;
-import org.awesomeapp.messenger.model.Presence;
-import org.awesomeapp.messenger.plugin.xmpp.XmppAddress;
-import org.awesomeapp.messenger.provider.Imps;
-import org.awesomeapp.messenger.ui.widgets.ImageViewActivity;
-import org.awesomeapp.messenger.ui.widgets.LetterAvatar;
-import org.awesomeapp.messenger.ui.widgets.RoundedAvatarDrawable;
-import org.awesomeapp.messenger.util.LinkifyHelper;
-import org.ocpsoft.prettytime.PrettyTime;
-
-import java.io.File;
-import java.io.InputStream;
-import java.net.URLConnection;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-
 import android.app.Dialog;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -52,19 +27,14 @@ import android.content.pm.ResolveInfo;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.Resources;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Typeface;
-import android.graphics.drawable.Drawable;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.RoundRectShape;
 import android.net.Uri;
-import android.os.Build;
 import android.preference.PreferenceManager;
 import android.provider.Browser;
 import android.provider.MediaStore;
-import android.support.v4.util.LruCache;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
@@ -75,28 +45,55 @@ import android.text.style.StyleSpan;
 import android.text.style.URLSpan;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.Display;
 import android.view.Gravity;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+
+import org.awesomeapp.messenger.ImApp;
+import org.awesomeapp.messenger.ImUrlActivity;
+import org.awesomeapp.messenger.plugin.xmpp.XmppAddress;
+import org.awesomeapp.messenger.provider.Imps;
+import org.awesomeapp.messenger.tasks.FetchWordTask;
+import org.awesomeapp.messenger.tts.TextToSpeechCommunicateListener;
+import org.awesomeapp.messenger.ui.legacy.DatabaseUtils;
+import org.awesomeapp.messenger.ui.legacy.Markup;
+import org.awesomeapp.messenger.ui.widgets.ImageViewActivity;
+import org.awesomeapp.messenger.ui.widgets.LetterAvatar;
+import org.awesomeapp.messenger.ui.widgets.MessageViewHolder;
+import org.awesomeapp.messenger.ui.widgets.RoundedAvatarDrawable;
+import org.awesomeapp.messenger.util.LinkifyHelper;
+import org.awesomeapp.messenger.util.SecureMediaStore;
+import org.ocpsoft.prettytime.PrettyTime;
+
+import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+
+import im.zom.messenger.R;
 
 
 
 
 public class MessageListItem extends FrameLayout {
 
+    private int currentWorkToken = 0;
+    Locale engLocale = new Locale("en", "US");
+    private List<Button> workTokens = new ArrayList<Button>();
+    private SpeakCallBackListener speakCallBackListener = null;
+
     public static HashSet<MessageViewHolder> myMessageView = new HashSet<MessageViewHolder>();
     public static float FONTSIZE = 21.0f;
+    final ImApp appContext = (ImApp) getContext().getApplicationContext();
 
     public enum DeliveryState {
         NEUTRAL, DELIVERED, UNDELIVERED
@@ -192,6 +189,7 @@ public class MessageListItem extends FrameLayout {
              @Override
              public void onClick(View v) {
                  final Dialog dialog = new Dialog(getContext());
+
                  dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
                  dialog.setContentView(R.layout.conversation_dialog);
                  int width = Resources.getSystem().getDisplayMetrics().widthPixels - 30;
@@ -221,11 +219,12 @@ public class MessageListItem extends FrameLayout {
                  for(int i=0; i<Message.length; i++)
                  {
                      btn = new Button(getContext());
+                     workTokens.add(btn);
                      btn.setText(Message[i]);
                      bg.getPaint().setColor(Color.WHITE);
                      btn.setLayoutParams(params);
                      btn.setTag(Message[i]);
-//                     btn.setBackgroundColor(Color.WHITE);
+//                     btn.setBackgroundColor(Color.BLUE);
                      btn.setBackgroundDrawable(bg);
 
                      btn.setOnClickListener(new OnClickListener() {
@@ -241,8 +240,6 @@ public class MessageListItem extends FrameLayout {
 
                              FetchWordTask f1 = new FetchWordTask(ImApp.sImApp, "cat", details);
                              f1.execute("cat");
-
-//                             details.show();
                          }
                      });
 
@@ -286,6 +283,11 @@ public class MessageListItem extends FrameLayout {
                  Spellbtn.setOnClickListener(new OnClickListener() {
                      @Override
                      public void onClick(View v) {
+                         if(workTokens != null && workTokens.size() > currentWorkToken) {
+
+                             speakCallBackListener = new SpeakCallBackListener();
+                             appContext.speakOut(workTokens.get(currentWorkToken).getText().toString(), engLocale, speakCallBackListener);
+                         }
                      }
                  });
 
@@ -1340,5 +1342,61 @@ public class MessageListItem extends FrameLayout {
         double y = (299 * Color.red(colorIn) + 587 * Color.green(colorIn) + 114 * Color.blue(colorIn)) / 1000;
         return y >= 128 ? Color.BLACK : Color.WHITE;
     }
+
+
+    private class SpeakCallBackListener implements TextToSpeechCommunicateListener
+    {
+
+        @Override
+        public void wordSpeakingStarted() {
+            System.out.println("wordSpeakingStarted");
+            appContext.getCurrentActivity().runOnUiThread(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            // TODO Auto-generated method stub
+                            RoundRectShape rect = new RoundRectShape(
+                                    new float[] {30,30, 30,30, 30,30, 30,30},
+                                    null,
+                                    null);
+                            ShapeDrawable bg = new ShapeDrawable(rect);
+                            bg.getPaint().setColor(Color.BLUE);
+                            workTokens.get(currentWorkToken).setBackgroundDrawable(bg);
+                        }
+
+                    }
+            );
+        }
+
+        @Override
+        public void wordSpeakingEnded() {
+            System.out.println("wordSpeakingEnded");
+            final int count = currentWorkToken;
+            appContext.getCurrentActivity().runOnUiThread(new Runnable() {
+                  @Override
+                  public void run() {
+                      // TODO Auto-generated method stub
+                      RoundRectShape rect = new RoundRectShape(
+                              new float[]{30, 30, 30, 30, 30, 30, 30, 30},
+                              null,
+                              null);
+                      ShapeDrawable bg = new ShapeDrawable(rect);
+                      bg.getPaint().setColor(Color.WHITE);
+                      if (workTokens != null && workTokens.size() > count)
+                      {
+                          workTokens.get(count).setBackgroundDrawable(bg);
+                      }
+                  }
+            });
+            currentWorkToken++;
+            if(workTokens != null && workTokens.size() > currentWorkToken)
+            {
+                appContext.speakOut(workTokens.get(currentWorkToken).getText().toString(), engLocale, speakCallBackListener);
+            }
+
+        }
+
+    }
+
 
 }

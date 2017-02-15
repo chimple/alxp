@@ -1,7 +1,5 @@
 package org.awesomeapp.messenger.tts;
 
-import android.speech.tts.TextToSpeech;
-
 import java.util.List;
 import java.util.Locale;
 
@@ -11,7 +9,7 @@ import java.util.Locale;
 
 public interface TextToSpeechEventListener {
 
-    public void onSuccessfulInitiated(TextToSpeech tts);
+    public void onSuccessfulInitiated(CustomTextToSpeech tts);
 
     public void onDownloadRequiredForLanguageData(List<Locale> missingLocals);
 

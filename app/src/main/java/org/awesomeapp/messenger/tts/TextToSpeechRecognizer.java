@@ -22,7 +22,7 @@ public class TextToSpeechRecognizer {
 
     private static final String TAG = "TextToSpeechRecognizer";
 
-    private TextToSpeech tts;
+    private CustomTextToSpeech tts;
 
     private Context context;
 
@@ -42,7 +42,7 @@ public class TextToSpeechRecognizer {
 
     private void initializeTextToSpeech(final List<Locale> supportedLocals)
     {
-        tts = new TextToSpeech(context, new TextToSpeech.OnInitListener()
+        tts = new CustomTextToSpeech(context, new CustomTextToSpeech.OnInitListener()
         {
             @Override
             public void onInit(int status)

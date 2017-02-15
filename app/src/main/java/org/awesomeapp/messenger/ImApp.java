@@ -32,6 +32,7 @@ import android.content.res.Configuration;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -65,6 +66,8 @@ import org.awesomeapp.messenger.service.ImServiceConstants;
 import org.awesomeapp.messenger.service.NetworkConnectivityReceiver;
 import org.awesomeapp.messenger.service.RemoteImService;
 import org.awesomeapp.messenger.tasks.RegisterExistingAccountTask;
+import org.awesomeapp.messenger.tts.CustomTextToSpeech;
+import org.awesomeapp.messenger.tts.TextToSpeechCommunicateListener;
 import org.awesomeapp.messenger.tts.TextToSpeechEventListener;
 import org.awesomeapp.messenger.tts.TextToSpeechRecognizer;
 import org.awesomeapp.messenger.ui.ConversationDetailActivity;
@@ -150,8 +153,7 @@ public class ImApp extends Application implements ICacheWordSubscriber, TextToSp
 
     public static ImApp sImApp;
 
-    private TextToSpeech tts;
-    private boolean supportForTTSEnabled = false;
+    private CustomTextToSpeech tts;
 
     IRemoteImService mImService;
 
@@ -282,7 +284,7 @@ public class ImApp extends Application implements ICacheWordSubscriber, TextToSp
         }
 
         List<Locale> locals = new ArrayList<Locale>();
-        locals.add(new Locale("hi", "IN"));
+        locals.add(new Locale("en", "US"));
         TextToSpeechRecognizer textToSpeechRecognizer = new TextToSpeechRecognizer(this, locals, this);
     }
 
@@ -829,6 +831,10 @@ public class ImApp extends Application implements ICacheWordSubscriber, TextToSp
                         @Override
                         public void onDone(String utteranceId)
                         {
+                            Log.d(LOG_TAG, "TTS done");
+                            if(tts.getCommunicateListener() != null) {
+                                tts.getCommunicateListener().wordSpeakingEnded();
+                            }
                         }
 
                         @Override
@@ -841,6 +847,9 @@ public class ImApp extends Application implements ICacheWordSubscriber, TextToSp
                         public void onStart(String utteranceId)
                         {
                             Log.d(LOG_TAG, "TTS start");
+                            if(tts.getCommunicateListener() != null) {
+                                tts.getCommunicateListener().wordSpeakingStarted();
+                            }
                         }
                     });
             if (listenerResult != TextToSpeech.SUCCESS)
@@ -857,7 +866,7 @@ public class ImApp extends Application implements ICacheWordSubscriber, TextToSp
                                 @Override
                                 public void onUtteranceCompleted(String utteranceId)
                                 {
-
+                                    Log.d(LOG_TAG, "TTS done");
                                 }
                             });
             if (listenerResult != TextToSpeech.SUCCESS)
@@ -872,7 +881,7 @@ public class ImApp extends Application implements ICacheWordSubscriber, TextToSp
     }
 
     @Override
-    public void onSuccessfulInitiated(TextToSpeech tts) {
+    public void onSuccessfulInitiated(CustomTextToSpeech tts) {
         this.tts = tts;
         setTTSListener();
     }
@@ -1270,12 +1279,34 @@ public class ImApp extends Application implements ICacheWordSubscriber, TextToSp
     }
 
 
+    public void speakOut(String word, Locale locale, TextToSpeechCommunicateListener communicateListener) {
+        try {
+            if(tts != null) {
+                tts.setLanguage(locale);
+                tts.setCommunicateListener(communicateListener);
+                Bundle params = new Bundle();
+                params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "");
+                tts.speak(word, TextToSpeech.QUEUE_FLUSH, params, "UniqueID");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
     public void speakOut(String word, Locale locale) {
         try {
-            if(tts != null && tts.getAvailableLanguages().contains(locale)) {
-                tts.setLanguage(locale);
-                tts.speak(word, TextToSpeech.QUEUE_FLUSH, null);
-            }
+//            if (Build.VERSION.SDK_INT >= 22) {
+//                if(tts != null && tts.getAvailableLanguages().contains(locale)) {
+//                    tts.setLanguage(locale);
+//                    tts.speak(word, TextToSpeech.QUEUE_FLUSH, null);
+//                }
+//            } else {
+                if(tts != null) {
+                    tts.setLanguage(locale);
+                    tts.speak(word, TextToSpeech.QUEUE_FLUSH, null);
+                }
+            //}
         } catch (Exception e) {
             e.printStackTrace();
         }
