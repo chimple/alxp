@@ -58,7 +58,8 @@
             android:id="@+id/imageAvatar"
             android:layout_width="match_parent"
             android:layout_height="200dp"
-            android:visibility="gone"
+            android:visibility="visible"
+            android:src="@color/android_green"
             android:scaleType="centerCrop"/>
 
         <RelativeLayout

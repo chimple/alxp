@@ -237,6 +237,11 @@ public class ConversationView {
     private static final long FAST_QUERY_INTERVAL = 200;
 
     CustomKeyboard mcustomKeyboard = null;
+    public static final int DEFAULT_KEYBOARD_TYPE = 1;
+    public static final int CUSTOM_KEYBOARD_TYPE = 2;
+    public static final int MICROPHONE_KEYBOARD_TYPE = 3;
+
+    private int mKeyboardType = DEFAULT_KEYBOARD_TYPE;
 
     private RequeryCallback mRequeryCallback = null;
 
@@ -261,6 +266,36 @@ public class ConversationView {
         }
     }
 
+    public void setKeyboardType(int keyboardType, String...params) {
+        if(keyboardType != mKeyboardType) {
+            mKeyboardType = keyboardType;
+//            String[] keys = {"A","B","E"};
+            if (mKeyboardType == CUSTOM_KEYBOARD_TYPE){
+                // mComposeMessage.setInputType(InputType.TYPE_NULL);
+                InputMethodManager imm = (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(mComposeMessage.getWindowToken(), 0);
+                mActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+                mcustomKeyboard = new CustomKeyboard((Activity) mActivity,R.id.keyboardview,R.xml.custom_keyboard);
+                mComposeMessage = (EditText) mcustomKeyboard.registerEditText(R.id.composeMessage);
+                mcustomKeyboard.dyanamicKeyBoard(params);
+                // mApp.displayKeyBoard(keys);
+                mcustomKeyboard.setConversationViewObject(mConversationView);
+                mDynamicKeyboardIsVisible = true;
+
+            }
+            else
+            {
+                mDynamicKeyboardIsVisible = false;
+                if (mcustomKeyboard != null) {
+                    mcustomKeyboard.hideCustomKeyboard();
+                }
+                InputMethodManager imm = (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.showSoftInput(mComposeMessage, InputMethodManager.SHOW_IMPLICIT);
+                //  mActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+            }
+
+        }
+    }
 
     public void setSelected (boolean isSelected)
     {
@@ -2727,34 +2762,7 @@ public class ConversationView {
                 String[] str = body.split("");
                 int temp = str.length;
 
-                String[] keys = {"Apple","Ball","Cat"};
-                if (body.length() < 8 ){
-                   // mComposeMessage.setInputType(InputType.TYPE_NULL);
-                    InputMethodManager imm = (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.hideSoftInputFromWindow(mComposeMessage.getWindowToken(), 0);
-                    mActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
-                   // mActivity.findViewById(R.id.inputLayout).setVisibility(View.GONE);
-                    mcustomKeyboard = new CustomKeyboard((Activity) mActivity,R.id.keyboardview,R.xml.custom_keyboard);
-                    mComposeMessage = (EditText) mcustomKeyboard.registerEditText(R.id.composeMessage);
-                    mcustomKeyboard.dyanamicKeyBoard(keys);
-                   // mApp.displayKeyBoard(keys);
-               //     mComposeMessage.setVisibility(View.GONE);
-                    mcustomKeyboard.setConversationViewObject(mConversationView);
-                    mDynamicKeyboardIsVisible = true;
-
-                }
-                else
-                {
-                  //  mActivity.findViewById(R.id.inputLayout).setVisibility(View.VISIBLE);
-                  //  mComposeMessage.setVisibility(View.VISIBLE);
-                    mDynamicKeyboardIsVisible = false;
-                    if (mcustomKeyboard != null) {
-                        mcustomKeyboard.hideCustomKeyboard();
-                    }
-                    InputMethodManager imm = (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.showSoftInput(mComposeMessage, InputMethodManager.SHOW_IMPLICIT);
-                  //  mActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
-                }
+                setKeyboardType(CUSTOM_KEYBOARD_TYPE, "A", "B", "C");
 
                 //mcustomKeyboard.dyanamicKeyBoard(keys);
                 /*

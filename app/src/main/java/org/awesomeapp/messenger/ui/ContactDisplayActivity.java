@@ -221,7 +221,7 @@ public class ContactDisplayActivity extends BaseActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
 
-       getMenuInflater().inflate(R.menu.menu_contact_detail, menu);
+     //  getMenuInflater().inflate(R.menu.menu_contact_detail, menu);
 
         return true;
     }

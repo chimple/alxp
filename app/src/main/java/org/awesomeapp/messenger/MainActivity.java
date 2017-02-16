@@ -154,7 +154,7 @@ public class MainActivity extends BaseActivity {
         Adapter adapter = new Adapter(getSupportFragmentManager());
         adapter.addFragment(mConversationList, getString(R.string.title_chats), R.drawable.ic_message_white_36dp);
         adapter.addFragment(mContactList, getString(R.string.contacts), R.drawable.ic_people_white_36dp);
-        adapter.addFragment(mMoreFragment, getString(R.string.title_more), R.drawable.ic_more_horiz_white_36dp);
+      //  adapter.addFragment(mMoreFragment, getString(R.string.title_more), R.drawable.ic_more_horiz_white_36dp);
 
         mAccountFragment = new AccountFragment();
       //  fragAccount.setArguments();
@@ -173,9 +173,9 @@ public class MainActivity extends BaseActivity {
         tab.setIcon(R.drawable.ic_people_white_36dp);
         mTabLayout.addTab(tab);
 
-        tab = mTabLayout.newTab();
-        tab.setIcon(R.drawable.ic_explore_white_24dp);
-        mTabLayout.addTab(tab);
+        //tab = mTabLayout.newTab();
+       // tab.setIcon(R.drawable.ic_explore_white_24dp);
+       // mTabLayout.addTab(tab);
 
         tab = mTabLayout.newTab();
         tab.setIcon(R.drawable.ic_face_white_24dp);
@@ -263,9 +263,6 @@ public class MainActivity extends BaseActivity {
                 break;
             case 1:
                 sb.append(getString(R.string.friends));
-                break;
-            case 2:
-                sb.append(getString(R.string.title_more));
                 break;
             case 3:
                 sb.append(getString(R.string.me_title));
