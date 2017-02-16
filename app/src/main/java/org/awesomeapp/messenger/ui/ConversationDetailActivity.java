@@ -40,6 +40,8 @@ import android.os.Parcelable;
 import android.os.RemoteException;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
+import android.speech.RecognitionListener;
+import android.speech.SpeechRecognizer;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.CoordinatorLayout;
@@ -79,6 +81,11 @@ import im.zom.messenger.R;
 //import com.bumptech.glide.Glide;
 
 public class ConversationDetailActivity extends BaseActivity {
+
+    //  SpeechRecognizer
+    SpeechRecognizer mSpeechRecognizer;
+    Intent mSpeechRecognizerIntent;
+    boolean mIslistening;
 
     private long mChatId = -1;
     private String mAddress = null;
