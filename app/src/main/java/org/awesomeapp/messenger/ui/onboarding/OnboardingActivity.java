@@ -69,6 +69,7 @@ import java.io.InputStream;
 import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import im.zom.messenger.R;
 
@@ -869,6 +870,18 @@ public class OnboardingActivity extends BaseActivity {
         }
     }
 
+    private String randomAvatarNameGenerator() {
+        char[] chars = "abcdefghijklmnopqrstuvwxyz0123456789".toCharArray();
+        StringBuilder sb = new StringBuilder();
+        Random random = new Random();
+        for (int i = 0; i < 10; i++) {
+            char c = chars[random.nextInt(chars.length)];
+            sb.append(c);
+        }
+        String output = sb.toString();
+        return output;
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -913,7 +926,7 @@ public class OnboardingActivity extends BaseActivity {
             }
             else if (requestCode == OnboardingManager.REQUEST_CHOOSE_AVATAR_FOR_NEW_ACCOUNT)
             {
-                mNickname = "TEST_GENERATED";
+                mNickname = randomAvatarNameGenerator();
                 Uri imageUri = getPickImageResultUri(data);
 
                 if (imageUri == null)
