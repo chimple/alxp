@@ -728,41 +728,41 @@ public class ConversationView {
         });
 
 
-        mButtonAttach = (ImageButton) mActivity.findViewById(R.id.btnAttach);
-        mViewAttach = mActivity.findViewById(R.id.attachPanel);
+      //  mButtonAttach = (ImageButton) mActivity.findViewById(R.id.btnAttach);
+      //  mViewAttach = mActivity.findViewById(R.id.attachPanel);
 
         mStatusWarningView = mActivity.findViewById(R.id.warning);
         mWarningText = (TextView) mActivity.findViewById(R.id.warningText);
 
-        mButtonAttach.setOnClickListener(new View.OnClickListener() {
+//       // mButtonAttach.setOnClickListener(new View.OnClickListener() {
+//
+//            @Override
+//            public void onClick(View v) {
+//
+//
+//                toggleAttachMenu ();
+//            }
+//
+//        });
 
-            @Override
-            public void onClick(View v) {
 
+//        mActivity.findViewById(R.id.btnAttachPicture).setOnClickListener(new View.OnClickListener() {
+//
+//            @Override
+//            public void onClick(View v) {
+//                mActivity.startImagePicker();
+//            }
+//
+//        });
 
-                toggleAttachMenu ();
-            }
-
-        });
-
-
-        mActivity.findViewById(R.id.btnAttachPicture).setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                mActivity.startImagePicker();
-            }
-
-        });
-
-        mActivity.findViewById(R.id.btnTakePicture).setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                mActivity.startPhotoTaker();
-            }
-
-        });
+//        mActivity.findViewById(R.id.btnTakePicture).setOnClickListener(new View.OnClickListener() {
+//
+//            @Override
+//            public void onClick(View v) {
+//                mActivity.startPhotoTaker();
+//            }
+//
+//        });
 
         /**
         mActivity.findViewById(R.id.btnAttachFile).setOnClickListener(new View.OnClickListener() {
@@ -774,15 +774,15 @@ public class ConversationView {
 
         });*/
 
-        mActivity.findViewById(R.id.btnAttachSticker).setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                toggleAttachMenu();
-                showStickers();
-            }
-
-        });
+//        mActivity.findViewById(R.id.btnAttachSticker).setOnClickListener(new View.OnClickListener() {
+//
+//            @Override
+//            public void onClick(View v) {
+//                toggleAttachMenu();
+//                showStickers();
+//            }
+//
+//        });
 
 
 
@@ -1205,20 +1205,20 @@ public class ConversationView {
         if (isGroupChat())
         {
             //disable unsupported features for now
-            mActivity.findViewById(R.id.btnAttachPicture).setEnabled(false);
-            mActivity.findViewById(R.id.btnTakePicture).setEnabled(false);
+          //  mActivity.findViewById(R.id.btnAttachPicture).setEnabled(false);
+         //   mActivity.findViewById(R.id.btnTakePicture).setEnabled(false);
             //mActivity.findViewById(R.id.btnAttachFile).setEnabled(false);
             mMicButton.setEnabled(false);;
 
-            mActivity.findViewById(R.id.btnAttachPicture).setAlpha(0.2f);
-            mActivity.findViewById(R.id.btnTakePicture).setAlpha(0.2f);
+       //     mActivity.findViewById(R.id.btnAttachPicture).setAlpha(0.2f);
+      //      mActivity.findViewById(R.id.btnTakePicture).setAlpha(0.2f);
             //mActivity.findViewById(R.id.btnAttachFile).setAlpha(0.2f);
             mMicButton.setAlpha(0.5f);
         }
         else
         {
-            mActivity.findViewById(R.id.btnAttachPicture).setEnabled(true);
-            mActivity.findViewById(R.id.btnTakePicture).setEnabled(true);
+        //    mActivity.findViewById(R.id.btnAttachPicture).setEnabled(true);
+       //     mActivity.findViewById(R.id.btnTakePicture).setEnabled(true);
             //mActivity.findViewById(R.id.btnAttachFile).setEnabled(true);
             mMicButton.setEnabled(true);
         }
@@ -2733,16 +2733,20 @@ public class ConversationView {
                     InputMethodManager imm = (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
                     imm.hideSoftInputFromWindow(mComposeMessage.getWindowToken(), 0);
                     mActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+                   // mActivity.findViewById(R.id.inputLayout).setVisibility(View.GONE);
                     mcustomKeyboard = new CustomKeyboard((Activity) mActivity,R.id.keyboardview,R.xml.custom_keyboard);
                     mComposeMessage = (EditText) mcustomKeyboard.registerEditText(R.id.composeMessage);
                     mcustomKeyboard.dyanamicKeyBoard(keys);
                    // mApp.displayKeyBoard(keys);
+               //     mComposeMessage.setVisibility(View.GONE);
                     mcustomKeyboard.setConversationViewObject(mConversationView);
                     mDynamicKeyboardIsVisible = true;
 
                 }
                 else
                 {
+                  //  mActivity.findViewById(R.id.inputLayout).setVisibility(View.VISIBLE);
+                  //  mComposeMessage.setVisibility(View.VISIBLE);
                     mDynamicKeyboardIsVisible = false;
                     if (mcustomKeyboard != null) {
                         mcustomKeyboard.hideCustomKeyboard();

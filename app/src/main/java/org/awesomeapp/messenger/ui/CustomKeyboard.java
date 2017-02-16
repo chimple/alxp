@@ -67,6 +67,7 @@ public class CustomKeyboard {
                 Editable editable = edittext.getText();
                 int start = edittext.getSelectionStart();
                 editable.insert(start, Character.toString((char) primaryCode));
+                mConversationView.sendMessage();
             }
             // Apply the key to the edittext
 //            if( primaryCode==CodeCancel ) {
@@ -137,6 +138,8 @@ public class CustomKeyboard {
         mKeyboardView.setOnKeyboardActionListener(mOnKeyboardActionListener);
         // Hide the standard keyboard initially
         mHostActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+
+
 
         sentence_HashMap = new HashMap<Integer, String>();
     }
