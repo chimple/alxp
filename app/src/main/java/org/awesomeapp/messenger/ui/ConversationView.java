@@ -246,6 +246,8 @@ public class ConversationView {
 
     CustomKeyboard mcustomKeyboard = null;
 
+    SpeechToTextKeyboard speechCustomKeyboard = null;
+
     private RequeryCallback mRequeryCallback = null;
 
     public CustomKeyboard getCustomKeyBoard() {
@@ -254,6 +256,10 @@ public class ConversationView {
     public SimpleAlertHandler getHandler() {
         return mHandler;
     }
+    public SpeechToTextKeyboard getSpeechToTextKeyboard() {
+        return speechCustomKeyboard;
+    }
+
 
     public int getType() {
         return mViewType;
@@ -700,7 +706,6 @@ public class ConversationView {
 
     protected void initViews() {
 
-
         mActivity.mSpeechRecognizer = SpeechRecognizer.createSpeechRecognizer(mActivity.getApplicationContext());
         mActivity.mSpeechRecognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         mActivity.mSpeechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
@@ -722,36 +727,17 @@ public class ConversationView {
 
         mComposeMessage = (EditText) mActivity.findViewById(R.id.composeMessage);
         mSendButton = (ImageButton) mActivity.findViewById(R.id.btnSend);
-        mMicButton = (ImageButton) mActivity.findViewById(R.id.btnMic);
-        mButtonTalk = (TextView)mActivity.findViewById(R.id.buttonHoldToTalk);
 
-        speechLayout = (LinearLayout) mActivity.findViewById(R.id.speechLayout);
-        record = (Button) mActivity.findViewById(R.id.record);
-        delete = (Button)mActivity.findViewById(R.id.delete);
+        speechCustomKeyboard = new SpeechToTextKeyboard((Activity) mActivity,R.id.speechkeyboard,R.xml.speechtotext_keyboard, this);
+        mMicButton =  speechCustomKeyboard.registerButton(R.id.btnMic); //(ImageButton) mActivity.findViewById(R.id.btnMic);
+        mButtonTalk = (TextView)mActivity.findViewById(R.id.buttonHoldToTalk);
 
         mButtonDeleteVoice = (ImageView)mActivity.findViewById(R.id.btnDeleteVoice);
         mViewDeleteVoice = mActivity.findViewById(R.id.viewDeleteVoice);
 
-        delete.setOnClickListener(new View.OnClickListener() {
+//                    mComposeMessage.setText(mComposeMessage.getText().toString().substring(0, mComposeMessage.getText().toString().length() - 1));
 
-            @Override
-            public void onClick(View v) {
-                if(mComposeMessage.getText().toString().length() >= 1)
-                {
-                    mComposeMessage.setText(mComposeMessage.getText().toString().substring(0, mComposeMessage.getText().toString().length() - 1));
-                }
-            }
-
-        });
-
-        record.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                mActivity.mSpeechRecognizer.startListening(mActivity.mSpeechRecognizerIntent);
-            }
-
-        });
+//                mActivity.mSpeechRecognizer.startListening(mActivity.mSpeechRecognizerIntent);
 
         mButtonDeleteVoice.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -825,34 +811,6 @@ public class ConversationView {
         });
 
 
-
-        mMicButton.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-
-                //this is the tap to change to hold to talk mode
-                if (mMicButton.getVisibility() == View.VISIBLE) {
-//                    mComposeMessage.setVisibility(View.GONE);
-                    mcustomKeyboard.hideCustomKeyboard();
-//                    mMicButton.setVisibility(View.GONE);
-
-                    // Check if no view has focus:
-                    View view = mActivity.getCurrentFocus();
-                    if (view != null) {
-                        InputMethodManager imm = (InputMethodManager)mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
-                        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-                    }
-                    speechLayout.setVisibility(View.VISIBLE);
-                    mComposeMessage.setInputType(InputType.TYPE_NULL);
-//                    mSendButton.setImageResource(R.drawable.ic_keyboard_black_36dp);
-//                    mSendButton.setVisibility(View.VISIBLE);
-//                    mButtonTalk.setVisibility(View.VISIBLE);
-
-                }
-            }
-
-        });
 
 
         final GestureDetector gestureDetector = new GestureDetector(new GestureDetector.SimpleOnGestureListener() {

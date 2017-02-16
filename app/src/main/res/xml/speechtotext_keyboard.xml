@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
+    android:keyWidth="100%p"
+    android:keyHeight="20%p">
+    <Row>
+        <Key
+            android:codes="-101"
+            android:keyWidth="70%p"
+            android:keyIcon="@drawable/microphone" />
+
+        <Key
+            android:codes="-102"
+            android:keyWidth="30%p"
+            android:keyIcon="@drawable/backspace"/>
+    </Row>
+</Keyboard>
