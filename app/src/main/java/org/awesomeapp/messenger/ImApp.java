@@ -288,12 +288,12 @@ public class ImApp extends Application implements ICacheWordSubscriber, TextToSp
         TextToSpeechRecognizer textToSpeechRecognizer = new TextToSpeechRecognizer(this, locals, this);
     }
 
-    public void displayKeyBoard(String...params) {
+    public void displayKeyBoard(int keyboardType, String...params) {
        if(getCurrentActivity() != null && getCurrentActivity() instanceof ConversationDetailActivity) {
            ConversationDetailActivity conversationDetailActivity = (ConversationDetailActivity)getCurrentActivity();
-           CustomKeyboard board = conversationDetailActivity.getmConvoView().getCustomKeyBoard();
-           board.dyanamicKeyBoard(params);
-
+//           CustomKeyboard board = conversationDetailActivity.getmConvoView().getCustomKeyBoard();
+//           board.dyanamicKeyBoard(params);
+           conversationDetailActivity.getmConvoView().setKeyboardType(keyboardType, params);
        }
     }
 
@@ -530,6 +530,60 @@ public class ImApp extends Application implements ICacheWordSubscriber, TextToSp
                 values.put(Imps.Word.SP_MEANING, spMeaning);
 
                 Uri result = cr.insert(Imps.Word.CONTENT_URI, values);
+                if(result != null) {
+                    return ContentUris.parseId(result);
+                }
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    public static long insertOrUpdatePhonic(ContentResolver cr, String letters, String word, String split, String choice1, String choice2, String choice3) {
+
+        String where = Imps.Phonic.WORD + " = ?";
+        String[] selectionArgs = new String[]{word.toLowerCase()};
+
+        Cursor c = cr.query(Imps.Phonic.CONTENT_URI, null, where,
+                selectionArgs, null);
+
+        try {
+            if (c != null && c.getCount() > 0) {
+                c.moveToFirst();
+                long id = c.getLong(0);
+
+                ContentValues values = new ContentValues(6);
+                values.put(Imps.Phonic.LETTERS, letters);
+
+                values.put(Imps.Phonic.WORD, word);
+
+                if (!TextUtils.isEmpty(split))
+                    values.put(Imps.Phonic.SPLIT, split);
+
+                if (!TextUtils.isEmpty(choice1))
+                    values.put(Imps.Phonic.CHOICE1, choice1);
+
+                if (!TextUtils.isEmpty(choice2))
+                    values.put(Imps.Phonic.CHOICE2, choice2);
+
+                if (!TextUtils.isEmpty(choice3))
+                    values.put(Imps.Phonic.CHOICE3, choice3);
+
+                Uri phonicUri = ContentUris.withAppendedId(Imps.Phonic.CONTENT_URI, id);
+                cr.update(phonicUri, values, null, null);
+                c.close();
+                return id;
+            } else {
+                ContentValues values = new ContentValues(6);
+                values.put(Imps.Phonic.LETTERS, letters);
+                values.put(Imps.Phonic.WORD, word);
+                values.put(Imps.Phonic.SPLIT, split);
+                values.put(Imps.Phonic.CHOICE1, choice1);
+                values.put(Imps.Phonic.CHOICE2, choice2);
+                values.put(Imps.Phonic.CHOICE3, choice3);
+
+                Uri result = cr.insert(Imps.Phonic.CONTENT_URI, values);
                 if(result != null) {
                     return ContentUris.parseId(result);
                 }

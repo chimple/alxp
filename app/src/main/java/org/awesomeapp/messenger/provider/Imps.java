@@ -201,6 +201,56 @@ public class Imps {
 
     }
 
+    /**
+     * The columns for IM words.
+     */
+    public interface PhonicColumns {
+        /** Letters <P>Type: TEXT</P> */
+        String LETTERS = "letters";
+
+        /** word <P>Type: TEXT</P> */
+        String WORD = "word";
+
+        /** split <P>Type: TEXT</P> */
+        String SPLIT = "split";
+
+        /** Alternate choice <P>Type: TEXT</P> */
+        String CHOICE1 = "choice1";
+
+        /** Alternate choice <P>Type: TEXT</P> */
+        String CHOICE2 = "choice2";
+
+        /** Alternate choice <P>Type: TEXT</P> */
+        String CHOICE3 = "choice3";
+    }
+
+    /** This table contains the phonics. */
+    public static final class Phonic implements BaseColumns, PhonicColumns {
+        private Phonic() {
+
+        }
+
+        /** The content:// style URL for this table */
+        public static final Uri CONTENT_URI = Uri
+                .parse("content://org.awesomeapp.messenger.provider.Imps/phonics");
+
+        /**
+         * The MIME type of {@link #CONTENT_URI} providing a directory of
+         * account.
+         */
+        public static final String CONTENT_TYPE = "vnd.android.cursor.dir/imps-phonics";
+
+        /**
+         * The MIME type of a {@link #CONTENT_URI} subdirectory of a single
+         * account.
+         */
+        public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/imps-phonics";
+
+        /** The default sort order for this table */
+        public static final String DEFAULT_SORT_ORDER = "name ASC";
+
+    }
+
 
     /**
      * The columns for IM accounts. There can be more than one account for each
