@@ -19,6 +19,7 @@ import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
@@ -28,8 +29,13 @@ public class CustomKeyboard {
 
     /** A link to the KeyboardView that is used to render this CustomKeyboard. */
     private KeyboardView mKeyboardView;
+    private HashMap<Integer, String> sentence_HashMap ;
+    private String mInputType;
+
     /** A link to the activity that hosts the {@link #mKeyboardView}. */
     private Activity     mHostActivity;
+
+    private ConversationView mConversationView;
 
     /** The key (code) handler. */
     private OnKeyboardActionListener mOnKeyboardActionListener = new OnKeyboardActionListener() {
@@ -50,9 +56,19 @@ public class CustomKeyboard {
             View focusCurrent = mHostActivity.getWindow().getCurrentFocus();
            // if( focusCurrent==null || focusCurrent.getClass()!=EditText.class ) return;
             EditText edittext = (EditText) focusCurrent;
-            Editable editable = edittext.getText();
-            int start = edittext.getSelectionStart();
-            editable.insert(start, Character.toString((char) primaryCode));
+            if (mInputType.equals("word")){
+                Editable editable = edittext.getText();
+                edittext.setText(editable.toString() + sentence_HashMap.get(primaryCode).toString());
+                mConversationView.sendMessage();
+//                int start = edittext.getSelectionStart();
+//                editable.insert(start,sentence_HashMap.get(primaryCode).toString());
+            }
+            else {
+                Editable editable = edittext.getText();
+                int start = edittext.getSelectionStart();
+                editable.insert(start, Character.toString((char) primaryCode));
+                mConversationView.sendMessage();
+            }
             // Apply the key to the edittext
 //            if( primaryCode==CodeCancel ) {
 //                hideCustomKeyboard();
@@ -122,6 +138,10 @@ public class CustomKeyboard {
         mKeyboardView.setOnKeyboardActionListener(mOnKeyboardActionListener);
         // Hide the standard keyboard initially
         mHostActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+
+
+
+        sentence_HashMap = new HashMap<Integer, String>();
     }
 
     /** Returns whether the CustomKeyboard is visible. */
@@ -183,43 +203,73 @@ public class CustomKeyboard {
     public void dyanamicKeyBoard ( String[] userKeys){
 
         Keyboard updatedKeyboard = null;
-        if (userKeys.length >6 && userKeys.length < 10) // for 9 keys
+        if (userKeys[0].length() < 3){
+            mInputType ="";
+            if (userKeys.length >6 && userKeys.length < 10) // for 9 keys
                 updatedKeyboard = new Keyboard(mHostActivity,R.xml.custom_keyboard);
 
-        if(userKeys.length > 3 && userKeys.length < 7) { //for 6 keys
-            updatedKeyboard = new Keyboard(mHostActivity, R.xml.custom_keyboard_2x3);
-            mKeyboardView = (KeyboardView) mHostActivity.findViewById(R.id.keyboardview_2x3);
+            if(userKeys.length > 3 && userKeys.length < 7) { //for 6 keys
+                updatedKeyboard = new Keyboard(mHostActivity, R.xml.custom_keyboard_2x3);
+                mKeyboardView = (KeyboardView) mHostActivity.findViewById(R.id.keyboardview_2x3);
+            }
+            if (userKeys.length < 4 ){ // for 3 keys
+                updatedKeyboard = new Keyboard(mHostActivity,R.xml.custom_keyboard_1x3);
+                mKeyboardView= (KeyboardView)mHostActivity.findViewById(R.id.keyboardview_1x3);
+            }
+
+            mKeyboardView.setKeyboard(updatedKeyboard);
+            mKeyboardView.setPreviewEnabled(false);
+            mKeyboardView.setOnKeyboardActionListener(mOnKeyboardActionListener);
+            mKeyboardView.setVisibility(View.VISIBLE);
+            mKeyboardView.setEnabled(true);
+            mHostActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+            mHostActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
+            //mKeyboardView.keyTextSize
+            List<Keyboard.Key> keys = mKeyboardView.getKeyboard().getKeys();
+
+            int count = 0;
+            for (Keyboard.Key key : keys) {
+                int [] codes = {49};
+                codes[0] = userKeys[count].charAt(0);
+                key.codes = codes;
+                key.label = userKeys[count++];
+            }
         }
-        if (userKeys.length < 4 ){ // for 3 keys
-            updatedKeyboard = new Keyboard(mHostActivity,R.xml.custom_keyboard_1x3);
-            mKeyboardView= (KeyboardView)mHostActivity.findViewById(R.id.keyboardview_1x3);
+        else{
+            mInputType = "word";
+            sentence_HashMap.clear();
+            updatedKeyboard = new Keyboard(mHostActivity,R.xml.custom_word_keyboard);
+            mKeyboardView = (KeyboardView) mHostActivity.findViewById(R.id.keyboardview_1x3);
+
+            mKeyboardView.setKeyboard(updatedKeyboard);
+            mKeyboardView.setPreviewEnabled(false);
+            mKeyboardView.setOnKeyboardActionListener(mOnKeyboardActionListener);
+            mKeyboardView.setVisibility(View.VISIBLE);
+            mKeyboardView.setEnabled(true);
+            mHostActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+            mHostActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
+            List<Keyboard.Key> keys = mKeyboardView.getKeyboard().getKeys();
+
+            int count = 0;
+            for (Keyboard.Key key : keys) {
+                int [] codes = {49};
+                codes[0] = count;
+                key.codes = codes;
+                key.label = userKeys[count];
+                sentence_HashMap.put(count,userKeys[count]);
+                count++;
+            }
         }
 
-
-     //   Keyboard.Row updatedRow = new Keyboard.Row(updatedKeyboard);
-        mKeyboardView.setKeyboard(updatedKeyboard);
-        mKeyboardView.setPreviewEnabled(false);
-        mKeyboardView.setOnKeyboardActionListener(mOnKeyboardActionListener);
-        mKeyboardView.setVisibility(View.VISIBLE);
-        mKeyboardView.setEnabled(true);
-        mHostActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
-        mHostActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
-        //mKeyboardView.keyTextSize
-        List<Keyboard.Key> keys = mKeyboardView.getKeyboard().getKeys();
-
-        int count = 0;
-        for (Keyboard.Key key : keys) {
-            int [] codes = {49};
-            codes[0] = userKeys[count].charAt(0);
-            key.codes = codes;
-            key.label = userKeys[count++];
-        }
     }
 
     public void showDefalutKeyboard(){
        // mHostActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
     }
 
+    public void setConversationViewObject(ConversationView conversationViewObject){
+        mConversationView = conversationViewObject;
+    }
 }
 
 

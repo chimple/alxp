@@ -204,6 +204,7 @@ public class ConversationView {
     private View mStatusWarningView;
     private TextView mWarningText;
 
+    public ConversationView mConversationView;
     boolean mDynamicKeyboardIsVisible;
     private ImageView mDeliveryIcon;
     private boolean mExpectingDelivery;
@@ -245,6 +246,11 @@ public class ConversationView {
     private static final long FAST_QUERY_INTERVAL = 200;
 
     CustomKeyboard mcustomKeyboard = null;
+    public static final int DEFAULT_KEYBOARD_TYPE = 1;
+    public static final int CUSTOM_KEYBOARD_TYPE = 2;
+    public static final int MICROPHONE_KEYBOARD_TYPE = 3;
+
+    private int mKeyboardType = DEFAULT_KEYBOARD_TYPE;
 
     SpeechToTextKeyboard speechCustomKeyboard = null;
 
@@ -275,6 +281,36 @@ public class ConversationView {
         }
     }
 
+    public void setKeyboardType(int keyboardType, String...params) {
+        if(keyboardType != mKeyboardType) {
+            mKeyboardType = keyboardType;
+//            String[] keys = {"A","B","E"};
+            if (mKeyboardType == CUSTOM_KEYBOARD_TYPE){
+                // mComposeMessage.setInputType(InputType.TYPE_NULL);
+                InputMethodManager imm = (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(mComposeMessage.getWindowToken(), 0);
+                mActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+                mcustomKeyboard = new CustomKeyboard((Activity) mActivity,R.id.keyboardview,R.xml.custom_keyboard);
+                mComposeMessage = (EditText) mcustomKeyboard.registerEditText(R.id.composeMessage);
+                mcustomKeyboard.dyanamicKeyBoard(params);
+                // mApp.displayKeyBoard(keys);
+                mcustomKeyboard.setConversationViewObject(mConversationView);
+                mDynamicKeyboardIsVisible = true;
+
+            }
+            else
+            {
+                mDynamicKeyboardIsVisible = false;
+                if (mcustomKeyboard != null) {
+                    mcustomKeyboard.hideCustomKeyboard();
+                }
+                InputMethodManager imm = (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.showSoftInput(mComposeMessage, InputMethodManager.SHOW_IMPLICIT);
+                //  mActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+            }
+
+        }
+    }
 
     public void setSelected (boolean isSelected)
     {
@@ -693,8 +729,11 @@ public class ConversationView {
         mApp = (ImApp)mActivity.getApplication();
         mHandler = new ChatViewHandler(mActivity);
 
+        mConversationView= this;
         initViews();
     }
+
+
 
     void registerForConnEvents() {
         mApp.registerForConnEvents(mHandler);
@@ -754,41 +793,41 @@ public class ConversationView {
         });
 
 
-        mButtonAttach = (ImageButton) mActivity.findViewById(R.id.btnAttach);
-        mViewAttach = mActivity.findViewById(R.id.attachPanel);
+      //  mButtonAttach = (ImageButton) mActivity.findViewById(R.id.btnAttach);
+      //  mViewAttach = mActivity.findViewById(R.id.attachPanel);
 
         mStatusWarningView = mActivity.findViewById(R.id.warning);
         mWarningText = (TextView) mActivity.findViewById(R.id.warningText);
 
-        mButtonAttach.setOnClickListener(new View.OnClickListener() {
+//       // mButtonAttach.setOnClickListener(new View.OnClickListener() {
+//
+//            @Override
+//            public void onClick(View v) {
+//
+//
+//                toggleAttachMenu ();
+//            }
+//
+//        });
 
-            @Override
-            public void onClick(View v) {
 
+//        mActivity.findViewById(R.id.btnAttachPicture).setOnClickListener(new View.OnClickListener() {
+//
+//            @Override
+//            public void onClick(View v) {
+//                mActivity.startImagePicker();
+//            }
+//
+//        });
 
-                toggleAttachMenu ();
-            }
-
-        });
-
-
-        mActivity.findViewById(R.id.btnAttachPicture).setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                mActivity.startImagePicker();
-            }
-
-        });
-
-        mActivity.findViewById(R.id.btnTakePicture).setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                mActivity.startPhotoTaker();
-            }
-
-        });
+//        mActivity.findViewById(R.id.btnTakePicture).setOnClickListener(new View.OnClickListener() {
+//
+//            @Override
+//            public void onClick(View v) {
+//                mActivity.startPhotoTaker();
+//            }
+//
+//        });
 
         /**
         mActivity.findViewById(R.id.btnAttachFile).setOnClickListener(new View.OnClickListener() {
@@ -800,15 +839,15 @@ public class ConversationView {
 
         });*/
 
-        mActivity.findViewById(R.id.btnAttachSticker).setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                toggleAttachMenu();
-                showStickers();
-            }
-
-        });
+//        mActivity.findViewById(R.id.btnAttachSticker).setOnClickListener(new View.OnClickListener() {
+//
+//            @Override
+//            public void onClick(View v) {
+//                toggleAttachMenu();
+//                showStickers();
+//            }
+//
+//        });
 
 
 
@@ -1266,20 +1305,20 @@ public class ConversationView {
         if (isGroupChat())
         {
             //disable unsupported features for now
-            mActivity.findViewById(R.id.btnAttachPicture).setEnabled(false);
-            mActivity.findViewById(R.id.btnTakePicture).setEnabled(false);
+          //  mActivity.findViewById(R.id.btnAttachPicture).setEnabled(false);
+         //   mActivity.findViewById(R.id.btnTakePicture).setEnabled(false);
             //mActivity.findViewById(R.id.btnAttachFile).setEnabled(false);
             mMicButton.setEnabled(false);;
 
-            mActivity.findViewById(R.id.btnAttachPicture).setAlpha(0.2f);
-            mActivity.findViewById(R.id.btnTakePicture).setAlpha(0.2f);
+       //     mActivity.findViewById(R.id.btnAttachPicture).setAlpha(0.2f);
+      //      mActivity.findViewById(R.id.btnTakePicture).setAlpha(0.2f);
             //mActivity.findViewById(R.id.btnAttachFile).setAlpha(0.2f);
             mMicButton.setAlpha(0.5f);
         }
         else
         {
-            mActivity.findViewById(R.id.btnAttachPicture).setEnabled(true);
-            mActivity.findViewById(R.id.btnTakePicture).setEnabled(true);
+        //    mActivity.findViewById(R.id.btnAttachPicture).setEnabled(true);
+       //     mActivity.findViewById(R.id.btnTakePicture).setEnabled(true);
             //mActivity.findViewById(R.id.btnAttachFile).setEnabled(true);
             mMicButton.setEnabled(true);
         }
@@ -1908,6 +1947,8 @@ public class ConversationView {
     public boolean isGroupChat() {
         return this.mContactType == Imps.Contacts.TYPE_GROUP;
     }
+
+
 
     void sendMessage() {
 
@@ -2786,29 +2827,7 @@ public class ConversationView {
                 String[] str = body.split("");
                 int temp = str.length;
 
-                String[] keys = {"A","B","E"};
-                if (body.length() < 8 ){
-                   // mComposeMessage.setInputType(InputType.TYPE_NULL);
-                    InputMethodManager imm = (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.hideSoftInputFromWindow(mComposeMessage.getWindowToken(), 0);
-                    mActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
-                    mcustomKeyboard = new CustomKeyboard((Activity) mActivity,R.id.keyboardview,R.xml.custom_keyboard);
-                    mComposeMessage = (EditText) mcustomKeyboard.registerEditText(R.id.composeMessage);
-                    mcustomKeyboard.dyanamicKeyBoard(keys);
-                   // mApp.displayKeyBoard(keys);
-                    mDynamicKeyboardIsVisible = true;
-
-                }
-                else
-                {
-                    mDynamicKeyboardIsVisible = false;
-                    if (mcustomKeyboard != null) {
-                        mcustomKeyboard.hideCustomKeyboard();
-                    }
-                    InputMethodManager imm = (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.showSoftInput(mComposeMessage, InputMethodManager.SHOW_IMPLICIT);
-                  //  mActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
-                }
+                setKeyboardType(CUSTOM_KEYBOARD_TYPE, "A", "B", "C");
 
                 //mcustomKeyboard.dyanamicKeyBoard(keys);
                 /*

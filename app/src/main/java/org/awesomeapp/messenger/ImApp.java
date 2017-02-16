@@ -17,6 +17,7 @@
 
 package org.awesomeapp.messenger;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.content.ComponentName;
@@ -31,11 +32,14 @@ import android.content.res.Configuration;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.RemoteException;
 import android.preference.PreferenceManager;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
@@ -62,6 +66,10 @@ import org.awesomeapp.messenger.service.ImServiceConstants;
 import org.awesomeapp.messenger.service.NetworkConnectivityReceiver;
 import org.awesomeapp.messenger.service.RemoteImService;
 import org.awesomeapp.messenger.tasks.RegisterExistingAccountTask;
+import org.awesomeapp.messenger.tts.CustomTextToSpeech;
+import org.awesomeapp.messenger.tts.TextToSpeechCommunicateListener;
+import org.awesomeapp.messenger.tts.TextToSpeechEventListener;
+import org.awesomeapp.messenger.tts.TextToSpeechRecognizer;
 import org.awesomeapp.messenger.ui.ConversationDetailActivity;
 import org.awesomeapp.messenger.ui.CustomKeyboard;
 import org.awesomeapp.messenger.ui.legacy.ImPluginHelper;
@@ -76,6 +84,7 @@ import org.ironrabbit.type.CustomTypefaceManager;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
@@ -93,7 +102,7 @@ import info.guardianproject.cacheword.PRNGFixes;
 import info.guardianproject.iocipher.VirtualFileSystem;
 import timber.log.Timber;
 
-public class ImApp extends Application implements ICacheWordSubscriber {
+public class ImApp extends Application implements ICacheWordSubscriber, TextToSpeechEventListener {
 
     public static final String LOG_TAG = "Zom";
     public static boolean isXMPPAccountRegistered = false;
@@ -143,6 +152,8 @@ public class ImApp extends Application implements ICacheWordSubscriber {
     private Locale locale = null;
 
     public static ImApp sImApp;
+
+    private CustomTextToSpeech tts;
 
     IRemoteImService mImService;
 
@@ -271,14 +282,18 @@ public class ImApp extends Application implements ICacheWordSubscriber {
             BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>(maximumPoolSize);
             sThreadPoolExecutor = new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, TimeUnit.SECONDS, workQueue);
         }
+
+        List<Locale> locals = new ArrayList<Locale>();
+        locals.add(new Locale("en", "US"));
+        TextToSpeechRecognizer textToSpeechRecognizer = new TextToSpeechRecognizer(this, locals, this);
     }
 
-    public void displayKeyBoard(String...params) {
+    public void displayKeyBoard(int keyboardType, String...params) {
        if(getCurrentActivity() != null && getCurrentActivity() instanceof ConversationDetailActivity) {
            ConversationDetailActivity conversationDetailActivity = (ConversationDetailActivity)getCurrentActivity();
-           CustomKeyboard board = conversationDetailActivity.getmConvoView().getCustomKeyBoard();
-           board.dyanamicKeyBoard(params);
-
+//           CustomKeyboard board = conversationDetailActivity.getmConvoView().getCustomKeyBoard();
+//           board.dyanamicKeyBoard(params);
+           conversationDetailActivity.getmConvoView().setKeyboardType(keyboardType, params);
        }
     }
 
@@ -515,6 +530,60 @@ public class ImApp extends Application implements ICacheWordSubscriber {
                 values.put(Imps.Word.SP_MEANING, spMeaning);
 
                 Uri result = cr.insert(Imps.Word.CONTENT_URI, values);
+                if(result != null) {
+                    return ContentUris.parseId(result);
+                }
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    public static long insertOrUpdatePhonic(ContentResolver cr, String letters, String word, String split, String choice1, String choice2, String choice3) {
+
+        String where = Imps.Phonic.WORD + " = ?";
+        String[] selectionArgs = new String[]{word.toLowerCase()};
+
+        Cursor c = cr.query(Imps.Phonic.CONTENT_URI, null, where,
+                selectionArgs, null);
+
+        try {
+            if (c != null && c.getCount() > 0) {
+                c.moveToFirst();
+                long id = c.getLong(0);
+
+                ContentValues values = new ContentValues(6);
+                values.put(Imps.Phonic.LETTERS, letters);
+
+                values.put(Imps.Phonic.WORD, word);
+
+                if (!TextUtils.isEmpty(split))
+                    values.put(Imps.Phonic.SPLIT, split);
+
+                if (!TextUtils.isEmpty(choice1))
+                    values.put(Imps.Phonic.CHOICE1, choice1);
+
+                if (!TextUtils.isEmpty(choice2))
+                    values.put(Imps.Phonic.CHOICE2, choice2);
+
+                if (!TextUtils.isEmpty(choice3))
+                    values.put(Imps.Phonic.CHOICE3, choice3);
+
+                Uri phonicUri = ContentUris.withAppendedId(Imps.Phonic.CONTENT_URI, id);
+                cr.update(phonicUri, values, null, null);
+                c.close();
+                return id;
+            } else {
+                ContentValues values = new ContentValues(6);
+                values.put(Imps.Phonic.LETTERS, letters);
+                values.put(Imps.Phonic.WORD, word);
+                values.put(Imps.Phonic.SPLIT, split);
+                values.put(Imps.Phonic.CHOICE1, choice1);
+                values.put(Imps.Phonic.CHOICE2, choice2);
+                values.put(Imps.Phonic.CHOICE3, choice3);
+
+                Uri result = cr.insert(Imps.Phonic.CONTENT_URI, values);
                 if(result != null) {
                     return ContentUris.parseId(result);
                 }
@@ -804,6 +873,87 @@ public class ImApp extends Application implements ICacheWordSubscriber {
             broadcastConnEvent(EVENT_CONNECTION_CREATED, providerId, null);
         }
     };
+
+    @SuppressLint("NewApi")
+    private void setTTSListener()
+    {
+        if (Build.VERSION.SDK_INT >= 15)
+        {
+            int listenerResult =
+                    tts.setOnUtteranceProgressListener(new UtteranceProgressListener()
+                    {
+                        @Override
+                        public void onDone(String utteranceId)
+                        {
+                            Log.d(LOG_TAG, "TTS done");
+                            if(tts.getCommunicateListener() != null) {
+                                tts.getCommunicateListener().wordSpeakingEnded();
+                            }
+                        }
+
+                        @Override
+                        public void onError(String utteranceId)
+                        {
+                            Log.e(LOG_TAG, "TTS error");
+                        }
+
+                        @Override
+                        public void onStart(String utteranceId)
+                        {
+                            Log.d(LOG_TAG, "TTS start");
+                            if(tts.getCommunicateListener() != null) {
+                                tts.getCommunicateListener().wordSpeakingStarted();
+                            }
+                        }
+                    });
+            if (listenerResult != TextToSpeech.SUCCESS)
+            {
+                Log.e(LOG_TAG, "failed to add utterance progress listener");
+            }
+        }
+        else
+        {
+            int listenerResult =
+                    tts.setOnUtteranceCompletedListener(
+                            new TextToSpeech.OnUtteranceCompletedListener()
+                            {
+                                @Override
+                                public void onUtteranceCompleted(String utteranceId)
+                                {
+                                    Log.d(LOG_TAG, "TTS done");
+                                }
+                            });
+            if (listenerResult != TextToSpeech.SUCCESS)
+            {
+                Log.e(LOG_TAG, "failed to add utterance completed listener");
+            }
+        }
+    }
+
+    private void onDone(final String utteranceId)
+    {
+    }
+
+    @Override
+    public void onSuccessfulInitiated(CustomTextToSpeech tts) {
+        this.tts = tts;
+        setTTSListener();
+    }
+
+    @Override
+    public void onDownloadRequiredForLanguageData(List<Locale> missingLocals) {
+        TextToSpeechRecognizer.installLanguageData(this);
+    }
+
+    @Override
+    public void onDownloadNotCompletedForLanguageData() {
+
+    }
+
+    @Override
+    public void onErrorToInitialize() {
+
+    }
 
     private final class MyConnListener extends ConnectionListenerAdapter {
         public MyConnListener(Handler handler) {
@@ -1182,4 +1332,37 @@ public class ImApp extends Application implements ICacheWordSubscriber {
         }).start();
     }
 
+
+    public void speakOut(String word, Locale locale, TextToSpeechCommunicateListener communicateListener) {
+        try {
+            if(tts != null) {
+                tts.setLanguage(locale);
+                tts.setCommunicateListener(communicateListener);
+                Bundle params = new Bundle();
+                params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "");
+                tts.speak(word, TextToSpeech.QUEUE_FLUSH, params, "UniqueID");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public void speakOut(String word, Locale locale) {
+        try {
+//            if (Build.VERSION.SDK_INT >= 22) {
+//                if(tts != null && tts.getAvailableLanguages().contains(locale)) {
+//                    tts.setLanguage(locale);
+//                    tts.speak(word, TextToSpeech.QUEUE_FLUSH, null);
+//                }
+//            } else {
+                if(tts != null) {
+                    tts.setLanguage(locale);
+                    tts.speak(word, TextToSpeech.QUEUE_FLUSH, null);
+                }
+            //}
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

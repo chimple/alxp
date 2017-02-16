@@ -27,6 +27,7 @@ import android.database.CursorWindow;
 import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
+import android.provider.ContactsContract;
 import android.text.TextUtils;
 
 import net.sqlcipher.database.SQLiteConstraintException;
@@ -37,13 +38,18 @@ import net.sqlcipher.database.SQLiteQueryBuilder;
 import org.awesomeapp.messenger.ImApp;
 import org.awesomeapp.messenger.provider.Imps.Contacts;
 import org.awesomeapp.messenger.push.model.PushDatabase;
+import org.awesomeapp.messenger.tasks.ContactSyncProcessor;
 import org.awesomeapp.messenger.util.Debug;
 import org.awesomeapp.messenger.util.LogCleaner;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.StreamCorruptedException;
 import java.io.UnsupportedEncodingException;
@@ -51,11 +57,14 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 
 import info.guardianproject.cacheword.CacheWordHandler;
 import info.guardianproject.cacheword.ICacheWordSubscriber;
 
-/** A content provider for IM */
+/**
+ * A content provider for IM
+ */
 public class ImpsProvider extends ContentProvider implements ICacheWordSubscriber {
 
     private static final String PREV_DATABASE_OPEN_TRAIL_TAG = "prev_database_open";
@@ -67,6 +76,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
     private static final String AUTHORITY = "org.awesomeapp.messenger.provider.Imps";
 
     private static final String TABLE_WORDS = "words";
+    private static final String TABLE_PHONICS = "phonics";
     private static final String TABLE_ACCOUNTS = "accounts";
     private static final String TABLE_PROVIDERS = "providers";
     private static final String TABLE_PROVIDER_SETTINGS = "providerSettings";
@@ -171,6 +181,8 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
     protected static final int MATCH_BRANDING_RESOURCE_MAP_CACHE = 106;
     protected static final int MATCH_WORDS = 107;
     protected static final int MATCH_WORDS_BY_NAME = 108;
+    protected static final int MATCH_PHONICS = 109;
+    protected static final int MATCH_PHONICS_BY_LETTERS = 110;
 
     // mcs url matcher
     protected static final int MATCH_OUTGOING_RMQ_MESSAGES = 200;
@@ -199,8 +211,8 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
     private static final HashMap<String, String> sInMemoryMessagesProjectionMap;
 
     private static final String PROVIDER_JOIN_ACCOUNT_TABLE = "providers LEFT OUTER JOIN accounts ON "
-                                                              + "(providers._id = accounts.provider AND accounts.active = 1) "
-                                                              + "LEFT OUTER JOIN accountStatus ON (accounts._id = accountStatus.account)";
+            + "(providers._id = accounts.provider AND accounts.active = 1) "
+            + "LEFT OUTER JOIN accountStatus ON (accounts._id = accountStatus.account)";
 
     private static final String DOMAIN_JOIN_ACCOUNT_TABLE = "providerSettings JOIN accounts ON "
             + "(providerSettings.provider = accounts.provider AND providerSettings.name = '" + Imps.ProviderSettings.DOMAIN + "' AND accounts.active = 1) "
@@ -210,36 +222,38 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
     private static final String CONTACT_JOIN_PRESENCE_TABLE = "contacts LEFT OUTER JOIN presence ON (contacts._id = presence.contact_id)";
 
     private static final String CONTACT_JOIN_PRESENCE_CHAT_TABLE = CONTACT_JOIN_PRESENCE_TABLE
-                                                                   + " LEFT OUTER JOIN chats ON (contacts._id = chats.contact_id)";
+            + " LEFT OUTER JOIN chats ON (contacts._id = chats.contact_id)";
 
     private static final String CONTACT_JOIN_PRESENCE_CHAT_AVATAR_TABLE = CONTACT_JOIN_PRESENCE_CHAT_TABLE
-                                                                          + " LEFT OUTER JOIN avatars ON (contacts.username = avatars.contact"
-                                                                          + " AND contacts.account = avatars.account_id)";
+            + " LEFT OUTER JOIN avatars ON (contacts.username = avatars.contact"
+            + " AND contacts.account = avatars.account_id)";
 
     private static final String BLOCKEDLIST_JOIN_AVATAR_TABLE = "blockedList LEFT OUTER JOIN avatars ON (blockedList.username = avatars.contact"
-                                                                + " AND blockedList.account = avatars.account_id)";
+            + " AND blockedList.account = avatars.account_id)";
 
     private static final String MESSAGE_JOIN_CONTACT_TABLE = "messages LEFT OUTER JOIN contacts ON (contacts._id = messages.thread_id)";
 
     private static final String IN_MEMORY_MESSAGES_JOIN_CONTACT_TABLE = "inMemoryMessages LEFT OUTER JOIN contacts ON "
-                                                                        + "(contacts._id = inMemoryMessages.thread_id)";
+            + "(contacts._id = inMemoryMessages.thread_id)";
 
-    /** The where clause for filtering out blocked contacts */
+    /**
+     * The where clause for filtering out blocked contacts
+     */
     private static final String NON_BLOCKED_CONTACTS_WHERE_CLAUSE = "("
-                                                                    + Imps.Contacts.TYPE
-                                                                    + " IS NULL OR "
-                                                                    + Imps.Contacts.TYPE
-                                                                    + "!="
-                                                                    + String.valueOf(Imps.Contacts.TYPE_BLOCKED)
-                                                                    + ")";
+            + Imps.Contacts.TYPE
+            + " IS NULL OR "
+            + Imps.Contacts.TYPE
+            + "!="
+            + String.valueOf(Imps.Contacts.TYPE_BLOCKED)
+            + ")";
 
     private static final String BLOCKED_CONTACTS_WHERE_CLAUSE = "(contacts." + Imps.Contacts.TYPE
-                                                                + "=" + Imps.Contacts.TYPE_BLOCKED
-                                                                + ")";
+            + "=" + Imps.Contacts.TYPE_BLOCKED
+            + ")";
 
     private static final String CONTACT_ID = TABLE_CONTACTS + '.' + Imps.Contacts._ID;
     private static final String PRESENCE_CONTACT_ID = TABLE_PRESENCE + '.'
-                                                      + Imps.Presence.CONTACT_ID;
+            + Imps.Presence.CONTACT_ID;
 
     private static final Object mDbHelperLock = new Object();
     protected static DatabaseHelper mDbHelper;
@@ -247,35 +261,35 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
     private final int mDatabaseVersion;
 
 
-    private final String[] BACKFILL_PROJECTION = { Imps.Chats._ID, Imps.Chats.SHORTCUT,
-                                                  Imps.Chats.LAST_MESSAGE_DATE };
+    private final String[] BACKFILL_PROJECTION = {Imps.Chats._ID, Imps.Chats.SHORTCUT,
+            Imps.Chats.LAST_MESSAGE_DATE};
 
-    private final String[] FIND_SHORTCUT_PROJECTION = { Imps.Chats._ID, Imps.Chats.SHORTCUT };
+    private final String[] FIND_SHORTCUT_PROJECTION = {Imps.Chats._ID, Imps.Chats.SHORTCUT};
 
     // contact id query projection
-    private static final String[] CONTACT_ID_PROJECTION = new String[] { Imps.Contacts._ID, // 0
+    private static final String[] CONTACT_ID_PROJECTION = new String[]{Imps.Contacts._ID, // 0
     };
     private static final int CONTACT_ID_COLUMN = 0;
 
     // contact id query selection for "seed presence" operation
     private static final String CONTACTS_WITH_NO_PRESENCE_SELECTION = Imps.Contacts.ACCOUNT + "=?"
-                                                                      + " AND " + Imps.Contacts._ID
-                                                                      + " in (select " + CONTACT_ID
-                                                                      + " from " + TABLE_CONTACTS
-                                                                      + " left outer join "
-                                                                      + TABLE_PRESENCE + " on "
-                                                                      + CONTACT_ID + '='
-                                                                      + PRESENCE_CONTACT_ID
-                                                                      + " where "
-                                                                      + PRESENCE_CONTACT_ID
-                                                                      + " IS NULL)";
+            + " AND " + Imps.Contacts._ID
+            + " in (select " + CONTACT_ID
+            + " from " + TABLE_CONTACTS
+            + " left outer join "
+            + TABLE_PRESENCE + " on "
+            + CONTACT_ID + '='
+            + PRESENCE_CONTACT_ID
+            + " where "
+            + PRESENCE_CONTACT_ID
+            + " IS NULL)";
 
     // contact id query selection args 1
     private String[] mQueryContactIdSelectionArgs1 = new String[1];
 
     // contact id query selection for getContactId()
     private static final String CONTACT_ID_QUERY_SELECTION = Imps.Contacts.ACCOUNT + "=? AND "
-                                                             + Imps.Contacts.USERNAME + "=?";
+            + Imps.Contacts.USERNAME + "=?";
 
     // contact id query selection args 2
     private String[] mQueryContactIdSelectionArgs2 = new String[2];
@@ -292,16 +306,15 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
     public void onCacheWordLocked() {
 
         /**
-        synchronized (mDbHelperLock) {
-            if (mDbHelper != null) {
-                mDbHelper.close();
-                mDbHelper = null;
-                mDbHelperLock.notify();
-            }
-        }*/
+         synchronized (mDbHelperLock) {
+         if (mDbHelper != null) {
+         mDbHelper.close();
+         mDbHelper = null;
+         mDbHelperLock.notify();
+         }
+         }*/
 
-        if (tempKey != null)
-        {
+        if (tempKey != null) {
             try {
                 initDBHelper(tempKey, false);
             } catch (Exception e) {
@@ -329,7 +342,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
     /**
      * This method blocks until the underlying data store is ready. Be sure to call this
      * on a background thread.
-     *
+     * <p>
      * This is helpful because queries to this ContentProvider will return null if
      * this component hasn't yet performed initialization after CacheWord becomes ready.
      */
@@ -355,7 +368,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
         String mKey = null;
 
         boolean doCleanup = false;
-        
+
         DatabaseHelper(Context context, byte[] key, boolean inMemoryDb) throws Exception {
             super(context, mDatabaseName, null, mDatabaseVersion);
             mInMemoryDB = inMemoryDb;
@@ -390,80 +403,93 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
                 doCleanup = false;
             }
             */
-            
+
             return dbWrite;
         }
 
         @Override
         public void onCreate(SQLiteDatabase db) {
 
-                log("DatabaseHelper.onCreate");
+            log("DatabaseHelper.onCreate");
 
             db.execSQL("CREATE TABLE " + TABLE_PROVIDERS + " (" + "_id INTEGER PRIMARY KEY,"
-                       + "name TEXT," + // eg AIM
-                       "fullname TEXT," + // eg AOL Instance Messenger
-                       "category TEXT," + // a category used for forming intent
-                       "signup_url TEXT" + // web url to visit to create a new account
-                       ");");
+                    + "name TEXT," + // eg AIM
+                    "fullname TEXT," + // eg AOL Instance Messenger
+                    "category TEXT," + // a category used for forming intent
+                    "signup_url TEXT" + // web url to visit to create a new account
+                    ");");
 
             db.execSQL("CREATE TABLE " + TABLE_WORDS + " (" + "_id INTEGER PRIMARY KEY,"
                     + "name TEXT," + "meaning TEXT," + "image_url TEXT,"
                     + "sp_name TEXT," + "sp_meaning TEXT" + ");");
 
+            db.execSQL("CREATE TABLE " + TABLE_PHONICS + " (" + "_id INTEGER PRIMARY KEY,"
+                    + "letters TEXT," + "word TEXT,"
+                    + "split TEXT," + "choice1 TEXT" + "choice2 TEXT" + "choice2 TEXT" + ");");
 
             db.execSQL("CREATE TABLE " + TABLE_ACCOUNTS + " (" + "_id INTEGER PRIMARY KEY,"
-                       + "name TEXT," + "provider INTEGER," + "username TEXT," + "pw TEXT,"
-                       + "active INTEGER NOT NULL DEFAULT 0,"
-                       + "locked INTEGER NOT NULL DEFAULT 0,"
-                       + "keep_signed_in INTEGER NOT NULL DEFAULT 0,"
-                       + "last_login_state INTEGER NOT NULL DEFAULT 0,"
-                        + "sync_state INTEGER NOT NULL DEFAULT 0,"
-                       + "UNIQUE (provider, username)" + ");");
+                    + "name TEXT," + "provider INTEGER," + "username TEXT," + "pw TEXT,"
+                    + "active INTEGER NOT NULL DEFAULT 0,"
+                    + "locked INTEGER NOT NULL DEFAULT 0,"
+                    + "keep_signed_in INTEGER NOT NULL DEFAULT 0,"
+                    + "last_login_state INTEGER NOT NULL DEFAULT 0,"
+                    + "sync_state INTEGER NOT NULL DEFAULT 0,"
+                    + "UNIQUE (provider, username)" + ");");
 
             createContactsTables(db);
             createMessageChatTables(db, true /* create show_ts column */);
 
             db.execSQL("CREATE TABLE " + TABLE_AVATARS + " (" + "_id INTEGER PRIMARY KEY,"
-                       + "contact TEXT," + "provider_id INTEGER," + "account_id INTEGER,"
-                       + "hash TEXT," + "data BLOB," + // raw image data
-                       "UNIQUE (account_id, contact)" + ");");
+                    + "contact TEXT," + "provider_id INTEGER," + "account_id INTEGER,"
+                    + "hash TEXT," + "data BLOB," + // raw image data
+                    "UNIQUE (account_id, contact)" + ");");
 
             db.execSQL("CREATE TABLE " + TABLE_PROVIDER_SETTINGS + " ("
-                       + "_id INTEGER PRIMARY KEY," + "provider INTEGER," + "name TEXT,"
-                       + "value TEXT," + "UNIQUE (provider, name)" + ");");
+                    + "_id INTEGER PRIMARY KEY," + "provider INTEGER," + "name TEXT,"
+                    + "value TEXT," + "UNIQUE (provider, name)" + ");");
 
             db.execSQL("create TABLE " + TABLE_BRANDING_RESOURCE_MAP_CACHE + " ("
-                       + "_id INTEGER PRIMARY KEY," + "provider_id INTEGER,"
-                       + "app_res_id INTEGER," + "plugin_res_id INTEGER" + ");");
+                    + "_id INTEGER PRIMARY KEY," + "provider_id INTEGER,"
+                    + "app_res_id INTEGER," + "plugin_res_id INTEGER" + ");");
 
             // clean up account specific data when an account is deleted.
             db.execSQL("CREATE TRIGGER account_cleanup " + "DELETE ON " + TABLE_ACCOUNTS
-                       + " BEGIN " + "DELETE FROM " + TABLE_AVATARS + " WHERE account_id= OLD._id;"
-                       + "END");
+                    + " BEGIN " + "DELETE FROM " + TABLE_AVATARS + " WHERE account_id= OLD._id;"
+                    + "END");
 
             // add a database trigger to clean up associated provider settings
             // while deleting a provider
             db.execSQL("CREATE TRIGGER provider_cleanup " + "DELETE ON " + TABLE_PROVIDERS
-                       + " BEGIN " + "DELETE FROM " + TABLE_PROVIDER_SETTINGS
-                       + " WHERE provider= OLD._id;" + "END");
+                    + " BEGIN " + "DELETE FROM " + TABLE_PROVIDER_SETTINGS
+                    + " WHERE provider= OLD._id;" + "END");
 
             // the following are tables for mcs
             db.execSQL("create TABLE " + TABLE_OUTGOING_RMQ_MESSAGES + " ("
-                       + "_id INTEGER PRIMARY KEY," + "rmq_id INTEGER," + "type INTEGER,"
-                       + "ts INTEGER," + "data TEXT" + ");");
+                    + "_id INTEGER PRIMARY KEY," + "rmq_id INTEGER," + "type INTEGER,"
+                    + "ts INTEGER," + "data TEXT" + ");");
 
             db.execSQL("create TABLE " + TABLE_LAST_RMQ_ID + " (" + "_id INTEGER PRIMARY KEY,"
-                       + "rmq_id INTEGER" + ");");
+                    + "rmq_id INTEGER" + ");");
 
             db.execSQL("create TABLE " + TABLE_S2D_RMQ_IDS + " (" + "_id INTEGER PRIMARY KEY,"
-                       + "rmq_id INTEGER" + ");");
-         
+                    + "rmq_id INTEGER" + ");");
+
             //DELETE FROM cache WHERE id IN (SELECT cache.id FROM cache LEFT JOIN main ON cache.id=main.id WHERE main.id IS NULL);
 
             // ChatSecure-Push tables
             db.execSQL(PushDatabase.getAccountsTableSqlWithName(TABLE_CSP_ACCOUNTS));
             db.execSQL(PushDatabase.getDeviceTableSqlWithName(TABLE_CSP_DEVICES));
             db.execSQL(PushDatabase.getTokenTableSqlWithName(TABLE_CSP_TOKENS));
+
+            batchUpdatePhonics(db, "rs/phonics.csv");
+//            ContentValues values = new ContentValues();
+//            values.put(Imps.Phonic.LETTERS, "a");
+//            values.put(Imps.Phonic.WORD, "a");
+//            values.put(Imps.Phonic.SPLIT, "a");
+//            values.put(Imps.Phonic.CHOICE1, "a");
+//            values.put(Imps.Phonic.CHOICE2, "a");
+//            values.put(Imps.Phonic.CHOICE3, "a");
+//            db.insert(TABLE_PHONICS, null, values);
 
         }
 
@@ -472,158 +498,157 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
             LogCleaner.debug(LOG_TAG, "Upgrading database from version " + oldVersion + " to " + newVersion);
 
             switch (oldVersion) {
-            case 43: // this is the db version shipped in Dream 1.0
-                // no-op: no schema changed from 43 to 44. The db version was changed to flush
-                // old provider settings, so new provider setting (including new name/value
-                // pairs) could be inserted by the plugins.
+                case 43: // this is the db version shipped in Dream 1.0
+                    // no-op: no schema changed from 43 to 44. The db version was changed to flush
+                    // old provider settings, so new provider setting (including new name/value
+                    // pairs) could be inserted by the plugins.
 
-                // follow thru.
-            case 44:
-                if (newVersion <= 44) {
-                    return;
-                }
-
-                db.beginTransaction();
-                try {
-                    // add category column to the providers table
-                    db.execSQL("ALTER TABLE " + TABLE_PROVIDERS + " ADD COLUMN category TEXT;");
-                    // add otr column to the contacts table
-                    db.execSQL("ALTER TABLE " + TABLE_CONTACTS + " ADD COLUMN otr INTEGER;");
-
-                    db.setTransactionSuccessful();
-                } catch (Throwable ex) {
-                    LogCleaner.error(LOG_TAG, ex.getMessage(), ex);
-                    break; // force to destroy all old data;
-                } finally {
-                    db.endTransaction();
-                }
-
-            case 45:
-                if (newVersion <= 45) {
-                    return;
-                }
-
-                db.beginTransaction();
-                try {
-                    // add an otr_etag column to contact etag table
-                    db.execSQL("ALTER TABLE " + TABLE_CONTACTS_ETAG + " ADD COLUMN otr_etag TEXT;");
-                    db.setTransactionSuccessful();
-                } catch (Throwable ex) {
-                    LogCleaner.error(LOG_TAG, ex.getMessage(), ex);
-                    break; // force to destroy all old data;
-                } finally {
-                    db.endTransaction();
-                }
-
-            case 46:
-                if (newVersion <= 46) {
-                    return;
-                }
-
-                db.beginTransaction();
-                try {
-                    // add branding resource map cache table
-                    db.execSQL("create TABLE " + TABLE_BRANDING_RESOURCE_MAP_CACHE + " ("
-                               + "_id INTEGER PRIMARY KEY," + "provider_id INTEGER,"
-                               + "app_res_id INTEGER," + "plugin_res_id INTEGER" + ");");
-                    db.setTransactionSuccessful();
-                } catch (Throwable ex) {
-                    LogCleaner.error(LOG_TAG, ex.getMessage(), ex);
-                    break; // force to destroy all old data;
-                } finally {
-                    db.endTransaction();
-                }
-
-            case 47:
-                if (newVersion <= 47) {
-                    return;
-                }
-
-                db.beginTransaction();
-                try {
-                    // when upgrading from version 47, don't create the show_ts column
-                    // here. The upgrade step in 51 will add the show_ts column to the
-                    // messages table. If we created the messages table with show_ts here,
-                    // we'll get a duplicate column error later.
-                    createMessageChatTables(db, false /* don't create show_ts column */);
-                    db.setTransactionSuccessful();
-                } catch (Throwable ex) {
-                    LogCleaner.error(LOG_TAG, ex.getMessage(), ex);
-                    break; // force to destroy all old data;
-                } finally {
-                    db.endTransaction();
-                }
-
-                // fall thru.
-
-            case 48:
-            case 49:
-            case 50:
-                if (newVersion <= 50) {
-                    return;
-                }
-
-                db.beginTransaction();
-                try {
-                    // add rmq2 s2d ids table
-                    db.execSQL("create TABLE " + TABLE_S2D_RMQ_IDS + " ("
-                               + "_id INTEGER PRIMARY KEY," + "rmq_id INTEGER" + ");");
-                    db.setTransactionSuccessful();
-                } catch (Throwable ex) {
-                    LogCleaner.error(LOG_TAG, ex.getMessage(), ex);
-                    break; // force to destroy all old data;
-                } finally {
-                    db.endTransaction();
-                }
-
-            case 51:
-                if (newVersion <= 51) {
-                    return;
-                }
-
-                db.beginTransaction();
-                try {
-                    db.execSQL("ALTER TABLE " + TABLE_MESSAGES + " ADD COLUMN show_ts INTEGER;");
-                    db.setTransactionSuccessful();
-                } catch (Throwable ex) {
-                    LogCleaner.error(LOG_TAG, ex.getMessage(), ex);
-                    break; // force to destroy all old data;
-                } finally {
-                    db.endTransaction();
-                }
-
-                return;
-            case 101:
-                // This was a no-op upgrade when we added the encrypted DB option
-                return;
-            case 103:
-
-                try {
-                    db.beginTransaction();
-
-                    Cursor c = db.query(TABLE_MESSAGES, null, null, null, null, null, null);
-                    if (c.getColumnIndex("mime_type")==-1)
-                    {
-                        db.execSQL("ALTER TABLE " + TABLE_MESSAGES
-                                + " ADD COLUMN mime_type TEXT;");
+                    // follow thru.
+                case 44:
+                    if (newVersion <= 44) {
+                        return;
                     }
-                    c.close();
 
-                    db.setTransactionSuccessful();
-                } catch (Throwable ex) {
-                    LogCleaner.error(LOG_TAG, ex.getMessage(), ex);
-                } finally {
-                    db.endTransaction();
-                }
+                    db.beginTransaction();
+                    try {
+                        // add category column to the providers table
+                        db.execSQL("ALTER TABLE " + TABLE_PROVIDERS + " ADD COLUMN category TEXT;");
+                        // add otr column to the contacts table
+                        db.execSQL("ALTER TABLE " + TABLE_CONTACTS + " ADD COLUMN otr INTEGER;");
 
-                if (mInMemoryDB) { //this should actually be if mInMemoryDB = true, then update the table
+                        db.setTransactionSuccessful();
+                    } catch (Throwable ex) {
+                        LogCleaner.error(LOG_TAG, ex.getMessage(), ex);
+                        break; // force to destroy all old data;
+                    } finally {
+                        db.endTransaction();
+                    }
+
+                case 45:
+                    if (newVersion <= 45) {
+                        return;
+                    }
+
+                    db.beginTransaction();
+                    try {
+                        // add an otr_etag column to contact etag table
+                        db.execSQL("ALTER TABLE " + TABLE_CONTACTS_ETAG + " ADD COLUMN otr_etag TEXT;");
+                        db.setTransactionSuccessful();
+                    } catch (Throwable ex) {
+                        LogCleaner.error(LOG_TAG, ex.getMessage(), ex);
+                        break; // force to destroy all old data;
+                    } finally {
+                        db.endTransaction();
+                    }
+
+                case 46:
+                    if (newVersion <= 46) {
+                        return;
+                    }
+
+                    db.beginTransaction();
+                    try {
+                        // add branding resource map cache table
+                        db.execSQL("create TABLE " + TABLE_BRANDING_RESOURCE_MAP_CACHE + " ("
+                                + "_id INTEGER PRIMARY KEY," + "provider_id INTEGER,"
+                                + "app_res_id INTEGER," + "plugin_res_id INTEGER" + ");");
+                        db.setTransactionSuccessful();
+                    } catch (Throwable ex) {
+                        LogCleaner.error(LOG_TAG, ex.getMessage(), ex);
+                        break; // force to destroy all old data;
+                    } finally {
+                        db.endTransaction();
+                    }
+
+                case 47:
+                    if (newVersion <= 47) {
+                        return;
+                    }
+
+                    db.beginTransaction();
+                    try {
+                        // when upgrading from version 47, don't create the show_ts column
+                        // here. The upgrade step in 51 will add the show_ts column to the
+                        // messages table. If we created the messages table with show_ts here,
+                        // we'll get a duplicate column error later.
+                        createMessageChatTables(db, false /* don't create show_ts column */);
+                        db.setTransactionSuccessful();
+                    } catch (Throwable ex) {
+                        LogCleaner.error(LOG_TAG, ex.getMessage(), ex);
+                        break; // force to destroy all old data;
+                    } finally {
+                        db.endTransaction();
+                    }
+
+                    // fall thru.
+
+                case 48:
+                case 49:
+                case 50:
+                    if (newVersion <= 50) {
+                        return;
+                    }
+
+                    db.beginTransaction();
+                    try {
+                        // add rmq2 s2d ids table
+                        db.execSQL("create TABLE " + TABLE_S2D_RMQ_IDS + " ("
+                                + "_id INTEGER PRIMARY KEY," + "rmq_id INTEGER" + ");");
+                        db.setTransactionSuccessful();
+                    } catch (Throwable ex) {
+                        LogCleaner.error(LOG_TAG, ex.getMessage(), ex);
+                        break; // force to destroy all old data;
+                    } finally {
+                        db.endTransaction();
+                    }
+
+                case 51:
+                    if (newVersion <= 51) {
+                        return;
+                    }
+
+                    db.beginTransaction();
+                    try {
+                        db.execSQL("ALTER TABLE " + TABLE_MESSAGES + " ADD COLUMN show_ts INTEGER;");
+                        db.setTransactionSuccessful();
+                    } catch (Throwable ex) {
+                        LogCleaner.error(LOG_TAG, ex.getMessage(), ex);
+                        break; // force to destroy all old data;
+                    } finally {
+                        db.endTransaction();
+                    }
+
+                    return;
+                case 101:
+                    // This was a no-op upgrade when we added the encrypted DB option
+                    return;
+                case 103:
+
+                    try {
+                        db.beginTransaction();
+
+                        Cursor c = db.query(TABLE_MESSAGES, null, null, null, null, null, null);
+                        if (c.getColumnIndex("mime_type") == -1) {
+                            db.execSQL("ALTER TABLE " + TABLE_MESSAGES
+                                    + " ADD COLUMN mime_type TEXT;");
+                        }
+                        c.close();
+
+                        db.setTransactionSuccessful();
+                    } catch (Throwable ex) {
+                        LogCleaner.error(LOG_TAG, ex.getMessage(), ex);
+                    } finally {
+                        db.endTransaction();
+                    }
+
+                    if (mInMemoryDB) { //this should actually be if mInMemoryDB = true, then update the table
 
                         try {
 
-                                db.beginTransaction();
-                                db.execSQL("ALTER TABLE " + TABLE_IN_MEMORY_MESSAGES
-                                        + " ADD COLUMN mime_type TEXT;");
-                                db.setTransactionSuccessful();
+                            db.beginTransaction();
+                            db.execSQL("ALTER TABLE " + TABLE_IN_MEMORY_MESSAGES
+                                    + " ADD COLUMN mime_type TEXT;");
+                            db.setTransactionSuccessful();
 
                         } catch (Throwable ex) {
                             LogCleaner.error(LOG_TAG, ex.getMessage(), ex);
@@ -631,15 +656,15 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
                             db.endTransaction();
                         }
 
-                }
+                    }
 
-                return;
-            case 104:
+                    return;
+                case 104:
 
-                db.rawExecSQL("PRAGMA cipher_migrate;");
+                    db.rawExecSQL("PRAGMA cipher_migrate;");
 
-                return;
-            case 105:
+                    return;
+                case 105:
                     // Add ChatSecure-Push
                     db.beginTransaction();
 
@@ -654,25 +679,25 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
                     } finally {
                         db.endTransaction();
                     }
-                return; // TODO : Why do other case blocks return at their conclusion?
-                        // Wouldn't we want all applicable upgrades?
-            case 1:
-                if (newVersion <= 100) {
+                    return; // TODO : Why do other case blocks return at their conclusion?
+                // Wouldn't we want all applicable upgrades?
+                case 1:
+                    if (newVersion <= 100) {
+                        return;
+                    }
+
+                    db.beginTransaction();
+                    try {
+                        db.execSQL("ALTER TABLE " + TABLE_MESSAGES
+                                + " ADD COLUMN is_delivered INTEGER;");
+                        db.setTransactionSuccessful();
+                    } catch (Throwable ex) {
+                        LogCleaner.error(LOG_TAG, ex.getMessage(), ex);
+                    } finally {
+                        db.endTransaction();
+                    }
+
                     return;
-                }
-
-                db.beginTransaction();
-                try {
-                    db.execSQL("ALTER TABLE " + TABLE_MESSAGES
-                               + " ADD COLUMN is_delivered INTEGER;");
-                    db.setTransactionSuccessful();
-                } catch (Throwable ex) {
-                    LogCleaner.error(LOG_TAG, ex.getMessage(), ex);
-                } finally {
-                    db.endTransaction();
-                }
-
-                return;
             }
 
             LogCleaner.warn(LOG_TAG, "Couldn't upgrade db to " + newVersion + ". Destroying old data.");
@@ -682,6 +707,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
 
         private void destroyOldTables(SQLiteDatabase db) {
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_WORDS);
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_PHONICS);
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_PROVIDERS);
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_ACCOUNTS);
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_CONTACT_LIST);
@@ -706,8 +732,8 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
         }
 
         private void createContactsTables(SQLiteDatabase db) {
-            
-                log("createContactsTables");
+
+            log("createContactsTables");
 
             StringBuilder buf = new StringBuilder();
             String contactsTableName = TABLE_CONTACTS;
@@ -788,9 +814,9 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
         }
 
         private void createMessageChatTables(SQLiteDatabase db,
-                boolean addShowTsColumnForMessagesTable) {
-            
-                log("createMessageChatTables");
+                                             boolean addShowTsColumnForMessagesTable) {
+
+            log("createMessageChatTables");
 
             // message table
             StringBuilder buf = new StringBuilder();
@@ -817,8 +843,8 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
 
             String sqlStatement = buf.toString();
 
-            
-                log("create message table: " + sqlStatement);
+
+            log("create message table: " + sqlStatement);
             db.execSQL(sqlStatement);
 
             buf.delete(0, buf.length());
@@ -836,8 +862,8 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
             // chat sessions, including single person chats and group chats
             sqlStatement = buf.toString();
 
-            
-                log("create chat table: " + sqlStatement);
+
+            log("create chat table: " + sqlStatement);
             db.execSQL(sqlStatement);
 
             buf.delete(0, buf.length());
@@ -850,28 +876,84 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
 
             sqlStatement = buf.toString();
 
-            
-                log("create trigger: " + sqlStatement);
+
+            log("create trigger: " + sqlStatement);
             db.execSQL(sqlStatement);
         }
 
         private void createInMemoryMessageTables(SQLiteDatabase db, String tablePrefix) {
             String tableName = (tablePrefix != null) ? tablePrefix + TABLE_IN_MEMORY_MESSAGES
-                                                    : TABLE_IN_MEMORY_MESSAGES;
+                    : TABLE_IN_MEMORY_MESSAGES;
 
             db.execSQL("CREATE TABLE IF NOT EXISTS " + tableName + " ("
-                       + "_id INTEGER PRIMARY KEY," + "thread_id INTEGER," + "nickname TEXT,"
-                       + "body TEXT,"
-                       + "date INTEGER,"
-                       + // in millisec
-                       "type INTEGER," + "packet_id TEXT UNIQUE,"
-                       + "err_code INTEGER NOT NULL DEFAULT 0," + "err_msg TEXT,"
-                       + "is_muc INTEGER," + "show_ts INTEGER," +
-                       "is_delivered INTEGER," +
-                       "mime_type TEXT" +
-                       ");");
+                    + "_id INTEGER PRIMARY KEY," + "thread_id INTEGER," + "nickname TEXT,"
+                    + "body TEXT,"
+                    + "date INTEGER,"
+                    + // in millisec
+                    "type INTEGER," + "packet_id TEXT UNIQUE,"
+                    + "err_code INTEGER NOT NULL DEFAULT 0," + "err_msg TEXT,"
+                    + "is_muc INTEGER," + "show_ts INTEGER," +
+                    "is_delivered INTEGER," +
+                    "mime_type TEXT" +
+                    ");");
 
         }
+
+        private void batchUpdatePhonics(SQLiteDatabase db, String file) {
+            try {
+                InputStream fin = getContext().getAssets().open(file);
+                List<String[]> rows = new CSVFile(fin).read();
+                //process it....
+                for (String[] sRows: rows) {
+                    if(sRows != null && sRows.length == 6) {
+                        ContentValues values = new ContentValues(6);
+                        values.put(Imps.Phonic.LETTERS, sRows[0]);
+                        values.put(Imps.Phonic.WORD, sRows[1]);
+                        values.put(Imps.Phonic.SPLIT, sRows[2]);
+                        values.put(Imps.Phonic.CHOICE1, sRows[3]);
+                        values.put(Imps.Phonic.CHOICE2, sRows[4]);
+                        values.put(Imps.Phonic.CHOICE3, sRows[5]);
+
+                        db.insert(TABLE_PHONICS, null, values);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        private class CSVFile {
+            InputStream inputStream;
+
+            public CSVFile(InputStream inputStream){
+                this.inputStream = inputStream;
+            }
+
+            public List<String[]> read(){
+                List<String[]> resultList = new ArrayList();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+                try {
+                    String csvLine;
+                    while ((csvLine = reader.readLine()) != null) {
+                        String[] row = csvLine.split(",");
+                        resultList.add(row);
+                    }
+                }
+                catch (IOException ex) {
+                    throw new RuntimeException("Error in reading CSV file: "+ex);
+                }
+                finally {
+                    try {
+                        inputStream.close();
+                    }
+                    catch (IOException e) {
+                        throw new RuntimeException("Error while closing input stream: "+e);
+                    }
+                }
+                return resultList;
+            }
+        }
+
 
         @Override
         public void onOpen(SQLiteDatabase db) {
@@ -881,21 +963,18 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
                 return;
             }
 
-            
-                log("##### createTransientTables");
+
+            log("##### createTransientTables");
 
 
             // Create transient tables
             String cpDbName;
 
-            if (mInMemoryDB)
-            {
+            if (mInMemoryDB) {
                 db.execSQL("ATTACH DATABASE ':memory:' AS " + mTransientDbName + ";");
                 cpDbName = mTransientDbName + ".";
-            }
-            else
-            {
-               cpDbName = "";
+            } else {
+                cpDbName = "";
             }
 
             // in-memory message table
@@ -903,28 +982,28 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
 
             // presence
             db.execSQL("CREATE TABLE IF NOT EXISTS " + cpDbName + TABLE_PRESENCE + " ("
-                       + "_id INTEGER PRIMARY KEY," + "contact_id INTEGER UNIQUE,"
-                       + "jid_resource TEXT," + // jid resource for the presence
-                       "client_type INTEGER," + // client type
-                       "priority INTEGER," + // presence priority (XMPP)
-                       "mode INTEGER," + // presence mode
-                       "status TEXT" + // custom status
-                       ");");
+                    + "_id INTEGER PRIMARY KEY," + "contact_id INTEGER UNIQUE,"
+                    + "jid_resource TEXT," + // jid resource for the presence
+                    "client_type INTEGER," + // client type
+                    "priority INTEGER," + // presence priority (XMPP)
+                    "mode INTEGER," + // presence mode
+                    "status TEXT" + // custom status
+                    ");");
 
             // group chat invitations
             db.execSQL("CREATE TABLE IF NOT EXISTS " + cpDbName + TABLE_INVITATIONS + " ("
-                       + "_id INTEGER PRIMARY KEY," + "providerId INTEGER," + "accountId INTEGER,"
-                       + "inviteId TEXT," + "sender TEXT," + "groupName TEXT," + "note TEXT,"
-                       + "status INTEGER" + ");");
+                    + "_id INTEGER PRIMARY KEY," + "providerId INTEGER," + "accountId INTEGER,"
+                    + "inviteId TEXT," + "sender TEXT," + "groupName TEXT," + "note TEXT,"
+                    + "status INTEGER" + ");");
 
             // group chat members
             db.execSQL("CREATE TABLE IF NOT EXISTS " + cpDbName + TABLE_GROUP_MEMBERS + " ("
-                       + "_id INTEGER PRIMARY KEY," + "groupId INTEGER," + "username TEXT,"
-                       + "nickname TEXT" + ");");
+                    + "_id INTEGER PRIMARY KEY," + "groupId INTEGER," + "username TEXT,"
+                    + "nickname TEXT" + ");");
 
             db.execSQL("CREATE TABLE IF NOT EXISTS " + cpDbName + TABLE_ACCOUNT_STATUS + " ("
-                       + "_id INTEGER PRIMARY KEY," + "account INTEGER UNIQUE,"
-                       + "presenceStatus INTEGER," + "connStatus INTEGER" + ");");
+                    + "_id INTEGER PRIMARY KEY," + "account INTEGER UNIQUE,"
+                    + "presenceStatus INTEGER," + "connStatus INTEGER" + ");");
 
             /* when we moved the contact table out of transient_db and into the main db, the
                presence and groupchat cleanup triggers don't work anymore. It seems we can't
@@ -958,8 +1037,8 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
             // only store the session cookies in memory right now. This means
             // that we don't persist them across device reboot
             db.execSQL("CREATE TABLE IF NOT EXISTS " + cpDbName + TABLE_SESSION_COOKIES + " ("
-                       + "_id INTEGER PRIMARY KEY," + "provider INTEGER," + "account INTEGER,"
-                       + "name TEXT," + "value TEXT" + ");");
+                    + "_id INTEGER PRIMARY KEY," + "provider INTEGER," + "account INTEGER,"
+                    + "name TEXT," + "value TEXT" + ");");
 
         }
 
@@ -1147,6 +1226,8 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
         mUrlMatcher.addURI(authority, "words", MATCH_WORDS);
         mUrlMatcher.addURI(authority, "words/#", MATCH_WORDS_BY_NAME);
 
+        mUrlMatcher.addURI(authority, "phonics", MATCH_PHONICS);
+        mUrlMatcher.addURI(authority, "phonics/#", MATCH_PHONICS_BY_LETTERS);
 
         mUrlMatcher.addURI(authority, "accounts", MATCH_ACCOUNTS);
         mUrlMatcher.addURI(authority, "domainAccounts", MATCH_ACCOUNTS_WITH_DOMAIN);
@@ -1244,7 +1325,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
     @Override
     public boolean onCreate() {
 
-        mCacheword = new CacheWordHandler(getContext(),this);
+        mCacheword = new CacheWordHandler(getContext(), this);
         mCacheword.connectToService();
 
         return true;
@@ -1308,29 +1389,25 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
 
     @Override
     public final int update(final Uri url, final ContentValues values, final String selection,
-            final String[] selectionArgs) {
+                            final String[] selectionArgs) {
 
         DatabaseHelper dbHelper = getDBHelper();
 
 
         int result = 0;
 
-        if (dbHelper != null)
-        {
+        if (dbHelper != null) {
             SQLiteDatabase db = dbHelper.getWritableDatabase();
 
-            synchronized (db)
-            {
-                if (db.isOpen())
-                {
+            synchronized (db) {
+                if (db.isOpen()) {
                     try {
                         db.beginTransaction();
 
                         result = updateInternal(url, values, selection, selectionArgs);
                         db.setTransactionSuccessful();
                         db.endTransaction();
-                    }
-                    catch (Exception e){
+                    } catch (Exception e) {
 
                         if (db.isOpen() && db.inTransaction())
                             db.endTransaction();
@@ -1353,12 +1430,10 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
 
         int result = -1;
 
-        if (getDBHelper() != null)
-        {
+        if (getDBHelper() != null) {
             SQLiteDatabase db = getDBHelper().getWritableDatabase();
 
-            synchronized (db)
-            {
+            synchronized (db) {
                 if (db.isOpen()) //db can be closed if service sign out takes longer than app/cacheword lock
                 {
                     try {
@@ -1366,9 +1441,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
                         result = deleteInternal(url, selection, selectionArgs);
                         db.setTransactionSuccessful();
                         db.endTransaction();
-                    }
-                    catch (Exception e)
-                    {
+                    } catch (Exception e) {
                         //could not delete
                     }
 
@@ -1387,15 +1460,11 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
     public final Uri insert(final Uri url, final ContentValues values) {
         Uri result = null;
 
-        if (getDBHelper() != null)
-        {
-            try
-            {
+        if (getDBHelper() != null) {
+            try {
                 SQLiteDatabase db = getDBHelper().getWritableDatabase();
-                synchronized (db)
-                {
-                    if (db.isOpen())
-                    {
+                synchronized (db) {
+                    if (db.isOpen()) {
                         db.beginTransaction();
                         try {
                             result = insertInternal(url, values);
@@ -1409,9 +1478,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
                         }
                     }
                 }
-            }
-            catch (IllegalStateException ise)
-            {
+            } catch (IllegalStateException ise) {
                 log("database closed when insert attempted: " + url.toString());
             }
         }
@@ -1420,19 +1487,18 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
 
     @Override
     public final Cursor query(final Uri url, final String[] projection, final String selection,
-            final String[] selectionArgs, final String sortOrder) {
+                              final String[] selectionArgs, final String sortOrder) {
         return queryInternal(url, projection, selection, selectionArgs, sortOrder);
     }
 
     boolean mLoadedLibs = false;
 
     public Cursor queryInternal(Uri url, String[] projectionIn, String selection,
-            String[] selectionArgs, String sort) {
+                                String[] selectionArgs, String sort) {
 
         Debug.onServiceStart();
 
-        if (!mLoadedLibs)
-        {
+        if (!mLoadedLibs) {
             SQLiteDatabase.loadLibs(this.getContext().getApplicationContext());
             mLoadedLibs = true;
         }
@@ -1451,186 +1517,193 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
 
         /**
          {
-            //log("query " + url + ", match " + match + ", where " + selection);
-            if (selectionArgs != null) {
-                for (String selectionArg : selectionArgs) {
-                  //  log("     selectionArg: " + selectionArg);
-                }
-            }
-        }*/
+         //log("query " + url + ", match " + match + ", where " + selection);
+         if (selectionArgs != null) {
+         for (String selectionArg : selectionArgs) {
+         //  log("     selectionArg: " + selectionArg);
+         }
+         }
+         }*/
 
         switch (match) {
-        case MATCH_PROVIDERS_BY_ID:
-            appendWhere(whereClause, Imps.Provider._ID, "=", url.getPathSegments().get(1));
-            // fall thru.
+            case MATCH_PROVIDERS_BY_ID:
+                appendWhere(whereClause, Imps.Provider._ID, "=", url.getPathSegments().get(1));
+                // fall thru.
 
-        case MATCH_PROVIDERS:
-            qb.setTables(TABLE_PROVIDERS);
-            break;
+            case MATCH_PROVIDERS:
+                qb.setTables(TABLE_PROVIDERS);
+                break;
 
-        case MATCH_PROVIDERS_WITH_ACCOUNT:
-            qb.setTables(PROVIDER_JOIN_ACCOUNT_TABLE);
-            qb.setProjectionMap(sProviderAccountsProjectionMap);
-            break;
+            case MATCH_PROVIDERS_WITH_ACCOUNT:
+                qb.setTables(PROVIDER_JOIN_ACCOUNT_TABLE);
+                qb.setProjectionMap(sProviderAccountsProjectionMap);
+                break;
 
-        case MATCH_ACCOUNTS_WITH_DOMAIN:
-            qb.setTables(DOMAIN_JOIN_ACCOUNT_TABLE);
-            qb.setProjectionMap(sAccountsByDomainProjectionMap);
-            break;
+            case MATCH_ACCOUNTS_WITH_DOMAIN:
+                qb.setTables(DOMAIN_JOIN_ACCOUNT_TABLE);
+                qb.setProjectionMap(sAccountsByDomainProjectionMap);
+                break;
 
-        case MATCH_ACCOUNTS_BY_ID:
-            appendWhere(whereClause, Imps.Account._ID, "=", url.getPathSegments().get(1));
-            // falls down
-        case MATCH_ACCOUNTS:
-            qb.setTables(TABLE_ACCOUNTS);
-            break;
+            case MATCH_ACCOUNTS_BY_ID:
+                appendWhere(whereClause, Imps.Account._ID, "=", url.getPathSegments().get(1));
+                // falls down
+            case MATCH_ACCOUNTS:
+                qb.setTables(TABLE_ACCOUNTS);
+                break;
 
-        case MATCH_WORDS_BY_NAME:
-            appendWhere(whereClause, Imps.Word.NAME, "=", url.getPathSegments().get(1));
-            // falls down
-        case MATCH_WORDS:
-            qb.setTables(TABLE_WORDS);
-            break;
+            case MATCH_WORDS_BY_NAME:
+                appendWhere(whereClause, Imps.Word.NAME, "=", url.getPathSegments().get(1));
+                // falls down
+            case MATCH_WORDS:
+                qb.setTables(TABLE_WORDS);
+                break;
 
-        case MATCH_CONTACTS:
-        qb.setTables(CONTACT_JOIN_PRESENCE_CHAT_AVATAR_TABLE);
-        qb.setProjectionMap(sContactsProjectionMap);
-        break;
+            case MATCH_PHONICS_BY_LETTERS:
+                appendWhere(whereClause, Imps.Phonic.LETTERS, "=", url.getPathSegments().get(1));
+                // falls down
+            case MATCH_PHONICS:
+                qb.setTables(TABLE_PHONICS);
+                break;
 
-        case MATCH_CONTACTS_JOIN_PRESENCE:
-            qb.setTables(CONTACT_JOIN_PRESENCE_TABLE);
-            qb.setProjectionMap(sContactsProjectionMap);
-            break;
+            case MATCH_CONTACTS:
+                qb.setTables(CONTACT_JOIN_PRESENCE_CHAT_AVATAR_TABLE);
+                qb.setProjectionMap(sContactsProjectionMap);
+                break;
 
-        case MATCH_CONTACTS_BAREBONE:
-            qb.setTables(TABLE_CONTACTS);
-            break;
+            case MATCH_CONTACTS_JOIN_PRESENCE:
+                qb.setTables(CONTACT_JOIN_PRESENCE_TABLE);
+                qb.setProjectionMap(sContactsProjectionMap);
+                break;
 
-        case MATCH_CHATTING_CONTACTS:
-            qb.setTables(CONTACT_JOIN_PRESENCE_CHAT_AVATAR_TABLE);
-            qb.setProjectionMap(sContactsProjectionMap);
-            appendWhere(whereClause, "chats.last_message_date IS NOT NULL");
-            // no need to add the non blocked contacts clause because
-            // blocked contacts can't have conversations.
-            break;
+            case MATCH_CONTACTS_BAREBONE:
+                qb.setTables(TABLE_CONTACTS);
+                break;
 
-        case MATCH_CONTACTS_BY_PROVIDER:
-            buildQueryContactsByProvider(qb, whereClause, url);
-            appendWhere(whereClause, NON_BLOCKED_CONTACTS_WHERE_CLAUSE);
-            break;
+            case MATCH_CHATTING_CONTACTS:
+                qb.setTables(CONTACT_JOIN_PRESENCE_CHAT_AVATAR_TABLE);
+                qb.setProjectionMap(sContactsProjectionMap);
+                appendWhere(whereClause, "chats.last_message_date IS NOT NULL");
+                // no need to add the non blocked contacts clause because
+                // blocked contacts can't have conversations.
+                break;
 
-        case MATCH_CHATTING_CONTACTS_BY_PROVIDER:
-            buildQueryContactsByProvider(qb, whereClause, url);
-            appendWhere(whereClause, "chats.last_message_date IS NOT NULL");
-            // no need to add the non blocked contacts clause because
-            // blocked contacts can't have conversations.
-            break;
+            case MATCH_CONTACTS_BY_PROVIDER:
+                buildQueryContactsByProvider(qb, whereClause, url);
+                appendWhere(whereClause, NON_BLOCKED_CONTACTS_WHERE_CLAUSE);
+                break;
 
-        case MATCH_NO_CHATTING_CONTACTS_BY_PROVIDER:
-            buildQueryContactsByProvider(qb, whereClause, url);
-            appendWhere(whereClause, "chats.last_message_date IS NULL");
-            appendWhere(whereClause, NON_BLOCKED_CONTACTS_WHERE_CLAUSE);
-            break;
+            case MATCH_CHATTING_CONTACTS_BY_PROVIDER:
+                buildQueryContactsByProvider(qb, whereClause, url);
+                appendWhere(whereClause, "chats.last_message_date IS NOT NULL");
+                // no need to add the non blocked contacts clause because
+                // blocked contacts can't have conversations.
+                break;
 
-        case MATCH_ONLINE_CONTACTS_BY_PROVIDER:
-            buildQueryContactsByProvider(qb, whereClause, url);
-            appendWhere(whereClause, Imps.Contacts.PRESENCE_STATUS, "!=", Imps.Presence.OFFLINE);
-            appendWhere(whereClause, NON_BLOCKED_CONTACTS_WHERE_CLAUSE);
-            break;
+            case MATCH_NO_CHATTING_CONTACTS_BY_PROVIDER:
+                buildQueryContactsByProvider(qb, whereClause, url);
+                appendWhere(whereClause, "chats.last_message_date IS NULL");
+                appendWhere(whereClause, NON_BLOCKED_CONTACTS_WHERE_CLAUSE);
+                break;
 
-        case MATCH_OFFLINE_CONTACTS_BY_PROVIDER:
-            buildQueryContactsByProvider(qb, whereClause, url);
-            appendWhere(whereClause, Imps.Contacts.PRESENCE_STATUS, "=", Imps.Presence.OFFLINE);
-            appendWhere(whereClause, NON_BLOCKED_CONTACTS_WHERE_CLAUSE);
-            break;
+            case MATCH_ONLINE_CONTACTS_BY_PROVIDER:
+                buildQueryContactsByProvider(qb, whereClause, url);
+                appendWhere(whereClause, Imps.Contacts.PRESENCE_STATUS, "!=", Imps.Presence.OFFLINE);
+                appendWhere(whereClause, NON_BLOCKED_CONTACTS_WHERE_CLAUSE);
+                break;
 
-        case MATCH_BLOCKED_CONTACTS:
-            qb.setTables(CONTACT_JOIN_PRESENCE_CHAT_AVATAR_TABLE);
-            qb.setProjectionMap(sContactsProjectionMap);
-            appendWhere(whereClause, BLOCKED_CONTACTS_WHERE_CLAUSE);
-            break;
+            case MATCH_OFFLINE_CONTACTS_BY_PROVIDER:
+                buildQueryContactsByProvider(qb, whereClause, url);
+                appendWhere(whereClause, Imps.Contacts.PRESENCE_STATUS, "=", Imps.Presence.OFFLINE);
+                appendWhere(whereClause, NON_BLOCKED_CONTACTS_WHERE_CLAUSE);
+                break;
 
-        case MATCH_CONTACT:
-            qb.setTables(CONTACT_JOIN_PRESENCE_CHAT_AVATAR_TABLE);
-            qb.setProjectionMap(sContactsProjectionMap);
-            appendWhere(whereClause, "contacts._id", "=", url.getPathSegments().get(1));
-            break;
+            case MATCH_BLOCKED_CONTACTS:
+                qb.setTables(CONTACT_JOIN_PRESENCE_CHAT_AVATAR_TABLE);
+                qb.setProjectionMap(sContactsProjectionMap);
+                appendWhere(whereClause, BLOCKED_CONTACTS_WHERE_CLAUSE);
+                break;
 
-        case MATCH_ONLINE_CONTACT_COUNT:
-            qb.setTables(CONTACT_JOIN_PRESENCE_CHAT_TABLE);
-            qb.setProjectionMap(sContactsProjectionMap);
-            appendWhere(whereClause, Imps.Contacts.PRESENCE_STATUS, "!=", Imps.Presence.OFFLINE);
-            appendWhere(whereClause, "chats.last_message_date IS NULL");
-            appendWhere(whereClause, NON_BLOCKED_CONTACTS_WHERE_CLAUSE);
-            groupBy = Imps.Contacts.CONTACTLIST;
-            break;
+            case MATCH_CONTACT:
+                qb.setTables(CONTACT_JOIN_PRESENCE_CHAT_AVATAR_TABLE);
+                qb.setProjectionMap(sContactsProjectionMap);
+                appendWhere(whereClause, "contacts._id", "=", url.getPathSegments().get(1));
+                break;
 
-        case MATCH_CONTACTLISTS_BY_PROVIDER:
-            appendWhere(whereClause, Imps.ContactList.ACCOUNT, "=", url.getPathSegments().get(2));
-            // fall through
-        case MATCH_CONTACTLISTS:
-            qb.setTables(TABLE_CONTACT_LIST);
-            qb.setProjectionMap(sContactListProjectionMap);
-            break;
+            case MATCH_ONLINE_CONTACT_COUNT:
+                qb.setTables(CONTACT_JOIN_PRESENCE_CHAT_TABLE);
+                qb.setProjectionMap(sContactsProjectionMap);
+                appendWhere(whereClause, Imps.Contacts.PRESENCE_STATUS, "!=", Imps.Presence.OFFLINE);
+                appendWhere(whereClause, "chats.last_message_date IS NULL");
+                appendWhere(whereClause, NON_BLOCKED_CONTACTS_WHERE_CLAUSE);
+                groupBy = Imps.Contacts.CONTACTLIST;
+                break;
 
-        case MATCH_CONTACTLIST:
-            qb.setTables(TABLE_CONTACT_LIST);
-            appendWhere(whereClause, Imps.ContactList._ID, "=", url.getPathSegments().get(1));
-            break;
+            case MATCH_CONTACTLISTS_BY_PROVIDER:
+                appendWhere(whereClause, Imps.ContactList.ACCOUNT, "=", url.getPathSegments().get(2));
+                // fall through
+            case MATCH_CONTACTLISTS:
+                qb.setTables(TABLE_CONTACT_LIST);
+                qb.setProjectionMap(sContactListProjectionMap);
+                break;
 
-        case MATCH_BLOCKEDLIST:
-            qb.setTables(BLOCKEDLIST_JOIN_AVATAR_TABLE);
-            qb.setProjectionMap(sBlockedListProjectionMap);
-            break;
+            case MATCH_CONTACTLIST:
+                qb.setTables(TABLE_CONTACT_LIST);
+                appendWhere(whereClause, Imps.ContactList._ID, "=", url.getPathSegments().get(1));
+                break;
 
-        case MATCH_BLOCKEDLIST_BY_PROVIDER:
-            qb.setTables(BLOCKEDLIST_JOIN_AVATAR_TABLE);
-            qb.setProjectionMap(sBlockedListProjectionMap);
-            appendWhere(whereClause, Imps.BlockedList.ACCOUNT, "=", url.getPathSegments().get(2));
-            break;
+            case MATCH_BLOCKEDLIST:
+                qb.setTables(BLOCKEDLIST_JOIN_AVATAR_TABLE);
+                qb.setProjectionMap(sBlockedListProjectionMap);
+                break;
 
-        case MATCH_CONTACTS_ETAGS:
-            qb.setTables(TABLE_CONTACTS_ETAG);
-            break;
+            case MATCH_BLOCKEDLIST_BY_PROVIDER:
+                qb.setTables(BLOCKEDLIST_JOIN_AVATAR_TABLE);
+                qb.setProjectionMap(sBlockedListProjectionMap);
+                appendWhere(whereClause, Imps.BlockedList.ACCOUNT, "=", url.getPathSegments().get(2));
+                break;
 
-        case MATCH_CONTACTS_ETAG:
-            qb.setTables(TABLE_CONTACTS_ETAG);
-            appendWhere(whereClause, "_id", "=", url.getPathSegments().get(1));
-            break;
+            case MATCH_CONTACTS_ETAGS:
+                qb.setTables(TABLE_CONTACTS_ETAG);
+                break;
 
-        case MATCH_MESSAGES_BY_THREAD_ID:
-            appendWhere(whereClause, Imps.Messages.THREAD_ID, "=", url.getPathSegments().get(1));
-            // fall thru.
+            case MATCH_CONTACTS_ETAG:
+                qb.setTables(TABLE_CONTACTS_ETAG);
+                appendWhere(whereClause, "_id", "=", url.getPathSegments().get(1));
+                break;
 
-        case MATCH_MESSAGES:
-            qb.setTables(TABLE_MESSAGES);
+            case MATCH_MESSAGES_BY_THREAD_ID:
+                appendWhere(whereClause, Imps.Messages.THREAD_ID, "=", url.getPathSegments().get(1));
+                // fall thru.
 
-            final String selectionClause = whereClause.toString();
-            final String query1 = qb.buildQuery(projectionIn, selectionClause, null, null, null,
-                    null, null /* limit */);
+            case MATCH_MESSAGES:
+                qb.setTables(TABLE_MESSAGES);
 
-            // Build the second query for frequent
-            qb = new SQLiteQueryBuilder();
-            qb.setTables(TABLE_IN_MEMORY_MESSAGES);
-            final String query2 = qb.buildQuery(projectionIn, selectionClause, null, null, null,
-                    null, null /* limit */);
+                final String selectionClause = whereClause.toString();
+                final String query1 = qb.buildQuery(projectionIn, selectionClause, null, null, null,
+                        null, null /* limit */);
 
-            // Put them together
-            final String query = qb.buildUnionQuery(new String[] { query1, query2 }, sort, null);
-            final SQLiteDatabase db = getDBHelper().getWritableDatabase();
-            String[] doubleArgs = null;
-            if (selectionArgs != null) {
+                // Build the second query for frequent
+                qb = new SQLiteQueryBuilder();
+                qb.setTables(TABLE_IN_MEMORY_MESSAGES);
+                final String query2 = qb.buildQuery(projectionIn, selectionClause, null, null, null,
+                        null, null /* limit */);
 
-                doubleArgs = new String[ selectionArgs.length * 2];//Arrays.copyOf(selectionArgs, selectionArgs.length * 2);
-                System.arraycopy(selectionArgs, 0, doubleArgs, 0, selectionArgs.length);
-                System.arraycopy(selectionArgs, 0, doubleArgs, selectionArgs.length, selectionArgs.length);
-            }
+                // Put them together
+                final String query = qb.buildUnionQuery(new String[]{query1, query2}, sort, null);
+                final SQLiteDatabase db = getDBHelper().getWritableDatabase();
+                String[] doubleArgs = null;
+                if (selectionArgs != null) {
 
-            Cursor c = db.rawQueryWithFactory(null, query, doubleArgs, TABLE_MESSAGES);
-            if ((c != null) && !isTemporary()) {
-                c.setNotificationUri(getContext().getContentResolver(), url);
-            }
-            return c;
+                    doubleArgs = new String[selectionArgs.length * 2];//Arrays.copyOf(selectionArgs, selectionArgs.length * 2);
+                    System.arraycopy(selectionArgs, 0, doubleArgs, 0, selectionArgs.length);
+                    System.arraycopy(selectionArgs, 0, doubleArgs, selectionArgs.length, selectionArgs.length);
+                }
+
+                Cursor c = db.rawQueryWithFactory(null, query, doubleArgs, TABLE_MESSAGES);
+                if ((c != null) && !isTemporary()) {
+                    c.setNotificationUri(getContext().getContentResolver(), url);
+                }
+                return c;
 
             case MATCH_MESSAGES_BY_PACKET_ID:
             case MATCH_OTR_MESSAGES_BY_PACKET_ID:
@@ -1648,12 +1721,12 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
                         null, null /* limit */);
 
                 // Put them together
-                final String queryPacketId = qb.buildUnionQuery(new String[] { query1PacketId, query2PacketId }, sort, null);
+                final String queryPacketId = qb.buildUnionQuery(new String[]{query1PacketId, query2PacketId}, sort, null);
                 final SQLiteDatabase dbPacketId = getDBHelper().getWritableDatabase();
                 String[] doubleArgsPacketId = null;
                 if (selectionArgs != null) {
 
-                    doubleArgsPacketId = new String[ selectionArgs.length * 2];//Arrays.copyOf(selectionArgs, selectionArgs.length * 2);
+                    doubleArgsPacketId = new String[selectionArgs.length * 2];//Arrays.copyOf(selectionArgs, selectionArgs.length * 2);
                     System.arraycopy(selectionArgs, 0, doubleArgsPacketId, 0, selectionArgs.length);
                     System.arraycopy(selectionArgs, 0, doubleArgsPacketId, selectionArgs.length, selectionArgs.length);
                 }
@@ -1664,191 +1737,191 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
                 }
                 return cPacketId;
 
-        case MATCH_MESSAGE:
-            qb.setTables(TABLE_MESSAGES);
-            appendWhere(whereClause, Imps.Messages._ID, "=", url.getPathSegments().get(1));
-            break;
+            case MATCH_MESSAGE:
+                qb.setTables(TABLE_MESSAGES);
+                appendWhere(whereClause, Imps.Messages._ID, "=", url.getPathSegments().get(1));
+                break;
 
-        case MATCH_MESSAGES_BY_CONTACT:
-            qb.setTables(MESSAGE_JOIN_CONTACT_TABLE);
-            qb.setProjectionMap(sMessagesProjectionMap);
+            case MATCH_MESSAGES_BY_CONTACT:
+                qb.setTables(MESSAGE_JOIN_CONTACT_TABLE);
+                qb.setProjectionMap(sMessagesProjectionMap);
 
-            appendWhere(whereClause, Imps.Contacts.ACCOUNT, "=", url.getPathSegments().get(1));
-            appendWhere(whereClause, "contacts.username", "=", decodeURLSegment(url
-                    .getPathSegments().get(2)));
+                appendWhere(whereClause, Imps.Contacts.ACCOUNT, "=", url.getPathSegments().get(1));
+                appendWhere(whereClause, "contacts.username", "=", decodeURLSegment(url
+                        .getPathSegments().get(2)));
 
-            final String sel = whereClause.toString();
-            final String q1 = qb.buildQuery(projectionIn, sel, null, null, null, null, null);
+                final String sel = whereClause.toString();
+                final String q1 = qb.buildQuery(projectionIn, sel, null, null, null, null, null);
 
-            // Build the second query for frequent
-            qb = new SQLiteQueryBuilder();
-            qb.setTables(IN_MEMORY_MESSAGES_JOIN_CONTACT_TABLE);
-            qb.setProjectionMap(sInMemoryMessagesProjectionMap);
-            final String q2 = qb.buildQuery(projectionIn, sel, null, null, null, null, null);
+                // Build the second query for frequent
+                qb = new SQLiteQueryBuilder();
+                qb.setTables(IN_MEMORY_MESSAGES_JOIN_CONTACT_TABLE);
+                qb.setProjectionMap(sInMemoryMessagesProjectionMap);
+                final String q2 = qb.buildQuery(projectionIn, sel, null, null, null, null, null);
 
-            // Put them together
-            final String q3 = qb.buildUnionQuery(new String[] { q1, q2 }, sort, null);
-            final SQLiteDatabase db2 = getDBHelper().getWritableDatabase();
-            Cursor c2 = db2.rawQueryWithFactory(null, q3, null, MESSAGE_JOIN_CONTACT_TABLE);
-            if ((c2 != null) && !isTemporary()) {
-                c2.setNotificationUri(getContext().getContentResolver(), url);
-            }
-            return c2;
+                // Put them together
+                final String q3 = qb.buildUnionQuery(new String[]{q1, q2}, sort, null);
+                final SQLiteDatabase db2 = getDBHelper().getWritableDatabase();
+                Cursor c2 = db2.rawQueryWithFactory(null, q3, null, MESSAGE_JOIN_CONTACT_TABLE);
+                if ((c2 != null) && !isTemporary()) {
+                    c2.setNotificationUri(getContext().getContentResolver(), url);
+                }
+                return c2;
 
-        case MATCH_MESSAGES_BY_SEARCH:
-            qb.setTables(MESSAGE_JOIN_CONTACT_TABLE);
-            qb.setProjectionMap(sMessagesProjectionMap);
+            case MATCH_MESSAGES_BY_SEARCH:
+                qb.setTables(MESSAGE_JOIN_CONTACT_TABLE);
+                qb.setProjectionMap(sMessagesProjectionMap);
 
-            limit = "20";
+                limit = "20";
 
-            final String q4 = qb.buildQuery(projectionIn, whereClause.toString(), null, null, null, null, null);
+                final String q4 = qb.buildQuery(projectionIn, whereClause.toString(), null, null, null, null, null);
 
-            // Build the second query for frequent
-            qb = new SQLiteQueryBuilder();
-            qb.setTables(IN_MEMORY_MESSAGES_JOIN_CONTACT_TABLE);
-            qb.setProjectionMap(sInMemoryMessagesProjectionMap);
-            final String q5 = qb.buildQuery(projectionIn, whereClause.toString(), null, null, null, null, null);
+                // Build the second query for frequent
+                qb = new SQLiteQueryBuilder();
+                qb.setTables(IN_MEMORY_MESSAGES_JOIN_CONTACT_TABLE);
+                qb.setProjectionMap(sInMemoryMessagesProjectionMap);
+                final String q5 = qb.buildQuery(projectionIn, whereClause.toString(), null, null, null, null, null);
 
-            // Put them together
-            final String q6 = qb.buildUnionQuery(new String[] { q4, q5 }, sort, limit);
-            final SQLiteDatabase db3 = getDBHelper().getWritableDatabase();
-            Cursor c3 = db3.rawQueryWithFactory(null, q6, null, MESSAGE_JOIN_CONTACT_TABLE);
-            if ((c3 != null) && !isTemporary()) {
-                c3.setNotificationUri(getContext().getContentResolver(), url);
-            }
+                // Put them together
+                final String q6 = qb.buildUnionQuery(new String[]{q4, q5}, sort, limit);
+                final SQLiteDatabase db3 = getDBHelper().getWritableDatabase();
+                Cursor c3 = db3.rawQueryWithFactory(null, q6, null, MESSAGE_JOIN_CONTACT_TABLE);
+                if ((c3 != null) && !isTemporary()) {
+                    c3.setNotificationUri(getContext().getContentResolver(), url);
+                }
 
 
-            return c3;
+                return c3;
 
-        case MATCH_INVITATIONS:
-            qb.setTables(TABLE_INVITATIONS);
-            break;
+            case MATCH_INVITATIONS:
+                qb.setTables(TABLE_INVITATIONS);
+                break;
 
-        case MATCH_INVITATION:
-            qb.setTables(TABLE_INVITATIONS);
-            appendWhere(whereClause, Imps.Invitation._ID, "=", url.getPathSegments().get(1));
-            break;
+            case MATCH_INVITATION:
+                qb.setTables(TABLE_INVITATIONS);
+                appendWhere(whereClause, Imps.Invitation._ID, "=", url.getPathSegments().get(1));
+                break;
 
-        case MATCH_GROUP_MEMBERS:
-            qb.setTables(TABLE_GROUP_MEMBERS);
-            break;
+            case MATCH_GROUP_MEMBERS:
+                qb.setTables(TABLE_GROUP_MEMBERS);
+                break;
 
-        case MATCH_GROUP_MEMBERS_BY_GROUP:
-            qb.setTables(TABLE_GROUP_MEMBERS);
-            appendWhere(whereClause, Imps.GroupMembers.GROUP, "=", url.getPathSegments().get(1));
-            break;
+            case MATCH_GROUP_MEMBERS_BY_GROUP:
+                qb.setTables(TABLE_GROUP_MEMBERS);
+                appendWhere(whereClause, Imps.GroupMembers.GROUP, "=", url.getPathSegments().get(1));
+                break;
 
-        case MATCH_AVATARS:
-            qb.setTables(TABLE_AVATARS);
-            break;
+            case MATCH_AVATARS:
+                qb.setTables(TABLE_AVATARS);
+                break;
 
-        case MATCH_AVATAR_BY_PROVIDER:
-            qb.setTables(TABLE_AVATARS);
-            appendWhere(whereClause, Imps.Avatars.ACCOUNT, "=", url.getPathSegments().get(2));
-            break;
+            case MATCH_AVATAR_BY_PROVIDER:
+                qb.setTables(TABLE_AVATARS);
+                appendWhere(whereClause, Imps.Avatars.ACCOUNT, "=", url.getPathSegments().get(2));
+                break;
 
-        case MATCH_CHATS:
-            qb.setTables(TABLE_CHATS);
-            break;
+            case MATCH_CHATS:
+                qb.setTables(TABLE_CHATS);
+                break;
 
-        case MATCH_CHATS_ID:
-            qb.setTables(TABLE_CHATS);
-            appendWhere(whereClause, Imps.Chats.CONTACT_ID, "=", url.getPathSegments().get(1));
-            break;
+            case MATCH_CHATS_ID:
+                qb.setTables(TABLE_CHATS);
+                appendWhere(whereClause, Imps.Chats.CONTACT_ID, "=", url.getPathSegments().get(1));
+                break;
 
-        case MATCH_CHATS_BY_ACCOUNT:
-            qb.setTables(TABLE_CHATS);
-            String accountStr = decodeURLSegment(url.getLastPathSegment());
-            appendWhere(
-                    whereClause,
-                    buildContactIdSelection(Imps.Chats.CONTACT_ID, Imps.Contacts.ACCOUNT + "='"
-                                                                   + accountStr + "'"));
-            break;
+            case MATCH_CHATS_BY_ACCOUNT:
+                qb.setTables(TABLE_CHATS);
+                String accountStr = decodeURLSegment(url.getLastPathSegment());
+                appendWhere(
+                        whereClause,
+                        buildContactIdSelection(Imps.Chats.CONTACT_ID, Imps.Contacts.ACCOUNT + "='"
+                                + accountStr + "'"));
+                break;
 
-        case MATCH_PRESENCE:
-            qb.setTables(TABLE_PRESENCE);
-            break;
+            case MATCH_PRESENCE:
+                qb.setTables(TABLE_PRESENCE);
+                break;
 
-        case MATCH_PRESENCE_ID:
-            qb.setTables(TABLE_PRESENCE);
-            appendWhere(whereClause, Imps.Presence.CONTACT_ID, "=", url.getPathSegments().get(1));
-            break;
+            case MATCH_PRESENCE_ID:
+                qb.setTables(TABLE_PRESENCE);
+                appendWhere(whereClause, Imps.Presence.CONTACT_ID, "=", url.getPathSegments().get(1));
+                break;
 
-        case MATCH_SESSIONS:
-            qb.setTables(TABLE_SESSION_COOKIES);
-            break;
+            case MATCH_SESSIONS:
+                qb.setTables(TABLE_SESSION_COOKIES);
+                break;
 
-        case MATCH_SESSIONS_BY_PROVIDER:
-            qb.setTables(TABLE_SESSION_COOKIES);
-            appendWhere(whereClause, Imps.SessionCookies.ACCOUNT, "=", url.getPathSegments().get(2));
-            break;
+            case MATCH_SESSIONS_BY_PROVIDER:
+                qb.setTables(TABLE_SESSION_COOKIES);
+                appendWhere(whereClause, Imps.SessionCookies.ACCOUNT, "=", url.getPathSegments().get(2));
+                break;
 
-        case MATCH_PROVIDER_SETTINGS_BY_ID_AND_NAME:
-            appendWhere(whereClause, Imps.ProviderSettings.NAME, "=", url.getPathSegments().get(2));
-            // fall through
-        case MATCH_PROVIDER_SETTINGS_BY_ID:
-            appendWhere(whereClause, Imps.ProviderSettings.PROVIDER, "=", url.getPathSegments()
-                    .get(1));
-            // fall through
-        case MATCH_PROVIDER_SETTINGS:
-            qb.setTables(TABLE_PROVIDER_SETTINGS);
-            break;
+            case MATCH_PROVIDER_SETTINGS_BY_ID_AND_NAME:
+                appendWhere(whereClause, Imps.ProviderSettings.NAME, "=", url.getPathSegments().get(2));
+                // fall through
+            case MATCH_PROVIDER_SETTINGS_BY_ID:
+                appendWhere(whereClause, Imps.ProviderSettings.PROVIDER, "=", url.getPathSegments()
+                        .get(1));
+                // fall through
+            case MATCH_PROVIDER_SETTINGS:
+                qb.setTables(TABLE_PROVIDER_SETTINGS);
+                break;
 
-        case MATCH_ACCOUNTS_STATUS:
-            qb.setTables(TABLE_ACCOUNT_STATUS);
-            break;
+            case MATCH_ACCOUNTS_STATUS:
+                qb.setTables(TABLE_ACCOUNT_STATUS);
+                break;
 
-        case MATCH_ACCOUNT_STATUS:
-            qb.setTables(TABLE_ACCOUNT_STATUS);
-            appendWhere(whereClause, Imps.AccountStatus.ACCOUNT, "=", url.getPathSegments().get(1));
-            break;
+            case MATCH_ACCOUNT_STATUS:
+                qb.setTables(TABLE_ACCOUNT_STATUS);
+                appendWhere(whereClause, Imps.AccountStatus.ACCOUNT, "=", url.getPathSegments().get(1));
+                break;
 
-        case MATCH_BRANDING_RESOURCE_MAP_CACHE:
-            qb.setTables(TABLE_BRANDING_RESOURCE_MAP_CACHE);
-            break;
+            case MATCH_BRANDING_RESOURCE_MAP_CACHE:
+                qb.setTables(TABLE_BRANDING_RESOURCE_MAP_CACHE);
+                break;
 
-        // mcs and rmq queries
-        case MATCH_OUTGOING_RMQ_MESSAGES:
-            qb.setTables(TABLE_OUTGOING_RMQ_MESSAGES);
-            break;
+            // mcs and rmq queries
+            case MATCH_OUTGOING_RMQ_MESSAGES:
+                qb.setTables(TABLE_OUTGOING_RMQ_MESSAGES);
+                break;
 
-        case MATCH_OUTGOING_HIGHEST_RMQ_ID:
-            qb.setTables(TABLE_OUTGOING_RMQ_MESSAGES);
-            sort = "rmq_id DESC";
-            limit = "1";
-            break;
+            case MATCH_OUTGOING_HIGHEST_RMQ_ID:
+                qb.setTables(TABLE_OUTGOING_RMQ_MESSAGES);
+                sort = "rmq_id DESC";
+                limit = "1";
+                break;
 
-        case MATCH_LAST_RMQ_ID:
-            qb.setTables(TABLE_LAST_RMQ_ID);
-            limit = "1";
-            break;
+            case MATCH_LAST_RMQ_ID:
+                qb.setTables(TABLE_LAST_RMQ_ID);
+                limit = "1";
+                break;
 
-        case MATCH_S2D_RMQ_IDS:
-            qb.setTables(TABLE_S2D_RMQ_IDS);
-            break;
+            case MATCH_S2D_RMQ_IDS:
+                qb.setTables(TABLE_S2D_RMQ_IDS);
+                break;
 
-        // ChatSecure-Push queries
-        case MATCH_CSP_ACCOUNT:
-            appendWhere(whereClause, PushDatabase.Accounts._ID, "=", url.getPathSegments().get(1));
-        case MATCH_CSP_ACCOUNTS:
-            qb.setTables(TABLE_CSP_ACCOUNTS);
-            break;
+            // ChatSecure-Push queries
+            case MATCH_CSP_ACCOUNT:
+                appendWhere(whereClause, PushDatabase.Accounts._ID, "=", url.getPathSegments().get(1));
+            case MATCH_CSP_ACCOUNTS:
+                qb.setTables(TABLE_CSP_ACCOUNTS);
+                break;
 
-        case MATCH_CSP_DEVICE:
-            appendWhere(whereClause, PushDatabase.Devices._ID, "=", url.getPathSegments().get(1));
-        case MATCH_CSP_DEVICES:
-            qb.setTables(TABLE_CSP_DEVICES);
-            break;
+            case MATCH_CSP_DEVICE:
+                appendWhere(whereClause, PushDatabase.Devices._ID, "=", url.getPathSegments().get(1));
+            case MATCH_CSP_DEVICES:
+                qb.setTables(TABLE_CSP_DEVICES);
+                break;
 
-        case MATCH_CSP_TOKEN:
-            appendWhere(whereClause, PushDatabase.Tokens._ID, "=", url.getPathSegments().get(1));
+            case MATCH_CSP_TOKEN:
+                appendWhere(whereClause, PushDatabase.Tokens._ID, "=", url.getPathSegments().get(1));
 
-        case MATCH_CSP_TOKENS:
-            qb.setTables(TABLE_CSP_TOKENS);
-            break;
+            case MATCH_CSP_TOKENS:
+                qb.setTables(TABLE_CSP_TOKENS);
+                break;
 
-        default:
-            throw new IllegalArgumentException("Unknown URL " + url);
+            default:
+                throw new IllegalArgumentException("Unknown URL " + url);
         }
 
         if (getDBHelper() == null)
@@ -1877,35 +1950,34 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
                     sort, limit);
             if (c != null) {
                 switch (match) {
-                case MATCH_CHATTING_CONTACTS:
-                case MATCH_CHATTING_CONTACTS_BY_PROVIDER:
+                    case MATCH_CHATTING_CONTACTS:
+                    case MATCH_CHATTING_CONTACTS_BY_PROVIDER:
 
-                    url = Contacts.CONTENT_URI_CHAT_CONTACTS_BY;
-                    break;
+                        url = Contacts.CONTENT_URI_CHAT_CONTACTS_BY;
+                        break;
 
-                case MATCH_CONTACTS_BY_PROVIDER:
-                case MATCH_ONLINE_CONTACTS_BY_PROVIDER:
-                case MATCH_OFFLINE_CONTACTS_BY_PROVIDER:
-                case MATCH_CONTACTS_BAREBONE:
-                case MATCH_CONTACTS_JOIN_PRESENCE:
-                case MATCH_ONLINE_CONTACT_COUNT:
-                    url = Imps.Contacts.CONTENT_URI;
-                    break;
+                    case MATCH_CONTACTS_BY_PROVIDER:
+                    case MATCH_ONLINE_CONTACTS_BY_PROVIDER:
+                    case MATCH_OFFLINE_CONTACTS_BY_PROVIDER:
+                    case MATCH_CONTACTS_BAREBONE:
+                    case MATCH_CONTACTS_JOIN_PRESENCE:
+                    case MATCH_ONLINE_CONTACT_COUNT:
+                        url = Imps.Contacts.CONTENT_URI;
+                        break;
                 }
-                
-               //     log("set notify url " + url);
+
+                //     log("set notify url " + url);
 
                 c.setNotificationUri(getContext().getContentResolver(), url);
             }
 
-        //    c = new MyCrossProcessCursorWrapper(c);
+            //    c = new MyCrossProcessCursorWrapper(c);
             return c;
 
         } catch (Exception ex) {
             LogCleaner.error(LOG_TAG, "query exc db caught ", ex);
             return null;
-        }
-        catch (Error ex) {
+        } catch (Error ex) {
             LogCleaner.error(LOG_TAG, "query error db caught ", ex);
             return null;
         }
@@ -1960,7 +2032,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
     }
 
     private void buildQueryContactsByProvider(SQLiteQueryBuilder qb, StringBuilder whereClause,
-            Uri url) {
+                                              Uri url) {
         qb.setTables(CONTACT_JOIN_PRESENCE_CHAT_AVATAR_TABLE);
         qb.setProjectionMap(sContactsProjectionMap);
         // we don't really need the provider id in query. account id is enough.
@@ -1971,111 +2043,111 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
     public String getType(Uri url) {
         int match = mUrlMatcher.match(url);
         switch (match) {
-        case MATCH_PROVIDERS:
-            return Imps.Provider.CONTENT_TYPE;
+            case MATCH_PROVIDERS:
+                return Imps.Provider.CONTENT_TYPE;
 
-        case MATCH_PROVIDERS_BY_ID:
-            return Imps.Provider.CONTENT_ITEM_TYPE;
+            case MATCH_PROVIDERS_BY_ID:
+                return Imps.Provider.CONTENT_ITEM_TYPE;
 
-        case MATCH_ACCOUNTS:
-            return Imps.Account.CONTENT_TYPE;
+            case MATCH_ACCOUNTS:
+                return Imps.Account.CONTENT_TYPE;
 
-        case MATCH_ACCOUNTS_BY_ID:
-            return Imps.Account.CONTENT_ITEM_TYPE;
+            case MATCH_ACCOUNTS_BY_ID:
+                return Imps.Account.CONTENT_ITEM_TYPE;
 
-        case MATCH_CONTACTS:
-        case MATCH_CONTACTS_BY_PROVIDER:
-        case MATCH_ONLINE_CONTACTS_BY_PROVIDER:
-        case MATCH_OFFLINE_CONTACTS_BY_PROVIDER:
-        case MATCH_CONTACTS_BULK:
-        case MATCH_CONTACTS_BAREBONE:
-        case MATCH_CONTACTS_JOIN_PRESENCE:
-            return Imps.Contacts.CONTENT_TYPE;
+            case MATCH_CONTACTS:
+            case MATCH_CONTACTS_BY_PROVIDER:
+            case MATCH_ONLINE_CONTACTS_BY_PROVIDER:
+            case MATCH_OFFLINE_CONTACTS_BY_PROVIDER:
+            case MATCH_CONTACTS_BULK:
+            case MATCH_CONTACTS_BAREBONE:
+            case MATCH_CONTACTS_JOIN_PRESENCE:
+                return Imps.Contacts.CONTENT_TYPE;
 
-        case MATCH_CONTACT:
-            return Imps.Contacts.CONTENT_ITEM_TYPE;
+            case MATCH_CONTACT:
+                return Imps.Contacts.CONTENT_ITEM_TYPE;
 
-        case MATCH_CONTACTLISTS:
-        case MATCH_CONTACTLISTS_BY_PROVIDER:
-            return Imps.ContactList.CONTENT_TYPE;
+            case MATCH_CONTACTLISTS:
+            case MATCH_CONTACTLISTS_BY_PROVIDER:
+                return Imps.ContactList.CONTENT_TYPE;
 
-        case MATCH_CONTACTLIST:
-            return Imps.ContactList.CONTENT_ITEM_TYPE;
+            case MATCH_CONTACTLIST:
+                return Imps.ContactList.CONTENT_ITEM_TYPE;
 
-        case MATCH_BLOCKEDLIST:
-        case MATCH_BLOCKEDLIST_BY_PROVIDER:
-            return Imps.BlockedList.CONTENT_TYPE;
+            case MATCH_BLOCKEDLIST:
+            case MATCH_BLOCKEDLIST_BY_PROVIDER:
+                return Imps.BlockedList.CONTENT_TYPE;
 
-        case MATCH_CONTACTS_ETAGS:
-        case MATCH_CONTACTS_ETAG:
-            return Imps.ContactsEtag.CONTENT_TYPE;
+            case MATCH_CONTACTS_ETAGS:
+            case MATCH_CONTACTS_ETAG:
+                return Imps.ContactsEtag.CONTENT_TYPE;
 
-        case MATCH_MESSAGES:
-        case MATCH_MESSAGES_BY_CONTACT:
-        case MATCH_MESSAGES_BY_SEARCH:
-        case MATCH_MESSAGES_BY_THREAD_ID:
-        case MATCH_MESSAGES_BY_PACKET_ID:
-        case MATCH_MESSAGES_BY_PROVIDER:
-        case MATCH_MESSAGES_BY_ACCOUNT:
-        case MATCH_OTR_MESSAGES:
-        case MATCH_OTR_MESSAGES_BY_CONTACT:
-        case MATCH_OTR_MESSAGES_BY_THREAD_ID:
-        case MATCH_OTR_MESSAGES_BY_PROVIDER:
-        case MATCH_OTR_MESSAGES_BY_ACCOUNT:
-            return Imps.Messages.CONTENT_TYPE;
+            case MATCH_MESSAGES:
+            case MATCH_MESSAGES_BY_CONTACT:
+            case MATCH_MESSAGES_BY_SEARCH:
+            case MATCH_MESSAGES_BY_THREAD_ID:
+            case MATCH_MESSAGES_BY_PACKET_ID:
+            case MATCH_MESSAGES_BY_PROVIDER:
+            case MATCH_MESSAGES_BY_ACCOUNT:
+            case MATCH_OTR_MESSAGES:
+            case MATCH_OTR_MESSAGES_BY_CONTACT:
+            case MATCH_OTR_MESSAGES_BY_THREAD_ID:
+            case MATCH_OTR_MESSAGES_BY_PROVIDER:
+            case MATCH_OTR_MESSAGES_BY_ACCOUNT:
+                return Imps.Messages.CONTENT_TYPE;
 
-        case MATCH_MESSAGE:
-        case MATCH_OTR_MESSAGE:
-            return Imps.Messages.CONTENT_ITEM_TYPE;
+            case MATCH_MESSAGE:
+            case MATCH_OTR_MESSAGE:
+                return Imps.Messages.CONTENT_ITEM_TYPE;
 
-        case MATCH_PRESENCE:
-        case MATCH_PRESENCE_BULK:
-            return Imps.Presence.CONTENT_TYPE;
+            case MATCH_PRESENCE:
+            case MATCH_PRESENCE_BULK:
+                return Imps.Presence.CONTENT_TYPE;
 
-        case MATCH_AVATARS:
-            return Imps.Avatars.CONTENT_TYPE;
+            case MATCH_AVATARS:
+                return Imps.Avatars.CONTENT_TYPE;
 
-        case MATCH_AVATAR:
-            return Imps.Avatars.CONTENT_ITEM_TYPE;
+            case MATCH_AVATAR:
+                return Imps.Avatars.CONTENT_ITEM_TYPE;
 
-        case MATCH_CHATS:
-            return Imps.Chats.CONTENT_TYPE;
+            case MATCH_CHATS:
+                return Imps.Chats.CONTENT_TYPE;
 
-        case MATCH_CHATS_ID:
-            return Imps.Chats.CONTENT_ITEM_TYPE;
+            case MATCH_CHATS_ID:
+                return Imps.Chats.CONTENT_ITEM_TYPE;
 
-        case MATCH_INVITATIONS:
-            return Imps.Invitation.CONTENT_TYPE;
+            case MATCH_INVITATIONS:
+                return Imps.Invitation.CONTENT_TYPE;
 
-        case MATCH_INVITATION:
-            return Imps.Invitation.CONTENT_ITEM_TYPE;
+            case MATCH_INVITATION:
+                return Imps.Invitation.CONTENT_ITEM_TYPE;
 
-        case MATCH_GROUP_MEMBERS:
-        case MATCH_GROUP_MEMBERS_BY_GROUP:
-            return Imps.GroupMembers.CONTENT_TYPE;
+            case MATCH_GROUP_MEMBERS:
+            case MATCH_GROUP_MEMBERS_BY_GROUP:
+                return Imps.GroupMembers.CONTENT_TYPE;
 
-        case MATCH_SESSIONS:
-        case MATCH_SESSIONS_BY_PROVIDER:
-            return Imps.SessionCookies.CONTENT_TYPE;
+            case MATCH_SESSIONS:
+            case MATCH_SESSIONS_BY_PROVIDER:
+                return Imps.SessionCookies.CONTENT_TYPE;
 
-        case MATCH_PROVIDER_SETTINGS:
-            return Imps.ProviderSettings.CONTENT_TYPE;
+            case MATCH_PROVIDER_SETTINGS:
+                return Imps.ProviderSettings.CONTENT_TYPE;
 
-        case MATCH_ACCOUNTS_STATUS:
-            return Imps.AccountStatus.CONTENT_TYPE;
+            case MATCH_ACCOUNTS_STATUS:
+                return Imps.AccountStatus.CONTENT_TYPE;
 
-        case MATCH_ACCOUNT_STATUS:
-            return Imps.AccountStatus.CONTENT_ITEM_TYPE;
+            case MATCH_ACCOUNT_STATUS:
+                return Imps.AccountStatus.CONTENT_ITEM_TYPE;
 
 
-        case MATCH_WORDS:
-            return Imps.Word.CONTENT_TYPE;
+            case MATCH_WORDS:
+                return Imps.Word.CONTENT_TYPE;
 
-        case MATCH_WORDS_BY_NAME:
-            return Imps.Word.CONTENT_ITEM_TYPE;
+            case MATCH_WORDS_BY_NAME:
+                return Imps.Word.CONTENT_ITEM_TYPE;
 
-        default:
-        throw new IllegalArgumentException("Unknown URL");
+            default:
+                throw new IllegalArgumentException("Unknown URL");
         }
     }
 
@@ -2090,7 +2162,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
 
         if (usernameCount != nicknameCount) {
             LogCleaner.warn(LOG_TAG, "[ImProvider] insertBulkContacts: input bundle "
-                           + "username & nickname lists have diff. length!");
+                    + "username & nickname lists have diff. length!");
             return false;
         }
 
@@ -2125,7 +2197,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
             whereClause.append(" AND ");
             whereClause.append(Contacts.ACCOUNT);
             whereClause.append("=?");
-            
+
             for (int i = 0; i < usernameCount; i++) {
                 String username = usernames.get(i);
                 String nickname = nicknames.get(i);
@@ -2199,15 +2271,14 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
                     }
                 }
                 */
-                
+
                 String[] columns = {"_id, username"};
-                String[] whereArgs = {username,account+""};
-                
-                Cursor c = db.query(TABLE_CONTACTS,  columns, whereClause.toString(), whereArgs, null,null,null,null);
+                String[] whereArgs = {username, account + ""};
+
+                Cursor c = db.query(TABLE_CONTACTS, columns, whereClause.toString(), whereArgs, null, null, null, null);
                 boolean contactExists = (c != null && c.getCount() > 0);
 
-                if (contactExists) 
-                {
+                if (contactExists) {
                     int rowsUpdated = db.update(TABLE_CONTACTS, contactValues, whereClause.toString(), whereArgs);
 
                     // seed the presence for the new contact
@@ -2221,18 +2292,16 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
                     } catch (android.database.sqlite.SQLiteConstraintException ex) {
                         LogCleaner.warn(LOG_TAG, "insertBulkContacts: seeding presence caught " + ex);
                     }
-                }
-                else
-                {
+                } else {
                     rowId = db.insert(TABLE_CONTACTS, USERNAME, contactValues);
                     if (rowId > 0) {
                         sum++;
-    
+
                         // seed the presence for the new contact
-                        
-                            log("### seedPresence for contact id " + rowId);
+
+                        log("### seedPresence for contact id " + rowId);
                         presenceValues.put(Imps.Presence.CONTACT_ID, rowId);
-    
+
                         try {
                             db.insert(TABLE_PRESENCE, null, presenceValues);
                         } catch (android.database.sqlite.SQLiteConstraintException ex) {
@@ -2255,8 +2324,8 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
         }
 
         // We know that we succeeded becuase endTransaction throws if the transaction failed.
-        
-            log("insertBulkContacts: added " + sum + " contacts!");
+
+        log("insertBulkContacts: added " + sum + " contacts!");
         return true;
     }
 
@@ -2289,7 +2358,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
 
         if (usernameCount != nicknameCount) {
             LogCleaner.warn(LOG_TAG, "[ImProvider] updateBulkContacts: input bundle "
-                           + "username & nickname lists have diff. length!");
+                    + "username & nickname lists have diff. length!");
             return 0;
         }
 
@@ -2333,11 +2402,11 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
                     quickContact = Integer.parseInt(quickContactArray.get(i));
                     rejected = Integer.parseInt(rejectedArray.get(i));
                 } catch (NumberFormatException ex) {
-                    LogCleaner.error(LOG_TAG, "insertBulkContacts: caught ",ex);
+                    LogCleaner.error(LOG_TAG, "insertBulkContacts: caught ", ex);
                 }
 
-                
-                    log("updateBulkContacts[" + i + "] username=" + username + ", nickname="
+
+                log("updateBulkContacts[" + i + "] username=" + username + ", nickname="
                         + nickname + ", type=" + type + ", subscriptionStatus="
                         + subscriptionStatus + ", subscriptionType=" + subscriptionType + ", qc="
                         + quickContact);
@@ -2363,7 +2432,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
                         updateSelection.toString(), updateSelectionArgs);
                 if (numUpdated == 0) {
                     LogCleaner.warn(LOG_TAG, "[ImProvider] updateBulkContacts: "
-                                   + " update failed for selection = " + updateSelection);
+                            + " update failed for selection = " + updateSelection);
                 } else {
                     sum += numUpdated;
                 }
@@ -2378,8 +2447,8 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
             db.endTransaction();
         }
 
-        
-            log("updateBulkContacts: " + sum + " entries updated");
+
+        log("updateBulkContacts: " + sum + " entries updated");
         return sum;
     }
 
@@ -2389,11 +2458,11 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
      * this method does not remove presences for which the corresponding
      * contacts no longer exist. That's probably ok since presence is kept in
      * memory, so it won't stay around for too long. Here is the algorithm.
-     *
+     * <p>
      * 1. for all presence that have a corresponding contact, make it OFFLINE.
      * This is one sqlite call. 2. query for all the contacts that don't have a
      * presence, and add a presence row for them.
-     *
+     * <p>
      * TODO simplify the presence management! The desire is to have a presence
      * row for each TODO contact in the database, so later we can just call
      * update() on the presence rows TODO instead of checking for the existence
@@ -2404,7 +2473,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
      * need to maintain an empty presence TODO row for each contact.
      *
      * @param account the account of the contacts for which we want to create
-     *            seed presence rows.
+     *                seed presence rows.
      */
     private void seedInitialPresenceByAccount(long account) {
         SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
@@ -2435,28 +2504,28 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
             buf.append("=?) ");
 
             String selection = buf.toString();
-            
-                log("seedInitialPresence: reset presence selection=" + selection);
+
+            log("seedInitialPresence: reset presence selection=" + selection);
 
             int count = db.update(TABLE_PRESENCE, presenceValues, selection,
                     mQueryContactIdSelectionArgs1);
-            
-                log("seedInitialPresence: reset " + count + " presence rows to OFFLINE");
+
+            log("seedInitialPresence: reset " + count + " presence rows to OFFLINE");
 
             // for in-memory presence table, add a presence row for each contact that
             // doesn't have a presence. in-memory presence table isn't reliable, and goes away
             // when device reboot or IMProvider process dies, so we can't rely on each contact
             // have a corresponding presence.
-             {
+            {
                 log("seedInitialPresence: contacts_with_no_presence_selection => "
-                    + CONTACTS_WITH_NO_PRESENCE_SELECTION);
+                        + CONTACTS_WITH_NO_PRESENCE_SELECTION);
             }
 
             c = qb.query(db, CONTACT_ID_PROJECTION, CONTACTS_WITH_NO_PRESENCE_SELECTION,
                     mQueryContactIdSelectionArgs1, null, null, null, null);
 
-            
-                log("seedInitialPresence: found " + c.getCount() + " contacts w/o presence");
+
+            log("seedInitialPresence: found " + c.getCount() + " contacts w/o presence");
 
             count = 0;
 
@@ -2471,14 +2540,14 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
                 } catch (SQLiteConstraintException ex) {
                     // we could possibly catch this exception, since there could be a presence
                     // row with the same contact_id. That's fine, just ignore the error
-                    
-                        log("seedInitialPresence: insert presence for contact_id " + id
+
+                    log("seedInitialPresence: insert presence for contact_id " + id
                             + " failed, caught " + ex);
                 }
             }
 
-            
-                log("seedInitialPresence: added " + count + " new presence rows");
+
+            log("seedInitialPresence: added " + count + " new presence rows");
 
             db.setTransactionSuccessful();
         } finally {
@@ -2501,7 +2570,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
         ArrayList<String> clientTypeArray = getStringArrayList(values, Imps.Presence.CLIENT_TYPE);
         ArrayList<String> resourceArray = getStringArrayList(values, Imps.Presence.JID_RESOURCE);
 
-        
+
         // append username to the selection clause
         StringBuilder buf = new StringBuilder();
 
@@ -2536,8 +2605,8 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
 
         String selection = buf.toString();
 
-        
-            log("updateBulkPresence: selection => " + selection);
+
+        log("updateBulkPresence: selection => " + selection);
 
         int numArgs = (whereArgs != null ? whereArgs.length + 2 : 2);
         String[] selectionArgs = new String[numArgs];
@@ -2574,15 +2643,15 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
                         clientType = Integer.parseInt(clientTypeArray.get(i));
                     }
                 } catch (NumberFormatException ex) {
-                    LogCleaner.error(LOG_TAG, "[ImProvider] updateBulkPresence: caught",ex);
+                    LogCleaner.error(LOG_TAG, "[ImProvider] updateBulkPresence: caught", ex);
                 }
- 
+
                 log("updateBulkPresence[" + i + "] account=" + account + " username=" + username + ", priority="
-                    + priority + ", mode=" + mode + ", status=" + status + ", resource="
-                    + jidResource + ", clientType=" + clientType);
+                        + priority + ", mode=" + mode + ", status=" + status + ", resource="
+                        + jidResource + ", clientType=" + clientType);
 
                 presenceValues.put(Imps.Presence.PRESENCE_STATUS, mode);
-                presenceValues.put(Imps.Presence.PRIORITY, priority);                                
+                presenceValues.put(Imps.Presence.PRIORITY, priority);
                 presenceValues.put(Imps.Presence.PRESENCE_CUSTOM_STATUS, status);
                 presenceValues.put(Imps.Presence.CLIENT_TYPE, clientType);
                 presenceValues.put(Imps.Presence.JID_RESOURCE, jidResource);
@@ -2591,22 +2660,19 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
                 int idx = selArgsIndex;
                 selectionArgs[idx++] = String.valueOf(account);
                 selectionArgs[idx++] = username;
-                
+
                 //selectionArgs[idx++] = String.valueOf(priority);
                 //selectionArgs[idx] = jidResource;
-            
+
                 int numUpdated = db
                         .update(TABLE_PRESENCE, presenceValues, selection, selectionArgs);
-                
-                if (numUpdated == 0)
-                {
+
+                if (numUpdated == 0) {
                     LogCleaner.debug(LOG_TAG, "[ImProvider] updateBulkPresence: " + username + " updated " + numUpdated);
-                }
-                else
-                {            
+                } else {
                     sum += numUpdated;
                 }
-                
+
                 // yield the lock if anyone else is trying to
                 // perform a db operation here.
                 db.yieldIfContended();
@@ -2638,314 +2704,322 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
         final SQLiteDatabase db = getDBHelper().getWritableDatabase();
         int match = mUrlMatcher.match(url);
 
-        
-            log("insert to " + url + ", match " + match);
+
+        log("insert to " + url + ", match " + match);
         switch (match) {
-        case MATCH_PROVIDERS:
-            // Insert into the providers table
-            rowID = db.insert(TABLE_PROVIDERS, "name", initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(Imps.Provider.CONTENT_URI + "/" + rowID);
-            }
-            notifyProviderAccountContentUri = true;
-            break;
+            case MATCH_PROVIDERS:
+                // Insert into the providers table
+                rowID = db.insert(TABLE_PROVIDERS, "name", initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.Provider.CONTENT_URI + "/" + rowID);
+                }
+                notifyProviderAccountContentUri = true;
+                break;
 
-        case MATCH_ACCOUNTS:
-            // Insert into the accounts table
-            rowID = db.insert(TABLE_ACCOUNTS, "name", initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(Imps.Account.CONTENT_URI + "/" + rowID);
-            }
-            notifyProviderAccountContentUri = true;
-            break;
+            case MATCH_ACCOUNTS:
+                // Insert into the accounts table
+                rowID = db.insert(TABLE_ACCOUNTS, "name", initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.Account.CONTENT_URI + "/" + rowID);
+                }
+                notifyProviderAccountContentUri = true;
+                break;
 
-        case MATCH_WORDS:
-            // Insert into the accounts table
-            rowID = db.insert(TABLE_WORDS, "name", initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(Imps.Word.CONTENT_URI + "/" + rowID);
-            }
-            break;
+            case MATCH_WORDS:
+                // Insert into the accounts table
+                rowID = db.insert(TABLE_WORDS, "name", initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.Word.CONTENT_URI + "/" + rowID);
+                }
+                break;
 
-        case MATCH_CONTACTS_BY_PROVIDER:
-        appendValuesFromUrl(initialValues, url, Imps.Contacts.PROVIDER, Imps.Contacts.ACCOUNT);
-            // fall through
-        case MATCH_CONTACTS:
-        case MATCH_CONTACTS_BAREBONE:
-            // Insert into the contacts table
-            rowID = db.insert(TABLE_CONTACTS, USERNAME, initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(Imps.Contacts.CONTENT_URI + "/" + rowID);
-            }
+            case MATCH_PHONICS:
+                // Insert into the accounts table
+                rowID = db.insert(TABLE_PHONICS, "name", initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.Phonic.CONTENT_URI + "/" + rowID);
+                }
+                break;
 
-            notifyContactContentUri = true;
-            break;
+            case MATCH_CONTACTS_BY_PROVIDER:
+                appendValuesFromUrl(initialValues, url, Imps.Contacts.PROVIDER, Imps.Contacts.ACCOUNT);
+                // fall through
+            case MATCH_CONTACTS:
+            case MATCH_CONTACTS_BAREBONE:
+                // Insert into the contacts table
+                rowID = db.insert(TABLE_CONTACTS, USERNAME, initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.Contacts.CONTENT_URI + "/" + rowID);
+                }
 
-        case MATCH_CONTACTS_BULK:
-            if (insertBulkContacts(initialValues)) {
-                // notify change using the "content://im/contacts" url,
-                // so the change will be observed by listeners interested
-                // in contacts changes.
-                resultUri = Imps.Contacts.CONTENT_URI;
-            }
-            notifyContactContentUri = true;
-            break;
+                notifyContactContentUri = true;
+                break;
 
-        case MATCH_CONTACTLISTS_BY_PROVIDER:
-            appendValuesFromUrl(initialValues, url, Imps.ContactList.PROVIDER,
-                    Imps.ContactList.ACCOUNT);
-            // fall through
-        case MATCH_CONTACTLISTS:
-            // Insert into the contactList table
-            rowID = db.insert(TABLE_CONTACT_LIST, "name", initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(Imps.ContactList.CONTENT_URI + "/" + rowID);
-            }
-            notifyContactListContentUri = true;
-            break;
+            case MATCH_CONTACTS_BULK:
+                if (insertBulkContacts(initialValues)) {
+                    // notify change using the "content://im/contacts" url,
+                    // so the change will be observed by listeners interested
+                    // in contacts changes.
+                    resultUri = Imps.Contacts.CONTENT_URI;
+                }
+                notifyContactContentUri = true;
+                break;
 
-        case MATCH_BLOCKEDLIST_BY_PROVIDER:
-            appendValuesFromUrl(initialValues, url, Imps.BlockedList.PROVIDER,
-                    Imps.BlockedList.ACCOUNT);
-            // fall through
-        case MATCH_BLOCKEDLIST:
-            // Insert into the blockedList table
-            rowID = db.insert(TABLE_BLOCKED_LIST, "username", initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(Imps.BlockedList.CONTENT_URI + "/" + rowID);
-            }
+            case MATCH_CONTACTLISTS_BY_PROVIDER:
+                appendValuesFromUrl(initialValues, url, Imps.ContactList.PROVIDER,
+                        Imps.ContactList.ACCOUNT);
+                // fall through
+            case MATCH_CONTACTLISTS:
+                // Insert into the contactList table
+                rowID = db.insert(TABLE_CONTACT_LIST, "name", initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.ContactList.CONTENT_URI + "/" + rowID);
+                }
+                notifyContactListContentUri = true;
+                break;
 
-            break;
+            case MATCH_BLOCKEDLIST_BY_PROVIDER:
+                appendValuesFromUrl(initialValues, url, Imps.BlockedList.PROVIDER,
+                        Imps.BlockedList.ACCOUNT);
+                // fall through
+            case MATCH_BLOCKEDLIST:
+                // Insert into the blockedList table
+                rowID = db.insert(TABLE_BLOCKED_LIST, "username", initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.BlockedList.CONTENT_URI + "/" + rowID);
+                }
 
-        case MATCH_CONTACTS_ETAGS:
-            rowID = db.replace(TABLE_CONTACTS_ETAG, Imps.ContactsEtag.ETAG, initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(Imps.ContactsEtag.CONTENT_URI + "/" + rowID);
-            }
-            break;
+                break;
 
-        case MATCH_MESSAGES_BY_CONTACT:
-            String accountStr = decodeURLSegment(url.getPathSegments().get(1));
-            try {
-                account = Long.parseLong(accountStr);
-            } catch (NumberFormatException ex) {
-                throw new IllegalArgumentException();
-            }
+            case MATCH_CONTACTS_ETAGS:
+                rowID = db.replace(TABLE_CONTACTS_ETAG, Imps.ContactsEtag.ETAG, initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.ContactsEtag.CONTENT_URI + "/" + rowID);
+                }
+                break;
 
-            contact = decodeURLSegment(url.getPathSegments().get(2));
-            initialValues.put(Imps.Messages.THREAD_ID, getContactId(db, accountStr, contact));
+            case MATCH_MESSAGES_BY_CONTACT:
+                String accountStr = decodeURLSegment(url.getPathSegments().get(1));
+                try {
+                    account = Long.parseLong(accountStr);
+                } catch (NumberFormatException ex) {
+                    throw new IllegalArgumentException();
+                }
 
-            notifyMessagesContentUri = true;
+                contact = decodeURLSegment(url.getPathSegments().get(2));
+                initialValues.put(Imps.Messages.THREAD_ID, getContactId(db, accountStr, contact));
 
-            // Insert into the messages table.
-            rowID = db.insert(TABLE_MESSAGES, "thread_id", initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(Imps.Messages.CONTENT_URI + "/" + rowID);
-            }
+                notifyMessagesContentUri = true;
 
-            break;
+                // Insert into the messages table.
+                rowID = db.insert(TABLE_MESSAGES, "thread_id", initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.Messages.CONTENT_URI + "/" + rowID);
+                }
 
-        case MATCH_MESSAGES_BY_THREAD_ID:
-            appendValuesFromUrl(initialValues, url, Imps.Messages.THREAD_ID);
-            // fall through
+                break;
 
-        case MATCH_MESSAGES:
-            // Insert into the messages table.
-            notifyMessagesContentUri = true;
-            rowID = db.insert(TABLE_MESSAGES, "thread_id", initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(Imps.Messages.CONTENT_URI + "/" + rowID);
-            }
+            case MATCH_MESSAGES_BY_THREAD_ID:
+                appendValuesFromUrl(initialValues, url, Imps.Messages.THREAD_ID);
+                // fall through
 
-            break;
+            case MATCH_MESSAGES:
+                // Insert into the messages table.
+                notifyMessagesContentUri = true;
+                rowID = db.insert(TABLE_MESSAGES, "thread_id", initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.Messages.CONTENT_URI + "/" + rowID);
+                }
 
-        case MATCH_OTR_MESSAGES_BY_CONTACT:
-            String accountStr2 = decodeURLSegment(url.getPathSegments().get(1));
+                break;
 
-            try {
-                account = Long.parseLong(accountStr2);
-            } catch (NumberFormatException ex) {
-                throw new IllegalArgumentException();
-            }
+            case MATCH_OTR_MESSAGES_BY_CONTACT:
+                String accountStr2 = decodeURLSegment(url.getPathSegments().get(1));
 
-            contact = decodeURLSegment(url.getPathSegments().get(2));
-            initialValues.put(Imps.Messages.THREAD_ID, getContactId(db, accountStr2, contact));
+                try {
+                    account = Long.parseLong(accountStr2);
+                } catch (NumberFormatException ex) {
+                    throw new IllegalArgumentException();
+                }
 
-            notifyMessagesByContactContentUri = true;
+                contact = decodeURLSegment(url.getPathSegments().get(2));
+                initialValues.put(Imps.Messages.THREAD_ID, getContactId(db, accountStr2, contact));
 
-            // Insert into the in-memory messages table.
-            rowID = db.insert(TABLE_IN_MEMORY_MESSAGES, "thread_id", initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(Imps.Messages.OTR_MESSAGES_CONTENT_URI + "/" + rowID);
-            }
+                notifyMessagesByContactContentUri = true;
 
-            break;
+                // Insert into the in-memory messages table.
+                rowID = db.insert(TABLE_IN_MEMORY_MESSAGES, "thread_id", initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.Messages.OTR_MESSAGES_CONTENT_URI + "/" + rowID);
+                }
 
-        case MATCH_OTR_MESSAGES_BY_THREAD_ID:
-            try {
-                threadId = Long.parseLong(decodeURLSegment(url.getPathSegments().get(1)));
-            } catch (NumberFormatException ex) {
-                throw new IllegalArgumentException();
-            }
+                break;
 
-            initialValues.put(Imps.Messages.THREAD_ID, threadId);
+            case MATCH_OTR_MESSAGES_BY_THREAD_ID:
+                try {
+                    threadId = Long.parseLong(decodeURLSegment(url.getPathSegments().get(1)));
+                } catch (NumberFormatException ex) {
+                    throw new IllegalArgumentException();
+                }
 
-            notifyMessagesByThreadIdContentUri = true;
-            // fall through
+                initialValues.put(Imps.Messages.THREAD_ID, threadId);
 
-        case MATCH_OTR_MESSAGES:
-            // Insert into the messages table.
-            rowID = db.insert(TABLE_IN_MEMORY_MESSAGES, "thread_id", initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(Imps.Messages.OTR_MESSAGES_CONTENT_URI + "/" + rowID);
-            }
+                notifyMessagesByThreadIdContentUri = true;
+                // fall through
 
-            break;
+            case MATCH_OTR_MESSAGES:
+                // Insert into the messages table.
+                rowID = db.insert(TABLE_IN_MEMORY_MESSAGES, "thread_id", initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.Messages.OTR_MESSAGES_CONTENT_URI + "/" + rowID);
+                }
 
-        case MATCH_INVITATIONS:
-            rowID = db.insert(TABLE_INVITATIONS, null, initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(Imps.Invitation.CONTENT_URI + "/" + rowID);
-            }
-            break;
+                break;
 
-        case MATCH_GROUP_MEMBERS:
-            rowID = db.insert(TABLE_GROUP_MEMBERS, "nickname", initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(Imps.GroupMembers.CONTENT_URI + "/" + rowID);
-            }
-            break;
+            case MATCH_INVITATIONS:
+                rowID = db.insert(TABLE_INVITATIONS, null, initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.Invitation.CONTENT_URI + "/" + rowID);
+                }
+                break;
 
-        case MATCH_GROUP_MEMBERS_BY_GROUP:
-            appendValuesFromUrl(initialValues, url, Imps.GroupMembers.GROUP);
-            rowID = db.insert(TABLE_GROUP_MEMBERS, "nickname", initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(Imps.GroupMembers.CONTENT_URI + "/" + rowID);
-            }
-            break;
+            case MATCH_GROUP_MEMBERS:
+                rowID = db.insert(TABLE_GROUP_MEMBERS, "nickname", initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.GroupMembers.CONTENT_URI + "/" + rowID);
+                }
+                break;
 
-        case MATCH_AVATAR_BY_PROVIDER:
-            appendValuesFromUrl(initialValues, url, Imps.Avatars.PROVIDER, Imps.Avatars.ACCOUNT);
-            // fall through
-        case MATCH_AVATARS:
-            // Insert into the avatars table
-            rowID = db.replace(TABLE_AVATARS, "contact", initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(Imps.Avatars.CONTENT_URI + "/" + rowID);
-            }
-            break;
+            case MATCH_GROUP_MEMBERS_BY_GROUP:
+                appendValuesFromUrl(initialValues, url, Imps.GroupMembers.GROUP);
+                rowID = db.insert(TABLE_GROUP_MEMBERS, "nickname", initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.GroupMembers.CONTENT_URI + "/" + rowID);
+                }
+                break;
 
-        case MATCH_CHATS_ID:
-            appendValuesFromUrl(initialValues, url, Imps.Chats.CONTACT_ID);
-            // fall through
-        case MATCH_CHATS:
-            // Insert into the chats table
-            initialValues.put(Imps.Chats.SHORTCUT, -1);
-            rowID = db.replace(TABLE_CHATS, Imps.Chats.CONTACT_ID, initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(Imps.Chats.CONTENT_URI + "/" + rowID);
-                addToQuickSwitch(rowID);
-            }
-            notifyContactContentUri = true;
-            notifyProviderAccountContentUri = true; // For updating account stats in account list
-            break;
+            case MATCH_AVATAR_BY_PROVIDER:
+                appendValuesFromUrl(initialValues, url, Imps.Avatars.PROVIDER, Imps.Avatars.ACCOUNT);
+                // fall through
+            case MATCH_AVATARS:
+                // Insert into the avatars table
+                rowID = db.replace(TABLE_AVATARS, "contact", initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.Avatars.CONTENT_URI + "/" + rowID);
+                }
+                break;
 
-        case MATCH_PRESENCE:
-            rowID = db.replace(TABLE_PRESENCE, null, initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(Imps.Presence.CONTENT_URI + "/" + rowID);
-            }
-            notifyContactContentUri = true;
-            break;
+            case MATCH_CHATS_ID:
+                appendValuesFromUrl(initialValues, url, Imps.Chats.CONTACT_ID);
+                // fall through
+            case MATCH_CHATS:
+                // Insert into the chats table
+                initialValues.put(Imps.Chats.SHORTCUT, -1);
+                rowID = db.replace(TABLE_CHATS, Imps.Chats.CONTACT_ID, initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.Chats.CONTENT_URI + "/" + rowID);
+                    addToQuickSwitch(rowID);
+                }
+                notifyContactContentUri = true;
+                notifyProviderAccountContentUri = true; // For updating account stats in account list
+                break;
 
-        case MATCH_PRESENCE_SEED_BY_ACCOUNT:
-            try {
-                seedInitialPresenceByAccount(Long.parseLong(url.getLastPathSegment()));
-                resultUri = Imps.Presence.CONTENT_URI;
-            } catch (NumberFormatException ex) {
-                throw new IllegalArgumentException();
-            }
-            break;
+            case MATCH_PRESENCE:
+                rowID = db.replace(TABLE_PRESENCE, null, initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.Presence.CONTENT_URI + "/" + rowID);
+                }
+                notifyContactContentUri = true;
+                break;
 
-        case MATCH_SESSIONS_BY_PROVIDER:
-            appendValuesFromUrl(initialValues, url, Imps.SessionCookies.PROVIDER,
-                    Imps.SessionCookies.ACCOUNT);
-            // fall through
-        case MATCH_SESSIONS:
-            rowID = db.insert(TABLE_SESSION_COOKIES, null, initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(Imps.SessionCookies.CONTENT_URI + "/" + rowID);
-            }
-            break;
+            case MATCH_PRESENCE_SEED_BY_ACCOUNT:
+                try {
+                    seedInitialPresenceByAccount(Long.parseLong(url.getLastPathSegment()));
+                    resultUri = Imps.Presence.CONTENT_URI;
+                } catch (NumberFormatException ex) {
+                    throw new IllegalArgumentException();
+                }
+                break;
 
-        case MATCH_PROVIDER_SETTINGS:
-            rowID = db.replace(TABLE_PROVIDER_SETTINGS, null, initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(Imps.ProviderSettings.CONTENT_URI + "/" + rowID);
-            }
-            break;
+            case MATCH_SESSIONS_BY_PROVIDER:
+                appendValuesFromUrl(initialValues, url, Imps.SessionCookies.PROVIDER,
+                        Imps.SessionCookies.ACCOUNT);
+                // fall through
+            case MATCH_SESSIONS:
+                rowID = db.insert(TABLE_SESSION_COOKIES, null, initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.SessionCookies.CONTENT_URI + "/" + rowID);
+                }
+                break;
 
-        case MATCH_ACCOUNTS_STATUS:
-            rowID = db.replace(TABLE_ACCOUNT_STATUS, null, initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(Imps.AccountStatus.CONTENT_URI + "/" + rowID);
-            }
-            notifyProviderAccountContentUri = true;
-            break;
+            case MATCH_PROVIDER_SETTINGS:
+                rowID = db.replace(TABLE_PROVIDER_SETTINGS, null, initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.ProviderSettings.CONTENT_URI + "/" + rowID);
+                }
+                break;
 
-        case MATCH_BRANDING_RESOURCE_MAP_CACHE:
-            rowID = db.insert(TABLE_BRANDING_RESOURCE_MAP_CACHE, null, initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(Imps.BrandingResourceMapCache.CONTENT_URI + "/" + rowID);
-            }
-            break;
+            case MATCH_ACCOUNTS_STATUS:
+                rowID = db.replace(TABLE_ACCOUNT_STATUS, null, initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.AccountStatus.CONTENT_URI + "/" + rowID);
+                }
+                notifyProviderAccountContentUri = true;
+                break;
 
-        // mcs/rmq stuff
-        case MATCH_OUTGOING_RMQ_MESSAGES:
-            rowID = db.insert(TABLE_OUTGOING_RMQ_MESSAGES, null, initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(Imps.OutgoingRmq.CONTENT_URI + "/" + rowID);
-            }
-            break;
+            case MATCH_BRANDING_RESOURCE_MAP_CACHE:
+                rowID = db.insert(TABLE_BRANDING_RESOURCE_MAP_CACHE, null, initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.BrandingResourceMapCache.CONTENT_URI + "/" + rowID);
+                }
+                break;
 
-        case MATCH_LAST_RMQ_ID:
-            rowID = db.replace(TABLE_LAST_RMQ_ID, null, initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(Imps.LastRmqId.CONTENT_URI + "/" + rowID);
-            }
-            break;
+            // mcs/rmq stuff
+            case MATCH_OUTGOING_RMQ_MESSAGES:
+                rowID = db.insert(TABLE_OUTGOING_RMQ_MESSAGES, null, initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.OutgoingRmq.CONTENT_URI + "/" + rowID);
+                }
+                break;
 
-        case MATCH_S2D_RMQ_IDS:
-            rowID = db.insert(TABLE_S2D_RMQ_IDS, null, initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(Imps.ServerToDeviceRmqIds.CONTENT_URI + "/" + rowID);
-            }
-            break;
+            case MATCH_LAST_RMQ_ID:
+                rowID = db.replace(TABLE_LAST_RMQ_ID, null, initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.LastRmqId.CONTENT_URI + "/" + rowID);
+                }
+                break;
 
-        // ChatSecure-Push
-        case MATCH_CSP_ACCOUNTS:
-            rowID = db.insert(TABLE_CSP_ACCOUNTS, null, initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(PushDatabase.Accounts.CONTENT_URI + "/" + rowID);
-            }
-            break;
+            case MATCH_S2D_RMQ_IDS:
+                rowID = db.insert(TABLE_S2D_RMQ_IDS, null, initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.ServerToDeviceRmqIds.CONTENT_URI + "/" + rowID);
+                }
+                break;
 
-        case MATCH_CSP_DEVICES:
-            rowID = db.insert(TABLE_CSP_DEVICES, null, initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(PushDatabase.Devices.CONTENT_URI + "/" + rowID);
-            }
-            break;
+            // ChatSecure-Push
+            case MATCH_CSP_ACCOUNTS:
+                rowID = db.insert(TABLE_CSP_ACCOUNTS, null, initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(PushDatabase.Accounts.CONTENT_URI + "/" + rowID);
+                }
+                break;
 
-        case MATCH_CSP_TOKENS:
-            rowID = db.insert(TABLE_CSP_TOKENS, null, initialValues);
-            if (rowID > 0) {
-                resultUri = Uri.parse(PushDatabase.Tokens.CONTENT_URI + "/" + rowID);
-            }
-            break;
+            case MATCH_CSP_DEVICES:
+                rowID = db.insert(TABLE_CSP_DEVICES, null, initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(PushDatabase.Devices.CONTENT_URI + "/" + rowID);
+                }
+                break;
 
-        default:
-            throw new UnsupportedOperationException("Cannot insert into URL: " + url);
+            case MATCH_CSP_TOKENS:
+                rowID = db.insert(TABLE_CSP_TOKENS, null, initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(PushDatabase.Tokens.CONTENT_URI + "/" + rowID);
+                }
+                break;
+
+            default:
+                throw new UnsupportedOperationException("Cannot insert into URL: " + url);
         }
         // TODO: notify the data change observer?
 
@@ -2977,8 +3051,8 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
             }
 
             if (notifyProviderAccountContentUri) {
-                
-                    log("notify insert for " + Imps.Provider.CONTENT_URI_WITH_ACCOUNT);
+
+                log("notify insert for " + Imps.Provider.CONTENT_URI_WITH_ACCOUNT);
                 resolver.notifyChange(Imps.Provider.CONTENT_URI_WITH_ACCOUNT, null);
             }
         }
@@ -2992,7 +3066,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
         for (int i = 0; i < columns.length; i++) {
             if (values.containsKey(columns[i])) {
                 throw new UnsupportedOperationException("Cannot override the value for "
-                                                        + columns[i]);
+                        + columns[i]);
             }
             values.put(columns[i], decodeURLSegment(url.getPathSegments().get(i + 1)));
         }
@@ -3070,7 +3144,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
         values.put(Imps.Chats.SHORTCUT, slot);
 
         return update(Imps.Chats.CONTENT_URI, values, Imps.Chats._ID + "=?",
-                new String[] { Long.toString(chatId) });
+                new String[]{Long.toString(chatId)});
     }
 
     private int findEmptyQuickSwitchSlot() {
@@ -3089,7 +3163,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
             //  The map is here because numbers go from 0-9, but we want to assign slots in
             //  0, 9, 8, ..., 1 order to match the right-to-left reading of the number row
             //  on the keyboard.
-            int[] map = new int[] { 0, 9, 8, 7, 6, 5, 4, 3, 2, 1 };
+            int[] map = new int[]{0, 9, 8, 7, 6, 5, 4, 3, 2, 1};
 
             //  Mark all the slots that are in use
             //  The shortcuts represent actual keyboard number row keys, and not ordinals.
@@ -3120,44 +3194,46 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
         }
     }
 
-    /** manual trigger for deleting contacts */
+    /**
+     * manual trigger for deleting contacts
+     */
     private static final String DELETE_PRESENCE_SELECTION = Imps.Presence.CONTACT_ID
-                                                            + " in (select " + PRESENCE_CONTACT_ID
-                                                            + " from " + TABLE_PRESENCE
-                                                            + " left outer join " + TABLE_CONTACTS
-                                                            + " on " + PRESENCE_CONTACT_ID + '='
-                                                            + CONTACT_ID + " where " + CONTACT_ID
-                                                            + " IS NULL)";
+            + " in (select " + PRESENCE_CONTACT_ID
+            + " from " + TABLE_PRESENCE
+            + " left outer join " + TABLE_CONTACTS
+            + " on " + PRESENCE_CONTACT_ID + '='
+            + CONTACT_ID + " where " + CONTACT_ID
+            + " IS NULL)";
 
     private static final String CHATS_CONTACT_ID = TABLE_CHATS + '.' + Imps.Chats.CONTACT_ID;
     private static final String DELETE_CHATS_SELECTION = Imps.Chats.CONTACT_ID + " in (select "
-                                                         + CHATS_CONTACT_ID + " from "
-                                                         + TABLE_CHATS + " left outer join "
-                                                         + TABLE_CONTACTS + " on "
-                                                         + CHATS_CONTACT_ID + '=' + CONTACT_ID
-                                                         + " where " + CONTACT_ID + " IS NULL)";
+            + CHATS_CONTACT_ID + " from "
+            + TABLE_CHATS + " left outer join "
+            + TABLE_CONTACTS + " on "
+            + CHATS_CONTACT_ID + '=' + CONTACT_ID
+            + " where " + CONTACT_ID + " IS NULL)";
 
     private static final String GROUP_MEMBER_ID = TABLE_GROUP_MEMBERS + '.'
-                                                  + Imps.GroupMembers.GROUP;
+            + Imps.GroupMembers.GROUP;
     private static final String DELETE_GROUP_MEMBER_SELECTION = Imps.GroupMembers.GROUP
-                                                                + " in (select " + GROUP_MEMBER_ID
-                                                                + " from " + TABLE_GROUP_MEMBERS
-                                                                + " left outer join "
-                                                                + TABLE_CONTACTS + " on "
-                                                                + GROUP_MEMBER_ID + '='
-                                                                + CONTACT_ID + " where "
-                                                                + CONTACT_ID + " IS NULL)";
+            + " in (select " + GROUP_MEMBER_ID
+            + " from " + TABLE_GROUP_MEMBERS
+            + " left outer join "
+            + TABLE_CONTACTS + " on "
+            + GROUP_MEMBER_ID + '='
+            + CONTACT_ID + " where "
+            + CONTACT_ID + " IS NULL)";
 
     private static final String GROUP_MESSAGES_ID = TABLE_MESSAGES + '.' + Imps.Messages.THREAD_ID;
     private static final String DELETE_GROUP_MESSAGES_SELECTION = Imps.Messages.THREAD_ID
-                                                                  + " in (select "
-                                                                  + GROUP_MESSAGES_ID + " from "
-                                                                  + TABLE_MESSAGES
-                                                                  + " left outer join "
-                                                                  + TABLE_CONTACTS + " on "
-                                                                  + GROUP_MESSAGES_ID + '='
-                                                                  + CONTACT_ID + " where "
-                                                                  + CONTACT_ID + " IS NULL)";
+            + " in (select "
+            + GROUP_MESSAGES_ID + " from "
+            + TABLE_MESSAGES
+            + " left outer join "
+            + TABLE_CONTACTS + " on "
+            + GROUP_MESSAGES_ID + '='
+            + CONTACT_ID + " where "
+            + CONTACT_ID + " IS NULL)";
 
     private void performContactRemovalCleanup(long contactId) {
         final SQLiteDatabase db = getDBHelper().getWritableDatabase();
@@ -3183,12 +3259,12 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
     }
 
     private void deleteWithSelection(SQLiteDatabase db, String tableName, String selection,
-            String[] selectionArgs) {
-        
-            log("deleteWithSelection: table " + tableName + ", selection => " + selection);
+                                     String[] selectionArgs) {
+
+        log("deleteWithSelection: table " + tableName + ", selection => " + selection);
         int count = db.delete(tableName, selection, selectionArgs);
-        
-            log("deleteWithSelection: deleted " + count + " rows");
+
+        log("deleteWithSelection: deleted " + count + " rows");
     }
 
     private String buildContactIdSelection(String columnName, String contactSelection) {
@@ -3241,366 +3317,366 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
         final SQLiteDatabase db = getDBHelper().getWritableDatabase();
 
         switch (match) {
-        case MATCH_PROVIDERS_BY_ID:
-            changedItemId = url.getPathSegments().get(1);
-            // fall through
-        case MATCH_PROVIDERS:
-            tableToChange = TABLE_PROVIDERS;
-            notifyProviderAccountContentUri = true;
-            break;
+            case MATCH_PROVIDERS_BY_ID:
+                changedItemId = url.getPathSegments().get(1);
+                // fall through
+            case MATCH_PROVIDERS:
+                tableToChange = TABLE_PROVIDERS;
+                notifyProviderAccountContentUri = true;
+                break;
 
-        case MATCH_ACCOUNTS_BY_ID:
-            changedItemId = url.getPathSegments().get(1);
-            // fall through
-        case MATCH_ACCOUNTS:
-            tableToChange = TABLE_ACCOUNTS;
-            notifyProviderAccountContentUri = true;
-            break;
+            case MATCH_ACCOUNTS_BY_ID:
+                changedItemId = url.getPathSegments().get(1);
+                // fall through
+            case MATCH_ACCOUNTS:
+                tableToChange = TABLE_ACCOUNTS;
+                notifyProviderAccountContentUri = true;
+                break;
 
-        case MATCH_ACCOUNT_STATUS:
-            changedItemId = url.getPathSegments().get(1);
-            // fall through
-        case MATCH_ACCOUNTS_STATUS:
-            tableToChange = TABLE_ACCOUNT_STATUS;
-            notifyProviderAccountContentUri = true;
-            break;
+            case MATCH_ACCOUNT_STATUS:
+                changedItemId = url.getPathSegments().get(1);
+                // fall through
+            case MATCH_ACCOUNTS_STATUS:
+                tableToChange = TABLE_ACCOUNT_STATUS;
+                notifyProviderAccountContentUri = true;
+                break;
 
-        case MATCH_CONTACTS:
-        case MATCH_CONTACTS_BAREBONE:
-            tableToChange = TABLE_CONTACTS;
-            contactDeleted = true;
-            break;
+            case MATCH_CONTACTS:
+            case MATCH_CONTACTS_BAREBONE:
+                tableToChange = TABLE_CONTACTS;
+                contactDeleted = true;
+                break;
 
-        case MATCH_CONTACT:
-            tableToChange = TABLE_CONTACTS;
-            changedItemId = url.getPathSegments().get(1);
+            case MATCH_CONTACT:
+                tableToChange = TABLE_CONTACTS;
+                changedItemId = url.getPathSegments().get(1);
 
-            try {
-                deletedContactId = Long.parseLong(changedItemId);
-            } catch (NumberFormatException ex) {
-                throw new IllegalArgumentException();
-            }
+                try {
+                    deletedContactId = Long.parseLong(changedItemId);
+                } catch (NumberFormatException ex) {
+                    throw new IllegalArgumentException();
+                }
 
-            contactDeleted = true;
-            break;
+                contactDeleted = true;
+                break;
 
-        case MATCH_CONTACTS_BY_PROVIDER:
-            tableToChange = TABLE_CONTACTS;
-            appendWhere(whereClause, Imps.Contacts.ACCOUNT, "=", url.getPathSegments().get(2));
-            contactDeleted = true;
-            break;
+            case MATCH_CONTACTS_BY_PROVIDER:
+                tableToChange = TABLE_CONTACTS;
+                appendWhere(whereClause, Imps.Contacts.ACCOUNT, "=", url.getPathSegments().get(2));
+                contactDeleted = true;
+                break;
 
-        case MATCH_CONTACTLISTS_BY_PROVIDER:
-            appendWhere(whereClause, Imps.ContactList.ACCOUNT, "=", url.getPathSegments().get(2));
-            // fall through
-        case MATCH_CONTACTLISTS:
-            tableToChange = TABLE_CONTACT_LIST;
-            notifyContactListContentUri = true;
-            break;
+            case MATCH_CONTACTLISTS_BY_PROVIDER:
+                appendWhere(whereClause, Imps.ContactList.ACCOUNT, "=", url.getPathSegments().get(2));
+                // fall through
+            case MATCH_CONTACTLISTS:
+                tableToChange = TABLE_CONTACT_LIST;
+                notifyContactListContentUri = true;
+                break;
 
-        case MATCH_CONTACTLIST:
-            tableToChange = TABLE_CONTACT_LIST;
-            changedItemId = url.getPathSegments().get(1);
-            break;
+            case MATCH_CONTACTLIST:
+                tableToChange = TABLE_CONTACT_LIST;
+                changedItemId = url.getPathSegments().get(1);
+                break;
 
-        case MATCH_BLOCKEDLIST:
-            tableToChange = TABLE_BLOCKED_LIST;
-            break;
+            case MATCH_BLOCKEDLIST:
+                tableToChange = TABLE_BLOCKED_LIST;
+                break;
 
-        case MATCH_BLOCKEDLIST_BY_PROVIDER:
-            tableToChange = TABLE_BLOCKED_LIST;
-            appendWhere(whereClause, Imps.BlockedList.ACCOUNT, "=", url.getPathSegments().get(2));
-            break;
+            case MATCH_BLOCKEDLIST_BY_PROVIDER:
+                tableToChange = TABLE_BLOCKED_LIST;
+                appendWhere(whereClause, Imps.BlockedList.ACCOUNT, "=", url.getPathSegments().get(2));
+                break;
 
-        case MATCH_CONTACTS_ETAGS:
-            tableToChange = TABLE_CONTACTS_ETAG;
-            break;
+            case MATCH_CONTACTS_ETAGS:
+                tableToChange = TABLE_CONTACTS_ETAG;
+                break;
 
-        case MATCH_CONTACTS_ETAG:
-            tableToChange = TABLE_CONTACTS_ETAG;
-            changedItemId = url.getPathSegments().get(1);
-            break;
+            case MATCH_CONTACTS_ETAG:
+                tableToChange = TABLE_CONTACTS_ETAG;
+                changedItemId = url.getPathSegments().get(1);
+                break;
 
-        case MATCH_MESSAGES:
-            tableToChange = TABLE_MESSAGES;
-            break;
+            case MATCH_MESSAGES:
+                tableToChange = TABLE_MESSAGES;
+                break;
 
-        case MATCH_MESSAGES_BY_CONTACT:
-            tableToChange = TABLE_MESSAGES;
-            tableToChange2 = TABLE_IN_MEMORY_MESSAGES;
+            case MATCH_MESSAGES_BY_CONTACT:
+                tableToChange = TABLE_MESSAGES;
+                tableToChange2 = TABLE_IN_MEMORY_MESSAGES;
 
-            accountStr = decodeURLSegment(url.getPathSegments().get(1));
-            try {
-                account = Long.parseLong(accountStr);
-            } catch (NumberFormatException ex) {
-                throw new IllegalArgumentException();
-            }
+                accountStr = decodeURLSegment(url.getPathSegments().get(1));
+                try {
+                    account = Long.parseLong(accountStr);
+                } catch (NumberFormatException ex) {
+                    throw new IllegalArgumentException();
+                }
 
-            contact = decodeURLSegment(url.getPathSegments().get(2));
-            appendWhere(whereClause, Imps.Messages.THREAD_ID, "=",
-                    getContactId(db, accountStr, contact));
+                contact = decodeURLSegment(url.getPathSegments().get(2));
+                appendWhere(whereClause, Imps.Messages.THREAD_ID, "=",
+                        getContactId(db, accountStr, contact));
 
-            notifyMessagesContentUri = true;
-            break;
+                notifyMessagesContentUri = true;
+                break;
 
-        case MATCH_MESSAGES_BY_THREAD_ID:
-            tableToChange = TABLE_MESSAGES;
-            tableToChange2 = TABLE_IN_MEMORY_MESSAGES;
+            case MATCH_MESSAGES_BY_THREAD_ID:
+                tableToChange = TABLE_MESSAGES;
+                tableToChange2 = TABLE_IN_MEMORY_MESSAGES;
 
-            try {
-                threadId = Long.parseLong(decodeURLSegment(url.getPathSegments().get(1)));
-            } catch (NumberFormatException ex) {
-                throw new IllegalArgumentException();
-            }
+                try {
+                    threadId = Long.parseLong(decodeURLSegment(url.getPathSegments().get(1)));
+                } catch (NumberFormatException ex) {
+                    throw new IllegalArgumentException();
+                }
 
-            appendWhere(whereClause, Imps.Messages.THREAD_ID, "=", threadId);
+                appendWhere(whereClause, Imps.Messages.THREAD_ID, "=", threadId);
 
-            notifyMessagesContentUri = true;
-            break;
+                notifyMessagesContentUri = true;
+                break;
 
-        case MATCH_MESSAGES_BY_PROVIDER:
-            tableToChange = TABLE_MESSAGES;
+            case MATCH_MESSAGES_BY_PROVIDER:
+                tableToChange = TABLE_MESSAGES;
 
-            provider = decodeURLSegment(url.getPathSegments().get(1));
-            appendWhere(
-                    whereClause,
-                    buildContactIdSelection(Imps.Messages.THREAD_ID, Imps.Contacts.PROVIDER + "='"
-                                                                     + provider + "'"));
+                provider = decodeURLSegment(url.getPathSegments().get(1));
+                appendWhere(
+                        whereClause,
+                        buildContactIdSelection(Imps.Messages.THREAD_ID, Imps.Contacts.PROVIDER + "='"
+                                + provider + "'"));
 
-            notifyMessagesContentUri = true;
-            break;
+                notifyMessagesContentUri = true;
+                break;
 
-        case MATCH_MESSAGES_BY_ACCOUNT:
-            tableToChange = TABLE_MESSAGES;
+            case MATCH_MESSAGES_BY_ACCOUNT:
+                tableToChange = TABLE_MESSAGES;
 
-            accountStr = decodeURLSegment(url.getPathSegments().get(1));
-            appendWhere(
-                    whereClause,
-                    buildContactIdSelection(Imps.Messages.THREAD_ID, Imps.Contacts.ACCOUNT + "='"
-                                                                     + accountStr + "'"));
+                accountStr = decodeURLSegment(url.getPathSegments().get(1));
+                appendWhere(
+                        whereClause,
+                        buildContactIdSelection(Imps.Messages.THREAD_ID, Imps.Contacts.ACCOUNT + "='"
+                                + accountStr + "'"));
 
-            notifyMessagesContentUri = true;
-            break;
+                notifyMessagesContentUri = true;
+                break;
 
-        case MATCH_MESSAGE:
-            tableToChange = TABLE_MESSAGES;
-            changedItemId = url.getPathSegments().get(1);
-            notifyMessagesContentUri = true;
-            break;
+            case MATCH_MESSAGE:
+                tableToChange = TABLE_MESSAGES;
+                changedItemId = url.getPathSegments().get(1);
+                notifyMessagesContentUri = true;
+                break;
 
-        case MATCH_OTR_MESSAGES:
-            tableToChange = TABLE_IN_MEMORY_MESSAGES;
-            break;
+            case MATCH_OTR_MESSAGES:
+                tableToChange = TABLE_IN_MEMORY_MESSAGES;
+                break;
 
-        case MATCH_OTR_MESSAGES_BY_CONTACT:
-            tableToChange = TABLE_IN_MEMORY_MESSAGES;
+            case MATCH_OTR_MESSAGES_BY_CONTACT:
+                tableToChange = TABLE_IN_MEMORY_MESSAGES;
 
-            accountStr = decodeURLSegment(url.getPathSegments().get(1));
-            try {
-                account = Long.parseLong(accountStr);
-            } catch (NumberFormatException ex) {
-                throw new IllegalArgumentException();
-            }
+                accountStr = decodeURLSegment(url.getPathSegments().get(1));
+                try {
+                    account = Long.parseLong(accountStr);
+                } catch (NumberFormatException ex) {
+                    throw new IllegalArgumentException();
+                }
 
-            contact = decodeURLSegment(url.getPathSegments().get(2));
-            appendWhere(whereClause, Imps.Messages.THREAD_ID, "=",
-                    getContactId(db, accountStr, contact));
+                contact = decodeURLSegment(url.getPathSegments().get(2));
+                appendWhere(whereClause, Imps.Messages.THREAD_ID, "=",
+                        getContactId(db, accountStr, contact));
 
-            notifyMessagesByContactContentUri = true;
-            break;
+                notifyMessagesByContactContentUri = true;
+                break;
 
-        case MATCH_OTR_MESSAGES_BY_THREAD_ID:
-            tableToChange = TABLE_IN_MEMORY_MESSAGES;
+            case MATCH_OTR_MESSAGES_BY_THREAD_ID:
+                tableToChange = TABLE_IN_MEMORY_MESSAGES;
 
-            try {
-                threadId = Long.parseLong(decodeURLSegment(url.getPathSegments().get(1)));
-            } catch (NumberFormatException ex) {
-                throw new IllegalArgumentException();
-            }
+                try {
+                    threadId = Long.parseLong(decodeURLSegment(url.getPathSegments().get(1)));
+                } catch (NumberFormatException ex) {
+                    throw new IllegalArgumentException();
+                }
 
-            appendWhere(whereClause, Imps.Messages.THREAD_ID, "=", threadId);
+                appendWhere(whereClause, Imps.Messages.THREAD_ID, "=", threadId);
 
-            notifyMessagesByThreadIdContentUri = true;
-            break;
+                notifyMessagesByThreadIdContentUri = true;
+                break;
 
-        case MATCH_OTR_MESSAGES_BY_PROVIDER:
-            tableToChange = TABLE_IN_MEMORY_MESSAGES;
+            case MATCH_OTR_MESSAGES_BY_PROVIDER:
+                tableToChange = TABLE_IN_MEMORY_MESSAGES;
 
-            provider = decodeURLSegment(url.getPathSegments().get(1));
-            appendWhere(
-                    whereClause,
-                    buildContactIdSelection(Imps.Messages.THREAD_ID, Imps.Contacts.PROVIDER + "='"
-                                                                     + provider + "'"));
+                provider = decodeURLSegment(url.getPathSegments().get(1));
+                appendWhere(
+                        whereClause,
+                        buildContactIdSelection(Imps.Messages.THREAD_ID, Imps.Contacts.PROVIDER + "='"
+                                + provider + "'"));
 
-            
+
                 log("delete (MATCH_OTR_MESSAGES_BY_PROVIDER) sel => " + whereClause);
-            notifyMessagesContentUri = true;
-            break;
+                notifyMessagesContentUri = true;
+                break;
 
-        case MATCH_OTR_MESSAGES_BY_ACCOUNT:
-            tableToChange = TABLE_IN_MEMORY_MESSAGES;
+            case MATCH_OTR_MESSAGES_BY_ACCOUNT:
+                tableToChange = TABLE_IN_MEMORY_MESSAGES;
 
-            accountStr = decodeURLSegment(url.getPathSegments().get(1));
-            appendWhere(
-                    whereClause,
-                    buildContactIdSelection(Imps.Messages.THREAD_ID, Imps.Contacts.ACCOUNT + "='"
-                                                                     + accountStr + "'"));
+                accountStr = decodeURLSegment(url.getPathSegments().get(1));
+                appendWhere(
+                        whereClause,
+                        buildContactIdSelection(Imps.Messages.THREAD_ID, Imps.Contacts.ACCOUNT + "='"
+                                + accountStr + "'"));
 
-            
+
                 log("delete (MATCH_OTR_MESSAGES_BY_ACCOUNT) sel => " + whereClause);
-            notifyMessagesContentUri = true;
-            break;
+                notifyMessagesContentUri = true;
+                break;
 
-        case MATCH_OTR_MESSAGE:
-            tableToChange = TABLE_IN_MEMORY_MESSAGES;
-            changedItemId = url.getPathSegments().get(1);
-            notifyMessagesContentUri = true;
-            break;
+            case MATCH_OTR_MESSAGE:
+                tableToChange = TABLE_IN_MEMORY_MESSAGES;
+                changedItemId = url.getPathSegments().get(1);
+                notifyMessagesContentUri = true;
+                break;
 
-        case MATCH_GROUP_MEMBERS:
-            tableToChange = TABLE_GROUP_MEMBERS;
-            break;
+            case MATCH_GROUP_MEMBERS:
+                tableToChange = TABLE_GROUP_MEMBERS;
+                break;
 
-        case MATCH_GROUP_MEMBERS_BY_GROUP:
-            tableToChange = TABLE_GROUP_MEMBERS;
-            appendWhere(whereClause, Imps.GroupMembers.GROUP, "=", url.getPathSegments().get(1));
-            break;
+            case MATCH_GROUP_MEMBERS_BY_GROUP:
+                tableToChange = TABLE_GROUP_MEMBERS;
+                appendWhere(whereClause, Imps.GroupMembers.GROUP, "=", url.getPathSegments().get(1));
+                break;
 
-        case MATCH_INVITATIONS:
-            tableToChange = TABLE_INVITATIONS;
-            break;
+            case MATCH_INVITATIONS:
+                tableToChange = TABLE_INVITATIONS;
+                break;
 
-        case MATCH_INVITATION:
-            tableToChange = TABLE_INVITATIONS;
-            changedItemId = url.getPathSegments().get(1);
-            break;
+            case MATCH_INVITATION:
+                tableToChange = TABLE_INVITATIONS;
+                changedItemId = url.getPathSegments().get(1);
+                break;
 
-        case MATCH_AVATARS:
-            tableToChange = TABLE_AVATARS;
-            break;
+            case MATCH_AVATARS:
+                tableToChange = TABLE_AVATARS;
+                break;
 
-        case MATCH_AVATAR:
-            tableToChange = TABLE_AVATARS;
-            changedItemId = url.getPathSegments().get(1);
-            break;
+            case MATCH_AVATAR:
+                tableToChange = TABLE_AVATARS;
+                changedItemId = url.getPathSegments().get(1);
+                break;
 
-        case MATCH_AVATAR_BY_PROVIDER:
-            tableToChange = TABLE_AVATARS;
-            changedItemId = url.getPathSegments().get(2);
-            idColumnName = Imps.Avatars.ACCOUNT;
-            break;
+            case MATCH_AVATAR_BY_PROVIDER:
+                tableToChange = TABLE_AVATARS;
+                changedItemId = url.getPathSegments().get(2);
+                idColumnName = Imps.Avatars.ACCOUNT;
+                break;
 
-        case MATCH_CHATS:
-            tableToChange = TABLE_CHATS;
-            backfillQuickSwitchSlots = true;
-            notifyProviderAccountContentUri = true; // For updating account stats in account list
-            break;
+            case MATCH_CHATS:
+                tableToChange = TABLE_CHATS;
+                backfillQuickSwitchSlots = true;
+                notifyProviderAccountContentUri = true; // For updating account stats in account list
+                break;
 
-        case MATCH_CHATS_BY_ACCOUNT:
-            tableToChange = TABLE_CHATS;
+            case MATCH_CHATS_BY_ACCOUNT:
+                tableToChange = TABLE_CHATS;
 
-            accountStr = decodeURLSegment(url.getLastPathSegment());
-            appendWhere(
-                    whereClause,
-                    buildContactIdSelection(Imps.Chats.CONTACT_ID, Imps.Contacts.ACCOUNT + "='"
-                                                                   + accountStr + "'"));
+                accountStr = decodeURLSegment(url.getLastPathSegment());
+                appendWhere(
+                        whereClause,
+                        buildContactIdSelection(Imps.Chats.CONTACT_ID, Imps.Contacts.ACCOUNT + "='"
+                                + accountStr + "'"));
 
-            
+
                 log("delete (MATCH_CHATS_BY_ACCOUNT) sel => " + whereClause);
 
-            changedItemId = null;
-            notifyProviderAccountContentUri = true; // For updating account stats in account list
-            break;
+                changedItemId = null;
+                notifyProviderAccountContentUri = true; // For updating account stats in account list
+                break;
 
-        case MATCH_CHATS_ID:
-            tableToChange = TABLE_CHATS;
-            changedItemId = url.getPathSegments().get(1);
-            idColumnName = Imps.Chats.CONTACT_ID;
-            notifyProviderAccountContentUri = true; // For updating account stats in account list
-            break;
+            case MATCH_CHATS_ID:
+                tableToChange = TABLE_CHATS;
+                changedItemId = url.getPathSegments().get(1);
+                idColumnName = Imps.Chats.CONTACT_ID;
+                notifyProviderAccountContentUri = true; // For updating account stats in account list
+                break;
 
-        case MATCH_PRESENCE:
-            tableToChange = TABLE_PRESENCE;
-            break;
+            case MATCH_PRESENCE:
+                tableToChange = TABLE_PRESENCE;
+                break;
 
-        case MATCH_PRESENCE_ID:
-            tableToChange = TABLE_PRESENCE;
-            changedItemId = url.getPathSegments().get(1);
-            idColumnName = Imps.Presence.CONTACT_ID;
-            break;
+            case MATCH_PRESENCE_ID:
+                tableToChange = TABLE_PRESENCE;
+                changedItemId = url.getPathSegments().get(1);
+                idColumnName = Imps.Presence.CONTACT_ID;
+                break;
 
-        case MATCH_PRESENCE_BY_ACCOUNT:
-            tableToChange = TABLE_PRESENCE;
+            case MATCH_PRESENCE_BY_ACCOUNT:
+                tableToChange = TABLE_PRESENCE;
 
-            accountStr = decodeURLSegment(url.getLastPathSegment());
-            appendWhere(
-                    whereClause,
-                    buildContactIdSelection(Imps.Presence.CONTACT_ID, Imps.Contacts.ACCOUNT + "='"
-                                                                      + accountStr + "'"));
+                accountStr = decodeURLSegment(url.getLastPathSegment());
+                appendWhere(
+                        whereClause,
+                        buildContactIdSelection(Imps.Presence.CONTACT_ID, Imps.Contacts.ACCOUNT + "='"
+                                + accountStr + "'"));
 
-            
+
                 log("delete (MATCH_PRESENCE_BY_ACCOUNT): sel => " + whereClause);
-            changedItemId = null;
-            break;
+                changedItemId = null;
+                break;
 
-        case MATCH_SESSIONS:
-            tableToChange = TABLE_SESSION_COOKIES;
-            break;
+            case MATCH_SESSIONS:
+                tableToChange = TABLE_SESSION_COOKIES;
+                break;
 
-        case MATCH_SESSIONS_BY_PROVIDER:
-            tableToChange = TABLE_SESSION_COOKIES;
-            changedItemId = url.getPathSegments().get(2);
-            idColumnName = Imps.SessionCookies.ACCOUNT;
-            break;
+            case MATCH_SESSIONS_BY_PROVIDER:
+                tableToChange = TABLE_SESSION_COOKIES;
+                changedItemId = url.getPathSegments().get(2);
+                idColumnName = Imps.SessionCookies.ACCOUNT;
+                break;
 
-        case MATCH_PROVIDER_SETTINGS_BY_ID:
-            tableToChange = TABLE_PROVIDER_SETTINGS;
-            changedItemId = url.getPathSegments().get(1);
-            idColumnName = Imps.ProviderSettings.PROVIDER;
-            break;
+            case MATCH_PROVIDER_SETTINGS_BY_ID:
+                tableToChange = TABLE_PROVIDER_SETTINGS;
+                changedItemId = url.getPathSegments().get(1);
+                idColumnName = Imps.ProviderSettings.PROVIDER;
+                break;
 
-        case MATCH_PROVIDER_SETTINGS_BY_ID_AND_NAME:
-            tableToChange = TABLE_PROVIDER_SETTINGS;
+            case MATCH_PROVIDER_SETTINGS_BY_ID_AND_NAME:
+                tableToChange = TABLE_PROVIDER_SETTINGS;
 
-            String providerId = url.getPathSegments().get(1);
-            String name = url.getPathSegments().get(2);
+                String providerId = url.getPathSegments().get(1);
+                String name = url.getPathSegments().get(2);
 
-            appendWhere(whereClause, Imps.ProviderSettings.PROVIDER, "=", providerId);
-            appendWhere(whereClause, Imps.ProviderSettings.NAME, "=", name);
-            break;
+                appendWhere(whereClause, Imps.ProviderSettings.PROVIDER, "=", providerId);
+                appendWhere(whereClause, Imps.ProviderSettings.NAME, "=", name);
+                break;
 
-        case MATCH_BRANDING_RESOURCE_MAP_CACHE:
-            tableToChange = TABLE_BRANDING_RESOURCE_MAP_CACHE;
-            break;
+            case MATCH_BRANDING_RESOURCE_MAP_CACHE:
+                tableToChange = TABLE_BRANDING_RESOURCE_MAP_CACHE;
+                break;
 
-        // mcs/rmq stuff
-        case MATCH_OUTGOING_RMQ_MESSAGES:
-            tableToChange = TABLE_OUTGOING_RMQ_MESSAGES;
-            break;
+            // mcs/rmq stuff
+            case MATCH_OUTGOING_RMQ_MESSAGES:
+                tableToChange = TABLE_OUTGOING_RMQ_MESSAGES;
+                break;
 
-        case MATCH_LAST_RMQ_ID:
-            tableToChange = TABLE_LAST_RMQ_ID;
-            break;
+            case MATCH_LAST_RMQ_ID:
+                tableToChange = TABLE_LAST_RMQ_ID;
+                break;
 
-        case MATCH_S2D_RMQ_IDS:
-            tableToChange = TABLE_S2D_RMQ_IDS;
-            break;
+            case MATCH_S2D_RMQ_IDS:
+                tableToChange = TABLE_S2D_RMQ_IDS;
+                break;
 
-        // ChatSecure-Push
-        case MATCH_CSP_ACCOUNTS:
-            tableToChange = TABLE_CSP_ACCOUNTS;
-            break;
+            // ChatSecure-Push
+            case MATCH_CSP_ACCOUNTS:
+                tableToChange = TABLE_CSP_ACCOUNTS;
+                break;
 
-        case MATCH_CSP_DEVICES:
-            tableToChange = TABLE_CSP_DEVICES;
-            break;
+            case MATCH_CSP_DEVICES:
+                tableToChange = TABLE_CSP_DEVICES;
+                break;
 
-        case MATCH_CSP_TOKENS:
-            tableToChange = TABLE_CSP_TOKENS;
-            break;
+            case MATCH_CSP_TOKENS:
+                tableToChange = TABLE_CSP_TOKENS;
+                break;
 
-        default:
-            throw new UnsupportedOperationException("Cannot delete that URL: " + url);
+            default:
+                throw new UnsupportedOperationException("Cannot delete that URL: " + url);
         }
 
         if (idColumnName == null) {
@@ -3611,8 +3687,8 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
             appendWhere(whereClause, idColumnName, "=", changedItemId);
         }
 
-        
-            log("delete from " + url + " WHERE  " + whereClause);
+
+        log("delete from " + url + " WHERE  " + whereClause);
 
         int count = db.delete(tableToChange, whereClause.toString(), whereArgs);
 
@@ -3633,7 +3709,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
             // In most case, we query contacts with presence and chats joined, thus
             // we should also notify that contacts changes when presence or chats changed.
             if (match == MATCH_CHATS || match == MATCH_CHATS_ID || match == MATCH_PRESENCE
-                || match == MATCH_PRESENCE_ID || match == MATCH_CONTACTS_BAREBONE) {
+                    || match == MATCH_PRESENCE_ID || match == MATCH_CONTACTS_BAREBONE) {
                 resolver.notifyChange(Imps.Contacts.CONTENT_URI, null);
             }
 
@@ -3656,8 +3732,8 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
             }
 
             if (notifyProviderAccountContentUri) {
-                
-                    log("notify delete for " + Imps.Provider.CONTENT_URI_WITH_ACCOUNT);
+
+                log("notify delete for " + Imps.Provider.CONTENT_URI_WITH_ACCOUNT);
                 resolver.notifyChange(Imps.Provider.CONTENT_URI_WITH_ACCOUNT, null);
             }
 
@@ -3695,281 +3771,280 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
         final SQLiteDatabase db = getDBHelper().getWritableDatabase();
 
         switch (match) {
-        case MATCH_PROVIDERS_BY_ID:
-            changedItemId = url.getPathSegments().get(1);
-            // fall through
-        case MATCH_PROVIDERS:
-            tableToChange = TABLE_PROVIDERS;
-            break;
+            case MATCH_PROVIDERS_BY_ID:
+                changedItemId = url.getPathSegments().get(1);
+                // fall through
+            case MATCH_PROVIDERS:
+                tableToChange = TABLE_PROVIDERS;
+                break;
 
-        case MATCH_ACCOUNTS_BY_ID:
-            changedItemId = url.getPathSegments().get(1);
-            // fall through
-        case MATCH_ACCOUNTS:
-            tableToChange = TABLE_ACCOUNTS;
-            notifyProviderAccountContentUri = true;
-            break;
+            case MATCH_ACCOUNTS_BY_ID:
+                changedItemId = url.getPathSegments().get(1);
+                // fall through
+            case MATCH_ACCOUNTS:
+                tableToChange = TABLE_ACCOUNTS;
+                notifyProviderAccountContentUri = true;
+                break;
 
-        case MATCH_ACCOUNT_STATUS:
-            changedItemId = url.getPathSegments().get(1);
-            // fall through
-        case MATCH_ACCOUNTS_STATUS:
-            tableToChange = TABLE_ACCOUNT_STATUS;
-            notifyProviderAccountContentUri = true;
-            break;
+            case MATCH_ACCOUNT_STATUS:
+                changedItemId = url.getPathSegments().get(1);
+                // fall through
+            case MATCH_ACCOUNTS_STATUS:
+                tableToChange = TABLE_ACCOUNT_STATUS;
+                notifyProviderAccountContentUri = true;
+                break;
 
-        case MATCH_CONTACTS:
-        case MATCH_CONTACTS_BAREBONE:
-            tableToChange = TABLE_CONTACTS;
-            break;
+            case MATCH_CONTACTS:
+            case MATCH_CONTACTS_BAREBONE:
+                tableToChange = TABLE_CONTACTS;
+                break;
 
-        case MATCH_CONTACTS_BY_PROVIDER:
-            tableToChange = TABLE_CONTACTS;
-            changedItemId = url.getPathSegments().get(2);
-            idColumnName = Imps.Contacts.ACCOUNT;
-            break;
+            case MATCH_CONTACTS_BY_PROVIDER:
+                tableToChange = TABLE_CONTACTS;
+                changedItemId = url.getPathSegments().get(2);
+                idColumnName = Imps.Contacts.ACCOUNT;
+                break;
 
-        case MATCH_CONTACT:
-            tableToChange = TABLE_CONTACTS;
-            changedItemId = url.getPathSegments().get(1);
-            break;
+            case MATCH_CONTACT:
+                tableToChange = TABLE_CONTACTS;
+                changedItemId = url.getPathSegments().get(1);
+                break;
 
-        case MATCH_CONTACTS_BULK:
-            count = updateBulkContacts(values, userWhere);
-            // notify change using the "content://im/contacts" url,
-            // so the change will be observed by listeners interested
-            // in contacts changes.
-            if (count > 0) {
-                getContext().getContentResolver().notifyChange(Imps.Contacts.CONTENT_URI, null);
-            }
-            return count;
+            case MATCH_CONTACTS_BULK:
+                count = updateBulkContacts(values, userWhere);
+                // notify change using the "content://im/contacts" url,
+                // so the change will be observed by listeners interested
+                // in contacts changes.
+                if (count > 0) {
+                    getContext().getContentResolver().notifyChange(Imps.Contacts.CONTENT_URI, null);
+                }
+                return count;
 
-        case MATCH_CONTACTLIST:
-            tableToChange = TABLE_CONTACT_LIST;
-            changedItemId = url.getPathSegments().get(1);
-            notifyContactListContentUri = true;
-            break;
-
-        case MATCH_CONTACTS_ETAGS:
-            tableToChange = TABLE_CONTACTS_ETAG;
-            break;
-
-        case MATCH_CONTACTS_ETAG:
-            tableToChange = TABLE_CONTACTS_ETAG;
-            changedItemId = url.getPathSegments().get(1);
-            break;
-
-        case MATCH_MESSAGES:
-            tableToChange = TABLE_MESSAGES;
-            break;
-
-        case MATCH_MESSAGES_BY_CONTACT:
-            tableToChange = TABLE_MESSAGES;
-
-            accountStr = decodeURLSegment(url.getPathSegments().get(1));
-            try {
-                account = Long.parseLong(accountStr);
-            } catch (NumberFormatException ex) {
-                throw new IllegalArgumentException();
-            }
-
-            contact = decodeURLSegment(url.getPathSegments().get(2));
-            appendWhere(whereClause, Imps.Messages.THREAD_ID, "=",
-                    getContactId(db, accountStr, contact));
-
-            notifyMessagesContentUri = true;
-            break;
-
-        case MATCH_MESSAGES_BY_THREAD_ID:
-            tableToChange = TABLE_MESSAGES;
-
-            try {
-                threadId = Long.parseLong(decodeURLSegment(url.getPathSegments().get(1)));
-            } catch (NumberFormatException ex) {
-                throw new IllegalArgumentException();
-            }
-
-            appendWhere(whereClause, Imps.Messages.THREAD_ID, "=", threadId);
-
-            notifyMessagesContentUri = true;
-            break;
-
-        case MATCH_MESSAGE:
-            tableToChange = TABLE_MESSAGES;
-            changedItemId = url.getPathSegments().get(1);
-            notifyMessagesContentUri = true;
-            break;
-
-        case MATCH_OTR_MESSAGES:
-            tableToChange = TABLE_IN_MEMORY_MESSAGES;
-            break;
-
-        case MATCH_OTR_MESSAGES_BY_CONTACT:
-            tableToChange = TABLE_IN_MEMORY_MESSAGES;
-
-            accountStr = decodeURLSegment(url.getPathSegments().get(1));
-            try {
-                account = Long.parseLong(accountStr);
-            } catch (NumberFormatException ex) {
-                throw new IllegalArgumentException();
-            }
-
-            contact = decodeURLSegment(url.getPathSegments().get(2));
-            appendWhere(whereClause, Imps.Messages.THREAD_ID, "=",
-                    getContactId(db, accountStr, contact));
-
-            notifyMessagesByContactContentUri = true;
-            break;
-
-        case MATCH_OTR_MESSAGES_BY_THREAD_ID:
-            tableToChange = TABLE_IN_MEMORY_MESSAGES;
-
-            try {
-                threadId = Long.parseLong(decodeURLSegment(url.getPathSegments().get(1)));
-            } catch (NumberFormatException ex) {
-                throw new IllegalArgumentException();
-            }
-
-            appendWhere(whereClause, Imps.Messages.THREAD_ID, "=", threadId);
-
-            notifyMessagesByThreadIdContentUri = true;
-            break;
-
-        case MATCH_MESSAGES_BY_PACKET_ID:
-            packetId = decodeURLSegment(url.getPathSegments().get(1));
-            tableToChange = TABLE_MESSAGES; // FIXME these should be going to memory but they do not
-            appendWhere(whereClause, Imps.Messages.PACKET_ID, "=", packetId);
-            notifyMessagesContentUri = true;
-            notifyMessagesByThreadIdContentUri = true;
-            threadId = values.getAsLong(Imps.Messages.THREAD_ID);
-            // Try updating OTR message
-            //    count += db.update(TABLE_IN_MEMORY_MESSAGES, values, whereClause.toString(), whereArgs);
-            break;
-
-        case MATCH_OTR_MESSAGES_BY_PACKET_ID:
-            packetId = decodeURLSegment(url.getPathSegments().get(1));
-            tableToChange = TABLE_IN_MEMORY_MESSAGES; // FIXME these should be going to memory but they do not
-            appendWhere(whereClause, Imps.Messages.PACKET_ID, "=", packetId);
-            notifyMessagesContentUri = true;
-            notifyMessagesByThreadIdContentUri = true;
-            threadId = values.getAsLong(Imps.Messages.THREAD_ID);
-            // Try updating OTR message
-        //    count += db.update(TABLE_IN_MEMORY_MESSAGES, values, whereClause.toString(), whereArgs);
-            break;
-
-        case MATCH_OTR_MESSAGE:
-            tableToChange = TABLE_IN_MEMORY_MESSAGES;
-            changedItemId = url.getPathSegments().get(1);
-            notifyMessagesContentUri = true;
-            break;
-
-        case MATCH_AVATARS:
-            tableToChange = TABLE_AVATARS;
-            break;
-
-        case MATCH_AVATAR:
-            tableToChange = TABLE_AVATARS;
-            changedItemId = url.getPathSegments().get(1);
-            break;
-
-        case MATCH_AVATAR_BY_PROVIDER:
-            tableToChange = TABLE_AVATARS;
-            changedItemId = url.getPathSegments().get(2);
-            idColumnName = Imps.Avatars.ACCOUNT;
-            break;
-
-        case MATCH_CHATS:
-            tableToChange = TABLE_CHATS;
-            notifyProviderAccountContentUri = true; // For updating account stats in account list
-            break;
-
-        case MATCH_CHATS_ID:
-            tableToChange = TABLE_CHATS;
-            changedItemId = url.getPathSegments().get(1);
-            idColumnName = Imps.Chats.CONTACT_ID;
-            notifyProviderAccountContentUri = true; // For updating account stats in account list
-            break;
-
-        case MATCH_PRESENCE:
-            log("update presence: where='" + userWhere + "'");
-            tableToChange = TABLE_PRESENCE;
-            break;
-
-        case MATCH_PRESENCE_ID:
-            tableToChange = TABLE_PRESENCE;
-            changedItemId = url.getPathSegments().get(1);
-            idColumnName = Imps.Presence.CONTACT_ID;
-            break;
-
-        case MATCH_PRESENCE_BULK:
-            
-            tableToChange = null;
-            
-            count = updateBulkPresence(values, db, userWhere, whereArgs);
-            // notify change using the "content://im/contacts" url,
-            // so the change will be observed by listeners interested
-            // in contacts changes.
-            
-            if (count > 0)
-            {
-                getContext().getContentResolver().notifyChange(Imps.Contacts.CONTENT_URI_CHAT_CONTACTS_BY, null);
-                getContext().getContentResolver().notifyChange(Imps.Contacts.CONTENT_URI, null);
+            case MATCH_CONTACTLIST:
+                tableToChange = TABLE_CONTACT_LIST;
+                changedItemId = url.getPathSegments().get(1);
                 notifyContactListContentUri = true;
-            }
-            break;
+                break;
 
-        case MATCH_INVITATION:
-            tableToChange = TABLE_INVITATIONS;
-            changedItemId = url.getPathSegments().get(1);
-            break;
+            case MATCH_CONTACTS_ETAGS:
+                tableToChange = TABLE_CONTACTS_ETAG;
+                break;
 
-        case MATCH_SESSIONS:
-            tableToChange = TABLE_SESSION_COOKIES;
-            break;
+            case MATCH_CONTACTS_ETAG:
+                tableToChange = TABLE_CONTACTS_ETAG;
+                changedItemId = url.getPathSegments().get(1);
+                break;
 
-        case MATCH_PROVIDER_SETTINGS_BY_ID_AND_NAME:
-            tableToChange = TABLE_PROVIDER_SETTINGS;
+            case MATCH_MESSAGES:
+                tableToChange = TABLE_MESSAGES;
+                break;
 
-            String providerId = url.getPathSegments().get(1);
-            String name = url.getPathSegments().get(2);
+            case MATCH_MESSAGES_BY_CONTACT:
+                tableToChange = TABLE_MESSAGES;
 
-            if (values.containsKey(Imps.ProviderSettings.PROVIDER)
-                || values.containsKey(Imps.ProviderSettings.NAME)) {
-                throw new SecurityException("Cannot override the value for provider|name");
-            }
+                accountStr = decodeURLSegment(url.getPathSegments().get(1));
+                try {
+                    account = Long.parseLong(accountStr);
+                } catch (NumberFormatException ex) {
+                    throw new IllegalArgumentException();
+                }
 
-            appendWhere(whereClause, Imps.ProviderSettings.PROVIDER, "=", providerId);
-            appendWhere(whereClause, Imps.ProviderSettings.NAME, "=", name);
+                contact = decodeURLSegment(url.getPathSegments().get(2));
+                appendWhere(whereClause, Imps.Messages.THREAD_ID, "=",
+                        getContactId(db, accountStr, contact));
 
-            break;
+                notifyMessagesContentUri = true;
+                break;
 
-        case MATCH_OUTGOING_RMQ_MESSAGES:
-            tableToChange = TABLE_OUTGOING_RMQ_MESSAGES;
-            break;
+            case MATCH_MESSAGES_BY_THREAD_ID:
+                tableToChange = TABLE_MESSAGES;
 
-        case MATCH_LAST_RMQ_ID:
-            tableToChange = TABLE_LAST_RMQ_ID;
-            break;
+                try {
+                    threadId = Long.parseLong(decodeURLSegment(url.getPathSegments().get(1)));
+                } catch (NumberFormatException ex) {
+                    throw new IllegalArgumentException();
+                }
 
-        case MATCH_S2D_RMQ_IDS:
-            tableToChange = TABLE_S2D_RMQ_IDS;
-            break;
+                appendWhere(whereClause, Imps.Messages.THREAD_ID, "=", threadId);
 
-        // ChatSecure-Push
-        case MATCH_CSP_ACCOUNTS:
-            tableToChange = TABLE_CSP_ACCOUNTS;
-            break;
+                notifyMessagesContentUri = true;
+                break;
 
-        case MATCH_CSP_DEVICES:
-            tableToChange = TABLE_CSP_DEVICES;
-            break;
+            case MATCH_MESSAGE:
+                tableToChange = TABLE_MESSAGES;
+                changedItemId = url.getPathSegments().get(1);
+                notifyMessagesContentUri = true;
+                break;
 
-        case MATCH_CSP_TOKENS:
-            tableToChange = TABLE_CSP_TOKENS;
-            break;
+            case MATCH_OTR_MESSAGES:
+                tableToChange = TABLE_IN_MEMORY_MESSAGES;
+                break;
 
-        default:
-            throw new UnsupportedOperationException("Cannot update URL: " + url);
+            case MATCH_OTR_MESSAGES_BY_CONTACT:
+                tableToChange = TABLE_IN_MEMORY_MESSAGES;
+
+                accountStr = decodeURLSegment(url.getPathSegments().get(1));
+                try {
+                    account = Long.parseLong(accountStr);
+                } catch (NumberFormatException ex) {
+                    throw new IllegalArgumentException();
+                }
+
+                contact = decodeURLSegment(url.getPathSegments().get(2));
+                appendWhere(whereClause, Imps.Messages.THREAD_ID, "=",
+                        getContactId(db, accountStr, contact));
+
+                notifyMessagesByContactContentUri = true;
+                break;
+
+            case MATCH_OTR_MESSAGES_BY_THREAD_ID:
+                tableToChange = TABLE_IN_MEMORY_MESSAGES;
+
+                try {
+                    threadId = Long.parseLong(decodeURLSegment(url.getPathSegments().get(1)));
+                } catch (NumberFormatException ex) {
+                    throw new IllegalArgumentException();
+                }
+
+                appendWhere(whereClause, Imps.Messages.THREAD_ID, "=", threadId);
+
+                notifyMessagesByThreadIdContentUri = true;
+                break;
+
+            case MATCH_MESSAGES_BY_PACKET_ID:
+                packetId = decodeURLSegment(url.getPathSegments().get(1));
+                tableToChange = TABLE_MESSAGES; // FIXME these should be going to memory but they do not
+                appendWhere(whereClause, Imps.Messages.PACKET_ID, "=", packetId);
+                notifyMessagesContentUri = true;
+                notifyMessagesByThreadIdContentUri = true;
+                threadId = values.getAsLong(Imps.Messages.THREAD_ID);
+                // Try updating OTR message
+                //    count += db.update(TABLE_IN_MEMORY_MESSAGES, values, whereClause.toString(), whereArgs);
+                break;
+
+            case MATCH_OTR_MESSAGES_BY_PACKET_ID:
+                packetId = decodeURLSegment(url.getPathSegments().get(1));
+                tableToChange = TABLE_IN_MEMORY_MESSAGES; // FIXME these should be going to memory but they do not
+                appendWhere(whereClause, Imps.Messages.PACKET_ID, "=", packetId);
+                notifyMessagesContentUri = true;
+                notifyMessagesByThreadIdContentUri = true;
+                threadId = values.getAsLong(Imps.Messages.THREAD_ID);
+                // Try updating OTR message
+                //    count += db.update(TABLE_IN_MEMORY_MESSAGES, values, whereClause.toString(), whereArgs);
+                break;
+
+            case MATCH_OTR_MESSAGE:
+                tableToChange = TABLE_IN_MEMORY_MESSAGES;
+                changedItemId = url.getPathSegments().get(1);
+                notifyMessagesContentUri = true;
+                break;
+
+            case MATCH_AVATARS:
+                tableToChange = TABLE_AVATARS;
+                break;
+
+            case MATCH_AVATAR:
+                tableToChange = TABLE_AVATARS;
+                changedItemId = url.getPathSegments().get(1);
+                break;
+
+            case MATCH_AVATAR_BY_PROVIDER:
+                tableToChange = TABLE_AVATARS;
+                changedItemId = url.getPathSegments().get(2);
+                idColumnName = Imps.Avatars.ACCOUNT;
+                break;
+
+            case MATCH_CHATS:
+                tableToChange = TABLE_CHATS;
+                notifyProviderAccountContentUri = true; // For updating account stats in account list
+                break;
+
+            case MATCH_CHATS_ID:
+                tableToChange = TABLE_CHATS;
+                changedItemId = url.getPathSegments().get(1);
+                idColumnName = Imps.Chats.CONTACT_ID;
+                notifyProviderAccountContentUri = true; // For updating account stats in account list
+                break;
+
+            case MATCH_PRESENCE:
+                log("update presence: where='" + userWhere + "'");
+                tableToChange = TABLE_PRESENCE;
+                break;
+
+            case MATCH_PRESENCE_ID:
+                tableToChange = TABLE_PRESENCE;
+                changedItemId = url.getPathSegments().get(1);
+                idColumnName = Imps.Presence.CONTACT_ID;
+                break;
+
+            case MATCH_PRESENCE_BULK:
+
+                tableToChange = null;
+
+                count = updateBulkPresence(values, db, userWhere, whereArgs);
+                // notify change using the "content://im/contacts" url,
+                // so the change will be observed by listeners interested
+                // in contacts changes.
+
+                if (count > 0) {
+                    getContext().getContentResolver().notifyChange(Imps.Contacts.CONTENT_URI_CHAT_CONTACTS_BY, null);
+                    getContext().getContentResolver().notifyChange(Imps.Contacts.CONTENT_URI, null);
+                    notifyContactListContentUri = true;
+                }
+                break;
+
+            case MATCH_INVITATION:
+                tableToChange = TABLE_INVITATIONS;
+                changedItemId = url.getPathSegments().get(1);
+                break;
+
+            case MATCH_SESSIONS:
+                tableToChange = TABLE_SESSION_COOKIES;
+                break;
+
+            case MATCH_PROVIDER_SETTINGS_BY_ID_AND_NAME:
+                tableToChange = TABLE_PROVIDER_SETTINGS;
+
+                String providerId = url.getPathSegments().get(1);
+                String name = url.getPathSegments().get(2);
+
+                if (values.containsKey(Imps.ProviderSettings.PROVIDER)
+                        || values.containsKey(Imps.ProviderSettings.NAME)) {
+                    throw new SecurityException("Cannot override the value for provider|name");
+                }
+
+                appendWhere(whereClause, Imps.ProviderSettings.PROVIDER, "=", providerId);
+                appendWhere(whereClause, Imps.ProviderSettings.NAME, "=", name);
+
+                break;
+
+            case MATCH_OUTGOING_RMQ_MESSAGES:
+                tableToChange = TABLE_OUTGOING_RMQ_MESSAGES;
+                break;
+
+            case MATCH_LAST_RMQ_ID:
+                tableToChange = TABLE_LAST_RMQ_ID;
+                break;
+
+            case MATCH_S2D_RMQ_IDS:
+                tableToChange = TABLE_S2D_RMQ_IDS;
+                break;
+
+            // ChatSecure-Push
+            case MATCH_CSP_ACCOUNTS:
+                tableToChange = TABLE_CSP_ACCOUNTS;
+                break;
+
+            case MATCH_CSP_DEVICES:
+                tableToChange = TABLE_CSP_DEVICES;
+                break;
+
+            case MATCH_CSP_TOKENS:
+                tableToChange = TABLE_CSP_TOKENS;
+                break;
+
+            default:
+                throw new UnsupportedOperationException("Cannot update URL: " + url);
         }
 
         if (idColumnName == null) {
@@ -3990,13 +4065,13 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
             // In most case, we query contacts with presence and chats joined, thus
             // we should also notify that contacts changes when presence or chats changed.
             if (match == MATCH_CHATS || match == MATCH_CHATS_ID || match == MATCH_PRESENCE || match == MATCH_PRESENCE_BULK
-                || match == MATCH_PRESENCE_ID || match == MATCH_CONTACTS_BAREBONE) {
+                    || match == MATCH_PRESENCE_ID || match == MATCH_CONTACTS_BAREBONE) {
                 resolver.notifyChange(Imps.Contacts.CONTENT_URI, null);
             }
 
             if (notifyMessagesContentUri) {
-                
-               //     log("notify change for " + Imps.Messages.CONTENT_URI);
+
+                //     log("notify change for " + Imps.Messages.CONTENT_URI);
                 resolver.notifyChange(Imps.Messages.CONTENT_URI, null);
             }
 
@@ -4015,8 +4090,8 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
             }
 
             if (notifyProviderAccountContentUri) {
-                
-                    log("notify change for " + Imps.Provider.CONTENT_URI_WITH_ACCOUNT);
+
+                log("notify change for " + Imps.Provider.CONTENT_URI_WITH_ACCOUNT);
                 resolver.notifyChange(Imps.Provider.CONTENT_URI_WITH_ACCOUNT, null);
             }
         }
@@ -4030,7 +4105,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
     }
 
     private static void appendWhere(StringBuilder where, String columnName, String condition,
-            Object value) {
+                                    Object value) {
         if (where.length() > 0) {
 
             StringBuilder newCond = new StringBuilder();
@@ -4040,10 +4115,9 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
             }
             newCond.append(" AND ");
 
-            where.insert(0,newCond.toString());
+            where.insert(0, newCond.toString());
 
-        }
-        else {
+        } else {
             where.append(columnName).append(condition);
             if (value != null) {
                 DatabaseUtils.appendValueToSql(where, value);

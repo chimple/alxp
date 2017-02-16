@@ -25,8 +25,12 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Shader;
 import android.graphics.Typeface;
+import android.graphics.drawable.BitmapDrawable;
 import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Build;
@@ -51,6 +55,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import net.java.otr4j.session.SessionStatus;
@@ -149,6 +154,12 @@ public class ConversationDetailActivity extends BaseActivity {
         getWindow().setSoftInputMode(
                 WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN
         );
+
+        Bitmap bmp = BitmapFactory.decodeResource(getResources(), R.drawable.background);
+        BitmapDrawable bitmapDrawable = new BitmapDrawable(bmp);
+        bitmapDrawable.setTileModeXY(Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
+        LinearLayout layout =(LinearLayout)this.findViewById(R.id.conversationBackground);
+        layout.setBackgroundDrawable(bitmapDrawable);
 
     }
 
@@ -353,6 +364,7 @@ public class ConversationDetailActivity extends BaseActivity {
         else {
             getMenuInflater().inflate(R.menu.menu_conversation_detail, menu);
         }
+
 
         return true;
     }

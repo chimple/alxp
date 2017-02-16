@@ -4,6 +4,10 @@ import android.content.Context;
 import android.content.res.AssetManager;
 
 import com.rivescript.ObjectMacro;
+
+import org.awesomeapp.messenger.ImApp;
+import org.awesomeapp.messenger.ui.ConversationView;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -76,7 +80,7 @@ public class AlphabetTeacher implements ObjectMacro {
             rs.setUservar(user, "topic", "aquestion1");
             sb.append(rs.getUservar(user, "o1")).append(" ?");
         }
-
+        ImApp.sImApp.displayKeyBoard(ConversationView.CUSTOM_KEYBOARD_TYPE, rs.getUservar(user, "a1"), rs.getUservar(user, "a2"), rs.getUservar(user, "a3"));
         return sb.toString();
     }
 

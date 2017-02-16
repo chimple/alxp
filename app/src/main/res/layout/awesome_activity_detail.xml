@@ -21,10 +21,11 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main_content"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="match_parent" >
+    <!--android:background="@drawable/avatar_unknown"-->
 
-    android:background="@drawable/avatar_unknown"
-    >
+    <!--&gt;-->
+
 <!--
 
     android:fitsSystemWindows="true"
@@ -69,10 +70,20 @@
 
     </android.support.design.widget.AppBarLayout>
 
+
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:id = "@+id/conversationBackground">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:orientation="vertical">
+        </LinearLayout>
+
 
         <android.support.v7.widget.RecyclerView
             android:id="@+id/history"
@@ -85,39 +96,12 @@
             android:scrollbars="vertical"
             android:layout_weight="9"
             app:layout_behavior="org.awesomeapp.messenger.ui.widgets.PatchedScrollingViewBehavior"
-            android:paddingBottom="48dp"
-            android:layout_marginTop="50dp"
+            android:paddingBottom="0dp"
+            android:layout_marginTop="0dp"
             android:paddingTop="0dp"
             />
 
-
         <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#77000000"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:id="@+id/viewDeleteVoice"
-        android:visibility="gone"
-        >
-
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_delete_white_48dp"
-            android:id="@+id/btnDeleteVoice"
-            />
-
-        <org.ironrabbit.type.CustomTypefaceTextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/swipe_up_delete"
-            android:textColor="@android:color/white"
-            />
-
-    </LinearLayout>
-
-    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
@@ -125,112 +109,112 @@
         >
 
 
-        <HorizontalScrollView
-            android:id="@+id/attachPanel"
-            android:layout_width="match_parent"
-            android:layout_height="96dip"
-            android:fillViewport="true"
-            android:measureAllChildren="false"
-            android:scrollbars="none"
-            android:visibility="invisible"
-            android:layout_gravity="center_vertical"
-            android:gravity="center_vertical"
-            android:background="@color/background_light"
-            >
+        <!--<HorizontalScrollView-->
+            <!--android:id="@+id/attachPanel"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="96dip"-->
+            <!--android:fillViewport="true"-->
+            <!--android:measureAllChildren="false"-->
+            <!--android:scrollbars="none"-->
+            <!--android:visibility="invisible"-->
+            <!--android:layout_gravity="center_vertical"-->
+            <!--android:gravity="center_vertical"-->
+            <!--android:background="@color/background_light"-->
+            <!--&gt;-->
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical|center_horizontal"
-                android:orientation="horizontal"
-                >
+            <!--<LinearLayout-->
+                <!--android:layout_width="match_parent"-->
+                <!--android:layout_height="wrap_content"-->
+                <!--android:gravity="center_vertical|center_horizontal"-->
+                <!--android:orientation="horizontal"-->
+                <!--&gt;-->
 
 
-                <org.awesomeapp.messenger.ui.CircleColorImageView
-                    android:id="@+id/btnAttachPicture"
-                    android:src="@drawable/ic_insert_photo_white_36dp"
-                    android:layout_margin="3dp"
-                    android:padding="6dp"
+                <!--<org.awesomeapp.messenger.ui.CircleColorImageView-->
+                    <!--android:id="@+id/btnAttachPicture"-->
+                    <!--android:src="@drawable/ic_insert_photo_white_36dp"-->
+                    <!--android:layout_margin="3dp"-->
+                    <!--android:padding="6dp"-->
 
-                    app:circleColor="@android:color/holo_green_light"
-                    android:layout_width="64dp"
-                    android:layout_height="64dp"
-                    />
+                    <!--app:circleColor="@android:color/holo_green_light"-->
+                    <!--android:layout_width="64dp"-->
+                    <!--android:layout_height="64dp"-->
+                    <!--/>-->
 
-                <org.awesomeapp.messenger.ui.CircleColorImageView
-                    android:id="@+id/btnTakePicture"
-                    android:src="@drawable/ic_photo_camera_white_36dp"
-                    android:layout_margin="3dp"
-                    app:circleColor="@android:color/holo_blue_light"
-                    android:padding="6dp"
-                    android:layout_width="64dp"
-                    android:layout_height="64dp"
+                <!--<org.awesomeapp.messenger.ui.CircleColorImageView-->
+                    <!--android:id="@+id/btnTakePicture"-->
+                    <!--android:src="@drawable/ic_photo_camera_white_36dp"-->
+                    <!--android:layout_margin="3dp"-->
+                    <!--app:circleColor="@android:color/holo_blue_light"-->
+                    <!--android:padding="6dp"-->
+                    <!--android:layout_width="64dp"-->
+                    <!--android:layout_height="64dp"-->
 
-                    />
+                    <!--/>-->
 
-                <org.awesomeapp.messenger.ui.CircleColorImageView
-                    android:id="@+id/btnAttachSticker"
-                    android:src="@drawable/ic_insert_emoticon_white_36dp"
-                    android:layout_margin="3dp"
-                    android:padding="6dp"
-                    app:circleColor="@android:color/holo_orange_light"
-                    android:layout_width="64dp"
-                    android:layout_height="64dp"
-                    />
+                <!--<org.awesomeapp.messenger.ui.CircleColorImageView-->
+                    <!--android:id="@+id/btnAttachSticker"-->
+                    <!--android:src="@drawable/ic_insert_emoticon_white_36dp"-->
+                    <!--android:layout_margin="3dp"-->
+                    <!--android:padding="6dp"-->
+                    <!--app:circleColor="@android:color/holo_orange_light"-->
+                    <!--android:layout_width="64dp"-->
+                    <!--android:layout_height="64dp"-->
+                    <!--/>-->
 
-<!--
-                <org.awesomeapp.messenger.ui.CircleColorImageView
-                    android:id="@+id/btnAttachFile"
-                    android:src="@drawable/ic_insert_drive_file_white_36dp"
-                    android:layout_margin="3dp"
-                    android:padding="6dp"
-                    app:circleColor="@android:color/holo_red_light"
-                    android:layout_width="64dp"
-                    android:layout_height="64dp"
-                    />-->
-            </LinearLayout>
-        </HorizontalScrollView>
+<!--&lt;!&ndash;-->
+                <!--<org.awesomeapp.messenger.ui.CircleColorImageView-->
+                    <!--android:id="@+id/btnAttachFile"-->
+                    <!--android:src="@drawable/ic_insert_drive_file_white_36dp"-->
+                    <!--android:layout_margin="3dp"-->
+                    <!--android:padding="6dp"-->
+                    <!--app:circleColor="@android:color/holo_red_light"-->
+                    <!--android:layout_width="64dp"-->
+                    <!--android:layout_height="64dp"-->
+                    <!--/>&ndash;&gt;-->
+            <!--</LinearLayout>-->
+        <!--</HorizontalScrollView>-->
 
-        <RelativeLayout
-            android:id="@+id/stickerBox"
-            android:orientation="horizontal"
-            android:layout_width="fill_parent"
-            android:layout_height="200dip"
-            android:visibility="gone"
-            >
+        <!--<RelativeLayout-->
+            <!--android:id="@+id/stickerBox"-->
+            <!--android:orientation="horizontal"-->
+            <!--android:layout_width="fill_parent"-->
+            <!--android:layout_height="200dip"-->
+            <!--android:visibility=""-->
+            <!--&gt;-->
 
-            <android.support.v4.view.ViewPager
-                android:id="@+id/stickerPager"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="#bcbcbc"
-                >
+            <!--<android.support.v4.view.ViewPager-->
+                <!--android:id="@+id/stickerPager"-->
+                <!--android:layout_width="match_parent"-->
+                <!--android:layout_height="match_parent"-->
+                <!--android:background="#bcbcbc"-->
+                <!--&gt;-->
 
-                <android.support.v4.view.PagerTitleStrip
-                    android:id="@+id/stickerPagerStrip"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textColor="#fff" />
+                <!--<android.support.v4.view.PagerTitleStrip-->
+                    <!--android:id="@+id/stickerPagerStrip"-->
+                    <!--android:layout_width="match_parent"-->
+                    <!--android:layout_height="wrap_content"-->
+                    <!--android:textColor="#fff" />-->
 
-            </android.support.v4.view.ViewPager>
+            <!--</android.support.v4.view.ViewPager>-->
 
-        </RelativeLayout>
+        <!--</RelativeLayout>-->
 
-        <org.ironrabbit.type.CustomTypefaceTextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="..."
-            android:layout_marginLeft="12dp"
-            android:id="@+id/tvTyping"
-            android:layout_below="@+id/history"
-            android:background="@android:color/transparent"
-            android:textColor="?messageTextPrimary"
-            android:visibility="gone"
-            />
+        <!--<org.ironrabbit.type.CustomTypefaceTextView-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:text="..."-->
+            <!--android:layout_marginLeft="12dp"-->
+            <!--android:id="@+id/tvTyping"-->
+            <!--android:layout_below="@+id/history"-->
+            <!--android:background="@android:color/transparent"-->
+            <!--android:textColor="?messageTextPrimary"-->
+            <!--android:visibility="visible"-->
+            <!--/>-->
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:padding="3dp"
@@ -241,18 +225,6 @@
             android:layout_weight="2"
 
             >
-
-            <ImageButton
-                android:id="@+id/btnAttach"
-                android:layout_width="28dip"
-                android:layout_height="28dip"
-                android:scaleType="centerInside"
-                android:background="@android:color/transparent"
-                android:src="@drawable/ic_add_circle_outline_black_36dp"
-                android:layout_margin="6dp"
-                />
-
-
 
             <!--<org.ironrabbit.type.CustomTypefaceEditText-->
             <EditText
@@ -307,14 +279,14 @@
                 android:src="@drawable/ic_send_holo_light"
                 android:visibility="gone"
                 />
+            </LinearLayout>
+            </LinearLayout>
 
-
-        </LinearLayout>
-
-
-       <LinearLayout
+        <LinearLayout
            android:layout_width="match_parent"
-           android:layout_height="wrap_content">
+           android:layout_height="wrap_content"
+           android:orientation="vertical"
+           >
 
            <android.inputmethodservice.KeyboardView
                android:id="@+id/keyboardview"
@@ -335,6 +307,7 @@
                android:focusable="true"
                android:focusableInTouchMode="true"
                android:keyTextSize="80sp"
+               android:labelTextSize="30sp"
                android:visibility="gone" />
            <android.inputmethodservice.KeyboardView
                android:id="@+id/keyboardview_2x3"
@@ -347,7 +320,33 @@
                android:keyTextSize="50sp"
                android:visibility="gone" />
        </LinearLayout>
-    </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#77000000"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:id="@+id/viewDeleteVoice"
+            android:visibility="gone"
+            >
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_delete_white_48dp"
+                android:id="@+id/btnDeleteVoice"
+                />
+
+            <org.ironrabbit.type.CustomTypefaceTextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/swipe_up_delete"
+                android:textColor="@android:color/white"
+                />
+
+        </LinearLayout>
 
 
         <LinearLayout
