@@ -195,6 +195,7 @@ public class ConversationView {
     private View mStatusWarningView;
     private TextView mWarningText;
 
+    public ConversationView mConversationView;
     boolean mDynamicKeyboardIsVisible;
     private ImageView mDeliveryIcon;
     private boolean mExpectingDelivery;
@@ -278,6 +279,7 @@ public class ConversationView {
                 mComposeMessage = (EditText) mcustomKeyboard.registerEditText(R.id.composeMessage);
                 mcustomKeyboard.dyanamicKeyBoard(params);
                 // mApp.displayKeyBoard(keys);
+                mcustomKeyboard.setConversationViewObject(mConversationView);
                 mDynamicKeyboardIsVisible = true;
 
             }
@@ -712,8 +714,11 @@ public class ConversationView {
         mApp = (ImApp)mActivity.getApplication();
         mHandler = new ChatViewHandler(mActivity);
 
+        mConversationView= this;
         initViews();
     }
+
+
 
     void registerForConnEvents() {
         mApp.registerForConnEvents(mHandler);
@@ -758,41 +763,41 @@ public class ConversationView {
         });
 
 
-        mButtonAttach = (ImageButton) mActivity.findViewById(R.id.btnAttach);
-        mViewAttach = mActivity.findViewById(R.id.attachPanel);
+      //  mButtonAttach = (ImageButton) mActivity.findViewById(R.id.btnAttach);
+      //  mViewAttach = mActivity.findViewById(R.id.attachPanel);
 
         mStatusWarningView = mActivity.findViewById(R.id.warning);
         mWarningText = (TextView) mActivity.findViewById(R.id.warningText);
 
-        mButtonAttach.setOnClickListener(new View.OnClickListener() {
+//       // mButtonAttach.setOnClickListener(new View.OnClickListener() {
+//
+//            @Override
+//            public void onClick(View v) {
+//
+//
+//                toggleAttachMenu ();
+//            }
+//
+//        });
 
-            @Override
-            public void onClick(View v) {
 
+//        mActivity.findViewById(R.id.btnAttachPicture).setOnClickListener(new View.OnClickListener() {
+//
+//            @Override
+//            public void onClick(View v) {
+//                mActivity.startImagePicker();
+//            }
+//
+//        });
 
-                toggleAttachMenu ();
-            }
-
-        });
-
-
-        mActivity.findViewById(R.id.btnAttachPicture).setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                mActivity.startImagePicker();
-            }
-
-        });
-
-        mActivity.findViewById(R.id.btnTakePicture).setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                mActivity.startPhotoTaker();
-            }
-
-        });
+//        mActivity.findViewById(R.id.btnTakePicture).setOnClickListener(new View.OnClickListener() {
+//
+//            @Override
+//            public void onClick(View v) {
+//                mActivity.startPhotoTaker();
+//            }
+//
+//        });
 
         /**
         mActivity.findViewById(R.id.btnAttachFile).setOnClickListener(new View.OnClickListener() {
@@ -804,15 +809,15 @@ public class ConversationView {
 
         });*/
 
-        mActivity.findViewById(R.id.btnAttachSticker).setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                toggleAttachMenu();
-                showStickers();
-            }
-
-        });
+//        mActivity.findViewById(R.id.btnAttachSticker).setOnClickListener(new View.OnClickListener() {
+//
+//            @Override
+//            public void onClick(View v) {
+//                toggleAttachMenu();
+//                showStickers();
+//            }
+//
+//        });
 
 
 
@@ -1235,20 +1240,20 @@ public class ConversationView {
         if (isGroupChat())
         {
             //disable unsupported features for now
-            mActivity.findViewById(R.id.btnAttachPicture).setEnabled(false);
-            mActivity.findViewById(R.id.btnTakePicture).setEnabled(false);
+          //  mActivity.findViewById(R.id.btnAttachPicture).setEnabled(false);
+         //   mActivity.findViewById(R.id.btnTakePicture).setEnabled(false);
             //mActivity.findViewById(R.id.btnAttachFile).setEnabled(false);
             mMicButton.setEnabled(false);;
 
-            mActivity.findViewById(R.id.btnAttachPicture).setAlpha(0.2f);
-            mActivity.findViewById(R.id.btnTakePicture).setAlpha(0.2f);
+       //     mActivity.findViewById(R.id.btnAttachPicture).setAlpha(0.2f);
+      //      mActivity.findViewById(R.id.btnTakePicture).setAlpha(0.2f);
             //mActivity.findViewById(R.id.btnAttachFile).setAlpha(0.2f);
             mMicButton.setAlpha(0.5f);
         }
         else
         {
-            mActivity.findViewById(R.id.btnAttachPicture).setEnabled(true);
-            mActivity.findViewById(R.id.btnTakePicture).setEnabled(true);
+        //    mActivity.findViewById(R.id.btnAttachPicture).setEnabled(true);
+       //     mActivity.findViewById(R.id.btnTakePicture).setEnabled(true);
             //mActivity.findViewById(R.id.btnAttachFile).setEnabled(true);
             mMicButton.setEnabled(true);
         }
@@ -1877,6 +1882,8 @@ public class ConversationView {
     public boolean isGroupChat() {
         return this.mContactType == Imps.Contacts.TYPE_GROUP;
     }
+
+
 
     void sendMessage() {
 
@@ -2756,6 +2763,7 @@ public class ConversationView {
                 int temp = str.length;
 
                 setKeyboardType(CUSTOM_KEYBOARD_TYPE, "A", "B", "C");
+
                 //mcustomKeyboard.dyanamicKeyBoard(keys);
                 /*
                 // if showTimeStamp is false for the latest message, then set a timer to query the
