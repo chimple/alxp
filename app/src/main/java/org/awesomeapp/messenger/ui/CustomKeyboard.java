@@ -204,6 +204,7 @@ public class CustomKeyboard {
 
         Keyboard updatedKeyboard = null;
         if (userKeys[0].length() < 3){
+            mInputType ="";
             if (userKeys.length >6 && userKeys.length < 10) // for 9 keys
                 updatedKeyboard = new Keyboard(mHostActivity,R.xml.custom_keyboard);
 

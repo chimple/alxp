@@ -148,7 +148,7 @@ public class ConversationDetailActivity extends BaseActivity {
                 WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN
         );
 
-        Bitmap bmp = BitmapFactory.decodeResource(getResources(), R.drawable.avatar_unknown);
+        Bitmap bmp = BitmapFactory.decodeResource(getResources(), R.drawable.background);
         BitmapDrawable bitmapDrawable = new BitmapDrawable(bmp);
         bitmapDrawable.setTileModeXY(Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
         LinearLayout layout =(LinearLayout)this.findViewById(R.id.conversationBackground);
