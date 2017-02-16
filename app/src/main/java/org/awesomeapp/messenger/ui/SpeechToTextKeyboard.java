@@ -108,13 +108,9 @@ public class SpeechToTextKeyboard {
     }
 
     /** Make the SpeechToTextKeyboard visible, and hide the system keyboard for view v. */
-    public void showSpeechToTextKeyboard( View v ) {
+    public void showSpeechToTextKeyboard() {
         mKeyboardView.setVisibility(View.VISIBLE);
         mKeyboardView.setEnabled(true);
-        conversationView.mComposeMessage.setInputType(InputType.TYPE_NULL);
-        if(conversationView.mcustomKeyboard!=null)
-            conversationView.mcustomKeyboard.hideCustomKeyboard();
-        if( v!=null ) ((InputMethodManager)mHostActivity.getSystemService(Activity.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(v.getWindowToken(), 0);
     }
 
     /** Make the SpeechToTextKeyboard invisible. */
@@ -136,7 +132,8 @@ public class SpeechToTextKeyboard {
         imgButton.setOnClickListener(new View.OnClickListener() {
             // NOTE By setting the on click listener, we can show the custom keyboard again, by tapping on an edit box that already had focus (but that had the keyboard hidden).
             @Override public void onClick(View v) {
-                showSpeechToTextKeyboard(v);
+
+                //showSpeechToTextKeyboard(v);
             }
         });
         // Disable standard keyboard hard way
@@ -155,38 +152,6 @@ public class SpeechToTextKeyboard {
 //        edittext.setInputType(edittext.getInputType() | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
         return imgButton;
     }
-
-    public void dyanamicSpeechToTextKeyboard (String...userKeys){
-
-        Keyboard updatedKeyboard = null;
-            updatedKeyboard = new Keyboard(mHostActivity,R.xml.speechtotext_keyboard);
-            mKeyboardView= (KeyboardView)mHostActivity.findViewById(R.id.speechkeyboard);
-
-
-        //   Keyboard.Row updatedRow = new Keyboard.Row(updatedKeyboard);
-        mKeyboardView.setKeyboard(updatedKeyboard);
-        mKeyboardView.setPreviewEnabled(false);
-        mKeyboardView.setOnKeyboardActionListener(mOnKeyboardActionListener);
-        mKeyboardView.setVisibility(View.VISIBLE);
-        mKeyboardView.setEnabled(true);
-        mHostActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
-        mHostActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
-        //mKeyboardView.keyTextSize
-        List<Keyboard.Key> keys = mKeyboardView.getKeyboard().getKeys();
-
-        int count = 0;
-        for (Keyboard.Key key : keys) {
-            int [] codes = {49};
-            codes[0] = userKeys[count].charAt(0);
-            key.codes = codes;
-            key.label = userKeys[count++];
-        }
-    }
-
-    public void showDefalutKeyboard(){
-        // mHostActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
-    }
-
 }
 
 

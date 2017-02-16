@@ -256,17 +256,6 @@
 
 
             <ImageButton
-                android:id="@+id/btnMic"
-
-                android:layout_width="28dip"
-                android:layout_height="28dip"
-                android:scaleType="centerInside"
-                android:background="@android:color/transparent"
-                android:src="@drawable/ic_mic_black_36dp"
-                android:layout_margin="6dp"
-                />
-
-            <ImageButton
                 android:id="@+id/btnSend"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
