@@ -136,6 +136,7 @@ public class ConversationDetailActivity extends BaseActivity {
         appBarLayout = (AppBarLayout)findViewById(R.id.appbar);
         mRootLayout = (CoordinatorLayout)findViewById(R.id.main_content);
 
+        toolbar.setTitle(mNickname);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         applyStyleForToolbar();
@@ -166,16 +167,16 @@ public class ConversationDetailActivity extends BaseActivity {
     public void applyStyleForToolbar() {
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        CollapsingToolbarLayout collapsingToolbar =
-                (CollapsingToolbarLayout) findViewById(R.id.collapsing_toolbar);
-        collapsingToolbar.setTitle(mConvoView.getTitle());
+//        CollapsingToolbarLayout collapsingToolbar =
+//                (CollapsingToolbarLayout) findViewById(R.id.collapsing_toolbar);
+       // toolbar.setTitle(mNickname);
 
         //first set font
         Typeface typeface = CustomTypefaceManager.getCurrentTypeface(this);
 
 
-        collapsingToolbar.setCollapsedTitleTypeface(typeface);
-        collapsingToolbar.setExpandedTitleTypeface(typeface);
+//        collapsingToolbar.setCollapsedTitleTypeface(typeface);
+//        collapsingToolbar.setExpandedTitleTypeface(typeface);
 
 
         if (typeface != null) {
@@ -208,7 +209,7 @@ public class ConversationDetailActivity extends BaseActivity {
             }
 
             appBarLayout.setBackgroundColor(themeColorHeader);
-            collapsingToolbar.setBackgroundColor(themeColorHeader);
+           // collapsingToolbar.setBackgroundColor(themeColorHeader);
             toolbar.setBackgroundColor(themeColorHeader);
             toolbar.setTitleTextColor(themeColorText);
 
@@ -247,9 +248,10 @@ public class ConversationDetailActivity extends BaseActivity {
 
         loadBackdrop();
 
-        CollapsingToolbarLayout collapsingToolbar =
-                (CollapsingToolbarLayout) findViewById(R.id.collapsing_toolbar);
-        collapsingToolbar.setTitle(mConvoView.getTitle());
+//        CollapsingToolbarLayout collapsingToolbar =
+//                (CollapsingToolbarLayout) findViewById(R.id.collapsing_toolbar);
+        Toolbar toolbar = (Toolbar)findViewById(R.id.toolbar);
+      //  toolbar.setTitle(mNickname);
     }
 
     public void collapseToolbar(){
@@ -347,10 +349,10 @@ public class ConversationDetailActivity extends BaseActivity {
     }
 
     private void loadBackdrop() {
-        final ImageView imageView = (ImageView) findViewById(R.id.backdrop);
-
-        if (mConvoView.getHeader()!=null)
-          imageView.setImageDrawable(mConvoView.getHeader());
+//        final ImageView imageView = (ImageView) findViewById(R.id.backdrop);
+//
+//        if (mConvoView.getHeader()!=null)
+//          imageView.setImageDrawable(mConvoView.getHeader());
 
     }
 

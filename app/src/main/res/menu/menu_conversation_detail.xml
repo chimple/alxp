@@ -24,13 +24,13 @@
 
              <item android:id="@+id/minus"
         android:title="@string/menu_verify"
-        android:icon="@drawable/ic_remove_circle_outline_black_24dp"
+        android:icon="@drawable/ic_remove_circle_outline_white_24dp"
         app:showAsAction="always"
          />
 
     <item android:id="@+id/plus"
         android:title="@string/menu_verify"
-        android:icon="@drawable/ic_add_circle_outline_black_24dp"
+        android:icon="@drawable/ic_add_circle_outline_white_24dp"
         app:showAsAction="always"
         />
 
