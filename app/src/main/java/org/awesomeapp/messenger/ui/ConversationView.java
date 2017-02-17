@@ -46,6 +46,9 @@ import android.os.Message;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.provider.Browser;
+import android.speech.RecognitionListener;
+import android.speech.RecognizerIntent;
+import android.speech.SpeechRecognizer;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -78,9 +81,11 @@ import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -136,6 +141,7 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
 import im.zom.messenger.R;
 
 public class ConversationView {
+
     // This projection and index are set for the query of active chats
     public static final String[] CHAT_PROJECTION = { Imps.Contacts._ID, Imps.Contacts.ACCOUNT,
                                              Imps.Contacts.PROVIDER, Imps.Contacts.USERNAME,
@@ -188,6 +194,9 @@ public class ConversationView {
     private TextView mButtonTalk;
     private ImageButton mButtonAttach;
     private View mViewAttach;
+
+    private LinearLayout speechLayout;
+    private Button record, delete;
 
     private ImageView mButtonDeleteVoice;
     private View mViewDeleteVoice;
@@ -243,6 +252,8 @@ public class ConversationView {
 
     private int mKeyboardType = DEFAULT_KEYBOARD_TYPE;
 
+    SpeechToTextKeyboard speechCustomKeyboard = null;
+
     private RequeryCallback mRequeryCallback = null;
 
     public CustomKeyboard getCustomKeyBoard() {
@@ -251,6 +262,10 @@ public class ConversationView {
     public SimpleAlertHandler getHandler() {
         return mHandler;
     }
+    public SpeechToTextKeyboard getSpeechToTextKeyboard() {
+        return speechCustomKeyboard;
+    }
+
 
     public int getType() {
         return mViewType;
@@ -271,6 +286,11 @@ public class ConversationView {
             mKeyboardType = keyboardType;
 //            String[] keys = {"A","B","E"};
             if (mKeyboardType == CUSTOM_KEYBOARD_TYPE){
+
+                if(speechCustomKeyboard!=null)
+                {
+                    speechCustomKeyboard.hideSpeechToTextKeyboard();
+                }
                 // mComposeMessage.setInputType(InputType.TYPE_NULL);
                 InputMethodManager imm = (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
                 imm.hideSoftInputFromWindow(mComposeMessage.getWindowToken(), 0);
@@ -283,11 +303,27 @@ public class ConversationView {
                 mDynamicKeyboardIsVisible = true;
 
             }
+            else if(mKeyboardType == MICROPHONE_KEYBOARD_TYPE)
+            {
+                if(mcustomKeyboard!=null)
+                {
+                    mcustomKeyboard.hideCustomKeyboard();
+                }
+
+                mComposeMessage.setInputType(InputType.TYPE_NULL);
+                InputMethodManager imm = (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(mComposeMessage.getWindowToken(), 0);
+                speechCustomKeyboard = new SpeechToTextKeyboard((Activity) mActivity,R.id.speechkeyboard,R.xml.speechtotext_keyboard, this);
+                speechCustomKeyboard.showSpeechToTextKeyboard();
+            }
             else
             {
                 mDynamicKeyboardIsVisible = false;
                 if (mcustomKeyboard != null) {
                     mcustomKeyboard.hideCustomKeyboard();
+                }
+                if(speechCustomKeyboard!=null) {
+                    speechCustomKeyboard.hideSpeechToTextKeyboard();
                 }
                 InputMethodManager imm = (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
                 imm.showSoftInput(mComposeMessage, InputMethodManager.SHOW_IMPLICIT);
@@ -729,12 +765,21 @@ public class ConversationView {
     }
 
     protected void initViews() {
+
+        mActivity.mSpeechRecognizer = SpeechRecognizer.createSpeechRecognizer(mActivity.getApplicationContext());
+        mActivity.mSpeechRecognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        mActivity.mSpeechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        mActivity.mSpeechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, mActivity.getPackageName());
+
+        SpeechRecognitionListener listener = new SpeechRecognitionListener();
+        mActivity.mSpeechRecognizer.setRecognitionListener(listener);
+
       //  mStatusIcon = (ImageView) mActivity.findViewById(R.id.statusIcon);
      //   mDeliveryIcon = (ImageView) mActivity.findViewById(R.id.deliveryIcon);
        // mTitle = (TextView) mActivity.findViewById(R.id.title);
         mHistory = (RecyclerView) mActivity.findViewById(R.id.history);
         LinearLayoutManager llm = new LinearLayoutManager(mHistory.getContext());
-        llm.setStackFromEnd(true);
+       // llm.setStackFromEnd(true);
         mHistory.setLayoutManager(llm);
 
         mHistory.setMinimumWidth(1);
@@ -742,11 +787,16 @@ public class ConversationView {
 
         mComposeMessage = (EditText) mActivity.findViewById(R.id.composeMessage);
         mSendButton = (ImageButton) mActivity.findViewById(R.id.btnSend);
-        mMicButton = (ImageButton) mActivity.findViewById(R.id.btnMic);
+
+        speechCustomKeyboard = new SpeechToTextKeyboard((Activity) mActivity,R.id.speechkeyboard,R.xml.speechtotext_keyboard, this);
         mButtonTalk = (TextView)mActivity.findViewById(R.id.buttonHoldToTalk);
 
         mButtonDeleteVoice = (ImageView)mActivity.findViewById(R.id.btnDeleteVoice);
         mViewDeleteVoice = mActivity.findViewById(R.id.viewDeleteVoice);
+
+//                    mComposeMessage.setText(mComposeMessage.getText().toString().substring(0, mComposeMessage.getText().toString().length() - 1));
+
+//                mActivity.mSpeechRecognizer.startListening(mActivity.mSpeechRecognizerIntent);
 
         mButtonDeleteVoice.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -821,33 +871,6 @@ public class ConversationView {
 
 
 
-        mMicButton.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-
-                //this is the tap to change to hold to talk mode
-                if (mMicButton.getVisibility() == View.VISIBLE) {
-                    mComposeMessage.setVisibility(View.GONE);
-                    mcustomKeyboard.hideCustomKeyboard();
-                    mMicButton.setVisibility(View.GONE);
-
-                    // Check if no view has focus:
-                    View view = mActivity.getCurrentFocus();
-                    if (view != null) {
-                        InputMethodManager imm = (InputMethodManager)mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
-                        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-                    }
-
-                    mSendButton.setImageResource(R.drawable.ic_keyboard_black_36dp);
-                    mSendButton.setVisibility(View.VISIBLE);
-                    mButtonTalk.setVisibility(View.VISIBLE);
-
-                }
-            }
-
-        });
-
 
         final GestureDetector gestureDetector = new GestureDetector(new GestureDetector.SimpleOnGestureListener() {
             public void onLongPress(MotionEvent e) {
@@ -867,14 +890,6 @@ public class ConversationView {
                 }
 
                 return super.onSingleTapUp(e);
-            }
-        });
-
-        mMicButton.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View view, MotionEvent motionEvent) {
-                return gestureDetector.onTouchEvent(motionEvent);
-
             }
         });
 
@@ -1051,7 +1066,7 @@ public class ConversationView {
                     mSendButton.setVisibility(View.GONE);
                     mButtonTalk.setVisibility(View.GONE);
                     mComposeMessage.setVisibility(View.VISIBLE);
-                    mMicButton.setVisibility(View.VISIBLE);
+//                    mMicButton.setVisibility(View.VISIBLE);
 
 
                 }
@@ -1062,6 +1077,68 @@ public class ConversationView {
         mHistory.setAdapter(mMessageAdapter);
 
     }
+
+    protected class SpeechRecognitionListener implements RecognitionListener
+    {
+
+        @Override
+        public void onBeginningOfSpeech()
+        {
+            //Log.d(TAG, "onBeginingOfSpeech");
+        }
+
+        @Override
+        public void onBufferReceived(byte[] buffer)
+        {
+
+        }
+
+        @Override
+        public void onEndOfSpeech()
+        {
+            //Log.d(TAG, "onEndOfSpeech");
+        }
+
+        @Override
+        public void onError(int error)
+        {
+//            mActivity.startListening(mActivity.mSpeechRecognizerIntent);
+            //Log.d(TAG, "error = " + error);
+        }
+
+        @Override
+        public void onEvent(int eventType, Bundle params)
+        {
+
+        }
+
+        @Override
+        public void onPartialResults(Bundle partialResults)
+        {
+
+        }
+
+        @Override
+        public void onReadyForSpeech(Bundle params)
+        {
+        }
+
+        @Override
+        public void onResults(Bundle results)
+        {
+            //Log.d(TAG, "onResults"); //$NON-NLS-1$
+            ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+            mComposeMessage.setText(mComposeMessage.getText() +" "+ matches.get(0));
+            // matches are the return values of speech guptarecognition engine
+            // Use these values for whatever you wish to do
+        }
+
+        @Override
+        public void onRmsChanged(float rmsdB)
+        {
+        }
+    }
+
 
     private boolean mLastIsTyping = false;
 
@@ -1243,19 +1320,19 @@ public class ConversationView {
           //  mActivity.findViewById(R.id.btnAttachPicture).setEnabled(false);
          //   mActivity.findViewById(R.id.btnTakePicture).setEnabled(false);
             //mActivity.findViewById(R.id.btnAttachFile).setEnabled(false);
-            mMicButton.setEnabled(false);;
+//            mMicButton.setEnabled(false);;
 
        //     mActivity.findViewById(R.id.btnAttachPicture).setAlpha(0.2f);
       //      mActivity.findViewById(R.id.btnTakePicture).setAlpha(0.2f);
             //mActivity.findViewById(R.id.btnAttachFile).setAlpha(0.2f);
-            mMicButton.setAlpha(0.5f);
+//            mMicButton.setAlpha(0.5f);
         }
         else
         {
         //    mActivity.findViewById(R.id.btnAttachPicture).setEnabled(true);
        //     mActivity.findViewById(R.id.btnTakePicture).setEnabled(true);
             //mActivity.findViewById(R.id.btnAttachFile).setEnabled(true);
-            mMicButton.setEnabled(true);
+//            mMicButton.setEnabled(true);
         }
     }
 
@@ -2219,7 +2296,7 @@ public class ConversationView {
     {
         if (mButtonTalk.getVisibility() == View.GONE) {
             if (mComposeMessage.getText().length() > 0 && mSendButton.getVisibility() == View.GONE) {
-                mMicButton.setVisibility(View.GONE);
+//                mMicButton.setVisibility(View.GONE);
                 mSendButton.setVisibility(View.VISIBLE);
                 mSendButton.setImageResource(R.drawable.ic_send_holo_light);
 
@@ -2228,7 +2305,7 @@ public class ConversationView {
 
 
             } else if (mComposeMessage.getText().length() == 0) {
-                mMicButton.setVisibility(View.VISIBLE);
+ //               mMicButton.setVisibility(View.VISIBLE);
                 mSendButton.setVisibility(View.GONE);
 
             }
