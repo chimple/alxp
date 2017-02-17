@@ -779,7 +779,7 @@ public class ConversationView {
        // mTitle = (TextView) mActivity.findViewById(R.id.title);
         mHistory = (RecyclerView) mActivity.findViewById(R.id.history);
         LinearLayoutManager llm = new LinearLayoutManager(mHistory.getContext());
-        llm.setStackFromEnd(true);
+       // llm.setStackFromEnd(true);
         mHistory.setLayoutManager(llm);
 
         mHistory.setMinimumWidth(1);

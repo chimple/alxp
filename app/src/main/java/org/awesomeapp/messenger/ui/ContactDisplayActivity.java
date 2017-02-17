@@ -85,7 +85,7 @@ public class ContactDisplayActivity extends BaseActivity {
         }
 
         setTitle("");
-
+       
         TextView tv = (TextView)findViewById(R.id.tvNickname);
         tv = (TextView)findViewById(R.id.tvNickname);
         tv.setText(mNickname);
@@ -191,6 +191,7 @@ public class ContactDisplayActivity extends BaseActivity {
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                toolbar.setTitle(mNickname);
                 if(mProviderId != 2) {
                     startChat();
                 } else {
@@ -330,6 +331,7 @@ public class ContactDisplayActivity extends BaseActivity {
 
                 if (chatId != -1) {
                     Intent intent = new Intent(ContactDisplayActivity.this, ConversationDetailActivity.class);
+                    intent.putExtra("nickname",mNickname);
                     intent.putExtra("id", chatId);
                     startActivity(intent);
                 }
