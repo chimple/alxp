@@ -283,9 +283,13 @@
                android:layout_height="wrap_content"
                android:layout_alignParentBottom="true"
                android:layout_centerHorizontal="true"
+               android:background="@color/background_light"
+               android:keyBackground="@color/background_light"
                android:focusable="true"
                android:focusableInTouchMode="true"
                android:keyTextSize="30sp"
+               android:keyTextColor="@color/background_black"
+               android:shadowRadius="0.0"
                android:visibility="gone" />
            <android.inputmethodservice.KeyboardView
                android:id="@+id/keyboardview_1x3"
@@ -293,10 +297,14 @@
                android:layout_height="wrap_content"
                android:layout_alignParentBottom="true"
                android:layout_centerHorizontal="true"
+               android:background="@color/background_light"
+               android:keyBackground="@color/background_light"
                android:focusable="true"
                android:focusableInTouchMode="true"
                android:keyTextSize="80sp"
                android:labelTextSize="30sp"
+               android:shadowRadius="0.0"
+               android:keyTextColor="@color/background_black"
                android:visibility="gone" />
            <android.inputmethodservice.KeyboardView
                android:id="@+id/keyboardview_2x3"
@@ -304,9 +312,13 @@
                android:layout_height="wrap_content"
                android:layout_alignParentBottom="true"
                android:layout_centerHorizontal="true"
+               android:background="@color/background_light"
+               android:keyBackground="@color/background_light"
                android:focusable="true"
+               android:shadowRadius="0.0"
                android:focusableInTouchMode="true"
                android:keyTextSize="50sp"
+               android:keyTextColor="@color/background_black"
                android:visibility="gone" />
        </LinearLayout>
 

@@ -25,6 +25,7 @@
     <color name="background_light">#DDDEDEDE</color>
     <color name="background_med">#DDABABAB</color>
     <color name="background_dark">#DD343434</color>
+    <color name="background_black">#000000</color>
     
 <!--     <color name="message_background_light">#CCDEDEDE</color>
  -->
