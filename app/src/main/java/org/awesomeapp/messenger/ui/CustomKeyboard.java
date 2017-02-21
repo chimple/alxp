@@ -171,6 +171,8 @@ public class CustomKeyboard {
         // Find the EditText 'resid'
         EditText edittext= (EditText)mHostActivity.findViewById(resid);
         // Make the custom keyboard appear
+        edittext.setHint("choose a correct answer");
+        edittext.setEnabled(false);
         edittext.setOnFocusChangeListener(new OnFocusChangeListener() {
             // NOTE By setting the on focus listener, we can show the custom keyboard when the edit box gets focus, but also hide it when the edit box loses focus
             @Override public void onFocusChange(View v, boolean hasFocus) {
@@ -234,6 +236,8 @@ public class CustomKeyboard {
                 key.codes = codes;
                 key.label = userKeys[count++];
             }
+            mKeyboardView.setVisibility(View.VISIBLE);
+            mKeyboardView.setEnabled(true);
         }
         else{
             mInputType = "word";
@@ -259,6 +263,8 @@ public class CustomKeyboard {
                 sentence_HashMap.put(count,userKeys[count]);
                 count++;
             }
+            mKeyboardView.setVisibility(View.VISIBLE);
+            mKeyboardView.setEnabled(true);
         }
 
     }
