@@ -205,6 +205,7 @@ public class OnboardingActivity extends BaseActivity {
         btnStartOnboardingNext.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 setAnimLeft();
                 showOnboarding();
             }
@@ -435,10 +436,10 @@ public class OnboardingActivity extends BaseActivity {
 
     private void showOnboarding ()
     {
-
+        findViewById(R.id.loadingPanel).setVisibility(View.VISIBLE);
 //        mViewFlipper.setDisplayedChild(1);
         startAvatarTakerForNewAccount(getPickCameraImageChooserIntent());
-
+       // findViewById(R.id.loadingPanel).setVisibility(View.GONE);
     }
 
     public Intent getPickCameraImageChooserIntent() {
@@ -759,6 +760,7 @@ public class OnboardingActivity extends BaseActivity {
 
                 //need to try again somehow
             }
+            findViewById(R.id.loadingPanel).setVisibility(View.GONE);
         }
       }
 
