@@ -25,7 +25,7 @@
     <color name="background_light">#DDDEDEDE</color>
     <color name="background_med">#DDABABAB</color>
     <color name="background_dark">#DD343434</color>
-    
+    <color name="btn_bg_color">#F2F2F2</color>
 <!--     <color name="message_background_light">#CCDEDEDE</color>
  -->
   <color name="message_background_light">#FFFFFF</color>      
@@ -55,7 +55,7 @@
      <!-- A light Holo shade of gray -->
     <color name="holo_grey_dark">#DBDEE1</color>
 
-    <color name="hot_pink">#ff00dd</color>
+    <color name="hot_pink">#00a4ef</color>
     <!-- 
     <color name="otr_red">#FF4444</color>
     <color name="otr_yellow">#FFBB33</color>
@@ -63,7 +63,7 @@
     
      -->
      
-    <color name="zom_primary">#E7275A</color>
+    <color name="zom_primary">#00a4ef</color>
 
     <array name="zom_colors">
         <item>@color/zom_primary</item>
