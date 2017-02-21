@@ -30,6 +30,9 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.database.Cursor;
+import android.graphics.Color;
+import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.shapes.RoundRectShape;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -288,12 +291,18 @@ public class ImApp extends Application implements ICacheWordSubscriber, TextToSp
         TextToSpeechRecognizer textToSpeechRecognizer = new TextToSpeechRecognizer(this, locals, this);
     }
 
-    public void displayKeyBoard(int keyboardType, String...params) {
+    public void displayKeyBoard(final int keyboardType, final String...params) {
        if(getCurrentActivity() != null && getCurrentActivity() instanceof ConversationDetailActivity) {
-           ConversationDetailActivity conversationDetailActivity = (ConversationDetailActivity)getCurrentActivity();
+           final ConversationDetailActivity conversationDetailActivity = (ConversationDetailActivity)getCurrentActivity();
 //           CustomKeyboard board = conversationDetailActivity.getmConvoView().getCustomKeyBoard();
 //           board.dyanamicKeyBoard(params);
-           conversationDetailActivity.getmConvoView().setKeyboardType(keyboardType, params);
+           getCurrentActivity().runOnUiThread(new Runnable() {
+               @Override
+               public void run() {
+                   conversationDetailActivity.getmConvoView().setKeyboardType(keyboardType, params);
+               }
+           });
+
        }
     }
 

@@ -327,6 +327,8 @@ public class ConversationView {
                 }
                 InputMethodManager imm = (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
                 imm.showSoftInput(mComposeMessage, InputMethodManager.SHOW_IMPLICIT);
+                mComposeMessage.setHint("send a message");
+                mComposeMessage.setEnabled(true);
                 //  mActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
             }
 
@@ -2839,7 +2841,7 @@ public class ConversationView {
                 String[] str = body.split("");
                 int temp = str.length;
 
-                setKeyboardType(CUSTOM_KEYBOARD_TYPE, "A", "B", "C");
+          //      setKeyboardType(CUSTOM_KEYBOARD_TYPE, "A", "B", "C");
 
                 //mcustomKeyboard.dyanamicKeyBoard(keys);
                 /*

@@ -1051,11 +1051,14 @@ public class RiveScript {
 
 			// Return their reply.
 			return reply;
+		} catch(Exception e) {
+			e.printStackTrace();
 
 		} finally {
 			// Clear the current user.
 			this.currentUser.remove();
 		}
+		return null;
 	}
 
 	/**

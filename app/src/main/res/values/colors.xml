@@ -26,6 +26,8 @@
     <color name="background_med">#DDABABAB</color>
     <color name="background_dark">#DD343434</color>
     <color name="btn_bg_color">#F2F2F2</color>
+    <color name="background_black">#000000</color>
+    
 <!--     <color name="message_background_light">#CCDEDEDE</color>
  -->
   <color name="message_background_light">#FFFFFF</color>      
