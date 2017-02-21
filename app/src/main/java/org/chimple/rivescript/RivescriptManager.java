@@ -30,6 +30,7 @@ public class RivescriptManager {
             rs.loadDirectory(chattee);
             rs.sortReplies();
             rs.setSubroutine("alphabet_teacher", new AlphabetTeacher(ImApp.getAppContext()));
+            rs.setSubroutine("change_keyboard", new ChangeKeyboard(ImApp.getAppContext()));
             SharedPreferences sp = ImApp.getAppContext().getSharedPreferences(currentChattee, 0);
             for(Map.Entry<String, ?> entry : sp.getAll().entrySet()) {
                 rs.setUservar(RS_USER, entry.getKey(), entry.getValue().toString());
