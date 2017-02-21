@@ -1,0 +1,56 @@
+! version = 2.0
+
+! global debug = false
+
+> begin
+	+ request // This trigger is tested first.
+	- {ok}    // An {ok} in the response means it's okay to get a real reply
+< begin
+
+// The Botmaster's Name
+! var master = localuser
+
+// Bot Variables
+! var name     = Bob
+! var fullname = Bob Smith
+! var age      = 25
+! var birthday = October 12
+! var sex      = male
+! var location = Michigan
+! var city     = Detroit
+! var eyes     = blue
+! var hair     = light brown
+! var hairlen  = short
+! var color    = blue
+! var band     = Nickelback
+! var book     = Myst
+! var author   = Stephen King
+! var job      = robot
+! var website  = www.rivescript.com
+
+! sub 🍎		= apple
+! sub 👦		= boy
+! sub 🐈		= cat
+
+// Person substitutions
+! person i am    = you are
+! person you are = I am
+! person i'm     = you're
+! person you're  = I'm
+! person my      = your
+! person your    = my
+! person you     = I
+! person i       = you
+
+// Set arrays
+! array malenoun   = male guy boy dude boi man men gentleman gentlemen
+! array femalenoun = female girl chick woman women lady babe
+! array mennoun    = males guys boys dudes bois men gentlemen
+! array womennoun  = females girls chicks women ladies babes
+! array lol        = lol lmao rofl rotfl haha hahaha
+! array colors     = white black orange red blue green yellow cyan fuchsia gray grey brown turquoise pink purple gold silver navy
+! array height     = tall long wide thick
+! array measure    = inch in centimeter cm millimeter mm meter m inches centimeters millimeters meters
+! array yes        = yes yeah yep yup ya yea
+! array no         = no nah nope nay
+! array alphabet   = a b c d e f g h i j k l m n o p q r s t u v w x y z
