@@ -29,6 +29,7 @@ import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.RoundRectShape;
 import android.net.Uri;
@@ -50,6 +51,7 @@ import android.view.View;
 import android.view.Window;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
@@ -193,10 +195,11 @@ public class MessageListItem extends FrameLayout {
                  dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
                  dialog.setContentView(R.layout.conversation_dialog);
                  int width = Resources.getSystem().getDisplayMetrics().widthPixels - 30;
+                 dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 
                  LinearLayout linearlayout = (LinearLayout) dialog.findViewById(R.id.linearlayout);
                  linearlayout.setOrientation(LinearLayout.VERTICAL);
-                 linearlayout.setBackgroundColor(Color.RED);
+//                 linearlayout.setBackgroundColor(Color.WHITE);
                  linearlayout.setMinimumWidth(width);
 
                  LinearLayout innerLayout;
@@ -219,13 +222,17 @@ public class MessageListItem extends FrameLayout {
                  for(int i=0; i<Message.length; i++)
                  {
                      btn = new Button(getContext());
+                     btn.setBackgroundResource(R.drawable.button_bg);
                      workTokens.add(btn);
                      btn.setText(Message[i]);
-                     bg.getPaint().setColor(Color.WHITE);
+                     btn.setTextSize(20);
+                     bg.getPaint().setColor(Color.parseColor("#F2F2F2"));
                      btn.setLayoutParams(params);
+                     btn.measure(0, 0);
+                     bg.setIntrinsicWidth(btn.getMeasuredWidth());
                      btn.setTag(Message[i]);
 //                     btn.setBackgroundColor(Color.BLUE);
-                     btn.setBackgroundDrawable(bg);
+//                     btn.setBackgroundDrawable(bg);
 
                      btn.setOnClickListener(new OnClickListener() {
                          @Override
@@ -233,6 +240,7 @@ public class MessageListItem extends FrameLayout {
                             Dialog details = new Dialog(getContext());
                              details.requestWindowFeature(Window.FEATURE_NO_TITLE);
                              details.setContentView(R.layout.conversation_dialog_fulldetails);
+                             details.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 
                              LinearLayout dialog_details = (LinearLayout)details.findViewById(R.id.dialog_details);
                              int height = Resources.getSystem().getDisplayMetrics().heightPixels;
@@ -243,11 +251,8 @@ public class MessageListItem extends FrameLayout {
                          }
                      });
 
-                     btn.measure(0, 0);
                      widthSoFar += btn.getMeasuredWidth();
                      widthSoFar+= 5;
-                     int wi = linearlayout.getMeasuredWidth();
-                     Log.d("width" , " "+btn.getMeasuredWidth());
 
                      if (widthSoFar >= width) {
                          linearlayout.addView(innerLayout);
@@ -272,13 +277,13 @@ public class MessageListItem extends FrameLayout {
 
                  }
 
-                 Button Spellbtn = new Button(getContext());
-                 Spellbtn.setText("Spell");
-                 bg.getPaint().setColor(Color.WHITE);
+                 ImageButton Spellbtn = new ImageButton(getContext());
+                 Spellbtn.setImageResource(R.drawable.volume);
+                 Spellbtn.setBackgroundColor(Color.TRANSPARENT);
                  Spellbtn.setLayoutParams(params);
                  Spellbtn.setTag("Spell");
 //                     btn.setBackgroundColor(Color.WHITE);
-                 Spellbtn.setBackgroundDrawable(bg);
+//                 Spellbtn.setBackgroundDrawable(bg);
 
                  Spellbtn.setOnClickListener(new OnClickListener() {
                      @Override
@@ -802,11 +807,13 @@ public class MessageListItem extends FrameLayout {
                 Dialog dialog = new Dialog(getContext());
                 dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
                 dialog.setContentView(R.layout.conversation_dialog);
+                dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+
                 int width = Resources.getSystem().getDisplayMetrics().widthPixels - 30;
 
                 LinearLayout linearlayout = (LinearLayout) dialog.findViewById(R.id.linearlayout);
                 linearlayout.setOrientation(LinearLayout.VERTICAL);
-                linearlayout.setBackgroundColor(Color.RED);
+//                linearlayout.setBackgroundColor(Color.WHITE);
                 linearlayout.setMinimumWidth(width);
 
                 LinearLayout innerLayout;
@@ -828,12 +835,16 @@ public class MessageListItem extends FrameLayout {
                 Button btn;
                 for(int i=0; i<Message.length; i++)
                 {
-                    btn = new Button(getContext());
+                    btn = new Button(getContext(), null, R.drawable.button_bg);
+                    btn.setBackgroundResource(R.drawable.button_bg);
                     btn.setText(Message[i]);
-                    bg.getPaint().setColor(Color.WHITE);
+                    btn.setTextSize(20);
+                    bg.getPaint().setColor(Color.parseColor("#F2F2F2"));
                     btn.setLayoutParams(params);
+                    btn.measure(0, 0);
 //                     btn.setBackgroundColor(Color.WHITE);
-                    btn.setBackgroundDrawable(bg);
+                    bg.setIntrinsicWidth(btn.getMeasuredWidth());
+//                    btn.setBackgroundDrawable(bg);
 
                     btn.setOnClickListener(new OnClickListener() {
                         @Override
@@ -842,7 +853,6 @@ public class MessageListItem extends FrameLayout {
                         }
                     });
 
-                    btn.measure(0, 0);
                     widthSoFar += btn.getMeasuredWidth();
                     widthSoFar+= 5;
                     int wi = linearlayout.getMeasuredWidth();
@@ -865,19 +875,15 @@ public class MessageListItem extends FrameLayout {
                         linearlayout.addView(innerLayout);
                     }
 
-//                     linearlayout.addView(btn);
-//                     int idx = linearlayout.indexOfChild(btn);
-//                     btn.setTag(Integer.toString(idx));
-
                 }
 
-                Button Spellbtn = new Button(getContext());
-                Spellbtn.setText("Spell");
-                bg.getPaint().setColor(Color.WHITE);
+                ImageButton Spellbtn = new ImageButton(getContext());
+                Spellbtn.setImageResource(R.drawable.volume);
+                Spellbtn.setBackgroundColor(Color.TRANSPARENT);
                 Spellbtn.setLayoutParams(params);
                 Spellbtn.setTag("Spell");
 //                     btn.setBackgroundColor(Color.WHITE);
-                Spellbtn.setBackgroundDrawable(bg);
+//                Spellbtn.setBackgroundDrawable(bg);
 
                 Spellbtn.setOnClickListener(new OnClickListener() {
                     @Override
