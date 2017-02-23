@@ -1,10 +1,12 @@
 package org.awesomeapp.messenger.ui;
 
 import android.app.Activity;
+import android.graphics.drawable.Drawable;
 import android.inputmethodservice.Keyboard;
 import android.inputmethodservice.KeyboardView;
 import android.text.Editable;
 import android.text.InputType;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -23,8 +25,10 @@ import im.zom.messenger.R;
 
 public class SpeechToTextKeyboard {
     /** A link to the KeyboardView that is used to render this SpeechToTextKeyboard. */
-    private KeyboardView mKeyboardView;
+    KeyboardView mKeyboardView;
     ConversationView conversationView;
+    Keyboard.Key _mikeBtn;
+    List<Keyboard.Key> keys;
     /** A link to the activity that hosts the {@link #mKeyboardView}. */
     private Activity mHostActivity;
 
@@ -47,6 +51,11 @@ public class SpeechToTextKeyboard {
 
             if(primaryCode == -101)
             {
+//                    Keyboard currentKeyboard = mKeyboardView.getKeyboard();
+//                    keys = currentKeyboard.getKeys();
+//                    Drawable d = mHostActivity.getResources().getDrawable(R.drawable.microphone_process);
+//                    _mikeBtn = keys.get(0);
+//                     keys.get(0).icon = d;
                     conversationView.mActivity.mSpeechRecognizer.startListening(conversationView.mActivity.mSpeechRecognizerIntent);
             }
             else if(primaryCode == -102)
