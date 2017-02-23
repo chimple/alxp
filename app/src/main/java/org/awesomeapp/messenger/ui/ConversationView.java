@@ -1123,6 +1123,9 @@ public class ConversationView {
         @Override
         public void onReadyForSpeech(Bundle params)
         {
+//            Activity activity = (Activity) mActivity;
+//            Drawable d = mActivity.getResources().getDrawable(R.drawable.microphone_process);
+//            speechCustomKeyboard.keys.get(0).icon = d;
         }
 
         @Override
@@ -1131,7 +1134,10 @@ public class ConversationView {
             //Log.d(TAG, "onResults"); //$NON-NLS-1$
             ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
             mComposeMessage.setText(mComposeMessage.getText() +" "+ matches.get(0));
-            // matches are the return values of speech guptarecognition engine
+//            Activity activity = (Activity) mActivity;
+//            Drawable d = mActivity.getResources().getDrawable(R.drawable.microphone_default);
+//            speechCustomKeyboard.keys.get(0).icon = d;
+            // matches are the return values of speech recognition engine
             // Use these values for whatever you wish to do
         }
 
