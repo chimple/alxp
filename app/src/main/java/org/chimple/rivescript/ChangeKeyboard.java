@@ -25,7 +25,7 @@ public class ChangeKeyboard implements ObjectMacro {
     }
 
     public String call(com.rivescript.RiveScript rs, String[] args) {
-        ImApp.sImApp.displayKeyBoard(ConversationView.DEFAULT_KEYBOARD_TYPE);
+        ImApp.sImApp.displayKeyBoard(ConversationView.MICROPHONE_KEYBOARD_TYPE);
         return "";
     }
 }
