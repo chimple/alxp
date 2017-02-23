@@ -5,6 +5,7 @@ package org.awesomeapp.messenger.ui;
  */
 
 import android.app.Activity;
+import android.graphics.Typeface;
 import android.inputmethodservice.Keyboard;
 import android.inputmethodservice.KeyboardView;
 import android.inputmethodservice.KeyboardView.OnKeyboardActionListener;
@@ -32,6 +33,7 @@ public class CustomKeyboard {
     private HashMap<Integer, String> sentence_HashMap ;
     private String mInputType;
 
+    private  EditText edittext = null;
     /** A link to the activity that hosts the {@link #mKeyboardView}. */
     private Activity     mHostActivity;
 
@@ -55,7 +57,7 @@ public class CustomKeyboard {
             // Get the EditText and its Editable
             View focusCurrent = mHostActivity.getWindow().getCurrentFocus();
            // if( focusCurrent==null || focusCurrent.getClass()!=EditText.class ) return;
-            EditText edittext = (EditText) focusCurrent;
+          //  EditText edittext = (EditText) focusCurrent;
             if (mInputType.equals("word")){
                 Editable editable = edittext.getText();
                 edittext.setText(editable.toString() + sentence_HashMap.get(primaryCode).toString());
@@ -66,7 +68,7 @@ public class CustomKeyboard {
             else {
                 Editable editable = edittext.getText();
                 int start = edittext.getSelectionStart();
-                editable.insert(start, Character.toString((char) primaryCode));
+                editable.insert(start, new String(keyCodes, 0, 1));
                 mConversationView.sendMessage();
             }
             // Apply the key to the edittext
@@ -169,9 +171,11 @@ public class CustomKeyboard {
      */
     public EditText registerEditText(int resid) {
         // Find the EditText 'resid'
-        EditText edittext= (EditText)mHostActivity.findViewById(resid);
+
+        edittext= (EditText)mHostActivity.findViewById(resid);
         // Make the custom keyboard appear
         edittext.setHint("choose a correct answer");
+
         edittext.setEnabled(false);
         edittext.setOnFocusChangeListener(new OnFocusChangeListener() {
             // NOTE By setting the on focus listener, we can show the custom keyboard when the edit box gets focus, but also hide it when the edit box loses focus
@@ -199,6 +203,7 @@ public class CustomKeyboard {
         });
         // Disable spell check (hex strings look like words to Android)
         edittext.setInputType(edittext.getInputType() | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        mHostActivity.findViewById(R.id.inputLayout).setVisibility(View.GONE);
         return edittext;
     }
 
@@ -212,13 +217,13 @@ public class CustomKeyboard {
 
             if(userKeys.length > 3 && userKeys.length < 7) { //for 6 keys
                 updatedKeyboard = new Keyboard(mHostActivity, R.xml.custom_keyboard_2x3);
+
                 mKeyboardView = (KeyboardView) mHostActivity.findViewById(R.id.keyboardview_2x3);
             }
             if (userKeys.length < 4 ){ // for 3 keys
                 updatedKeyboard = new Keyboard(mHostActivity,R.xml.custom_keyboard_1x3);
                 mKeyboardView= (KeyboardView)mHostActivity.findViewById(R.id.keyboardview_1x3);
             }
-
             mKeyboardView.setKeyboard(updatedKeyboard);
             mKeyboardView.setPreviewEnabled(false);
             mKeyboardView.setOnKeyboardActionListener(mOnKeyboardActionListener);
@@ -226,13 +231,14 @@ public class CustomKeyboard {
             mKeyboardView.setEnabled(true);
             mHostActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
             mHostActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
+
             //mKeyboardView.keyTextSize
             List<Keyboard.Key> keys = mKeyboardView.getKeyboard().getKeys();
 
             int count = 0;
             for (Keyboard.Key key : keys) {
                 int [] codes = {49};
-                codes[0] = userKeys[count].charAt(0);
+                codes[0] = userKeys[count].codePointAt(0);
                 key.codes = codes;
                 key.label = userKeys[count++];
             }

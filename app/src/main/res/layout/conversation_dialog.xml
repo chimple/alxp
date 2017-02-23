@@ -4,6 +4,7 @@
     android:id="@+id/linearlayout"
     android:orientation="vertical"
     android:layout_width="match_parent"
+    android:background="@drawable/dialog_bg"
     android:layout_height="wrap_content">
 
 

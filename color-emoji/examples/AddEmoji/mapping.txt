@@ -34,207 +34,207 @@ F020	yak.png
 F021	yatch.png
 F022	yogurt.png
 F023	yoyo.png
-F024	
-F025	
-F026	
-F027	
-F028	
-F029	
-F02A	
-F02B	
-F02C	
-F02D	
-F02E	
-F02F	
-F030	
-F031	
-F032	
-F033	
-F034	
-F035	
-F036	
-F037	
-F038	
-F039	
-F03A	
-F03B	
-F03C	
-F03D	
-F03E	
-F03F	
-F040	
-F041	
-F042	
-F043	
-F044	
-F045	
-F046	
-F047	
-F048	
-F049	
-F04A	
-F04B	
-F04C	
-F04D	
-F04E	
-F04F	
-F050	
-F051	
-F052	
-F053	
-F054	
-F055	
-F056	
-F057	
-F058	
-F059	
-F05A	
-F05B	
-F05C	
-F05D	
-F05E	
-F05F	
-F060	
-F061	
-F062	
-F063	
-F064	
-F065	
-F066	
-F067	
-F068	
-F069	
-F06A	
-F06B	
-F06C	
-F06D	
-F06E	
-F06F	
-F070	
-F071	
-F072	
-F073	
-F074	
-F075	
-F076	
-F077	
-F078	
-F079	
-F07A	
-F07B	
-F07C	
-F07D	
-F07E	
-F07F	
-F080	
-F081	
-F082	
-F083	
-F084	
-F085	
-F086	
-F087	
-F088	
-F089	
-F08A	
-F08B	
-F08C	
-F08D	
-F08E	
-F08F	
-F090	
-F091	
-F092	
-F093	
-F094	
-F095	
-F096	
-F097	
-F098	
-F099	
-F09A	
-F09B	
-F09C	
-F09D	
-F09E	
-F09F	
-F0A0	
-F0A1	
-F0A2	
-F0A3	
-F0A4	
-F0A5	
-F0A6	
-F0A7	
-F0A8	
-F0A9	
-F0AA	
-F0AB	
-F0AC	
-F0AD	
-F0AE	
-F0AF	
-F0B0	
-F0B1	
-F0B2	
-F0B3	
-F0B4	
-F0B5	
-F0B6	
-F0B7	
-F0B8	
-F0B9	
-F0BA	
-F0BB	
-F0BC	
-F0BD	
-F0BE	
-F0BF	
-F0C0	
-F0C1	
-F0C2	
-F0C3	
-F0C4	
-F0C5	
-F0C6	
-F0C7	
-F0C8	
-F0C9	
-F0CA	
-F0CB	
-F0CC	
-F0CD	
-F0CE	
-F0CF	
-F0D0	
-F0D1	
-F0D2	
-F0D3	
-F0D4	
-F0D5	
-F0D6	
-F0D7	
-F0D8	
-F0D9	
-F0DA	
-F0DB	
-F0DC	
-F0DD	
-F0DE	
-F0DF	
-F0E0	
-F0E1	
-F0E2	
-F0E3	
-F0E4	
-F0E5	
-F0E6	
-F0E7	
-F0E8	
-F0E9	
-F0EA	
-F0EB	
-F0EC	
+F024	air.png
+F025	august.png
+F026	bait.png
+F027	bark.png
+F028	beige.png
+F029	belt.png
+F02A	bench.png
+F02B	bleed.png
+F02C	bone.png
+F02D	bring.png
+F02E	brown.png
+F02F	brush.png
+F030	bunk.png
+F031	burnt.png
+F032	car.png
+F033	chair.png
+F034	chest.png
+F035	chew.png
+F036	chicks.png
+F037	chimp.png
+F038	chin.png
+F039	chip.png
+F03A	clamp.png
+F03B	claw.png
+F03C	clay.png
+F03D	cloud.png
+F03E	coat.png
+F03F	coil.png
+F040	coin.png
+F041	cook.png
+F042	cork.png
+F043	cramp.png
+F044	crash.png
+F045	cream.png
+F046	creep.png
+F047	crisp.png
+F048	crust.png
+F049	curl.png
+F04A	day.png
+F04B	dent.png
+F04C	destroy.png
+F04D	die.png
+F04E	dig.png
+F04F	dip.png
+F050	doll.png
+F051	drank.png
+F052	drench.png
+F053	drift.png
+F054	driftwood.png
+F055	drop.png
+F056	even.png
+F057	fan.png
+F058	felt.png
+F059	fight.png
+F05A	first.png
+F05B	flute.png
+F05C	food.png
+F05D	foot.png
+F05E	fork.png
+F05F	found.png
+F060	fried.png
+F061	frost.png
+F062	fur.png
+F063	gas.png
+F064	gene.png
+F065	germ.png
+F066	glue.png
+F067	grab.png
+F068	grasp.png
+F069	green.png
+F06A	grew.png
+F06B	gulp.png
+F06C	hang.png
+F06D	haul.png
+F06E	haunted.png
+F06F	heap.png
+F070	helpdesk.png
+F071	high.png
+F072	hiss.png
+F073	hoof.png
+F074	hook.png
+F075	how.png
+F076	hump.png
+F077	hunt.png
+F078	joint.png
+F079	june.png
+F07A	kick.png
+F07B	kit.png
+F07C	lair.png
+F07D	lamp.png
+F07E	launch.png
+F07F	law.png
+F080	lawn.png
+F081	legs.png
+F082	less.png
+F083	lift.png
+F084	limp.png
+F085	lit.png
+F086	loading.png
+F087	lost.png
+F088	mat.png
+F089	may.png
+F08A	melt.png
+F08B	mess.png
+F08C	off.png
+F08D	oil.png
+F08E	oyster.png
+F08F	peg.png
+F090	perm.png
+F091	plan.png
+F092	plum.png
+F093	pole.png
+F094	pot.png
+F095	prune.png
+F096	pure.png
+F097	quick.png
+F098	race.png
+F099	rag.png
+F09A	rang.png
+F09B	repeat.png
+F09C	rim.png
+F09D	rock.png
+F09E	root.png
+F09F	rot.png
+F0A0	royal.png
+F0A1	rule.png
+F0A2	sack.png
+F0A3	sat.png
+F0A4	saw.png
+F0A5	scout.png
+F0A6	screw.png
+F0A7	sell.png
+F0A8	shift.png
+F0A9	shine.png
+F0AA	shirt.png
+F0AB	short_long.png
+F0AC	shrink.png
+F0AD	sight.png
+F0AE	sink.png
+F0AF	skirt.png
+F0B0	slide.png
+F0B1	smear.png
+F0B2	snake.png
+F0B3	soap.png
+F0B4	soft.png
+F0B5	softest.png
+F0B6	soil.png
+F0B7	spied.png
+F0B8	spin.png
+F0B9	spot.png
+F0BA	spray.png
+F0BB	stamp.png
+F0BC	stand.png
+F0BD	step.png
+F0BE	stone.png
+F0BF	stray.png
+F0C0	string.png
+F0C1	surf.png
+F0C2	tail.png
+F0C3	task.png
+F0C4	tear.png
+F0C5	term.png
+F0C6	theft.png
+F0C7	thin_thick.png
+F0C8	third.png
+F0C9	this_that.png
+F0CA	thrush.png
+F0CB	thrust.png
+F0CC	tight.png
+F0CD	tilt.png
+F0CE	tin.png
+F0CF	tissue.png
+F0D0	toad.png
+F0D1	toe.png
+F0D2	torn.png
+F0D3	toy.png
+F0D4	trail.png
+F0D5	trash.png
+F0D6	tray.png
+F0D7	treasure.png
+F0D8	trench.png
+F0D9	trust.png
+F0DA	tuft.png
+F0DB	tusk.png
+F0DC	twist.png
+F0DD	vat.png
+F0DE	vet.png
+F0DF	vision.png
+F0E0	wag.png
+F0E1	week.png
+F0E2	wheel.png
+F0E3	wig.png
+F0E4	windmill.png
+F0E5	wing.png
+F0E6	woke.png
+F0E7	wood.png
+F0E8	wool.png
+F0E9	yap.png
+F0EA	zip.png
+F0EB	zoo.png
+F0EC	zoom.png
 F0ED	
 F0EE	
 F0EF	

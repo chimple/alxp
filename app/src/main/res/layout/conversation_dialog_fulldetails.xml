@@ -4,6 +4,7 @@
     android:id="@+id/dialog_details"
     android:orientation="vertical"
     android:layout_width="fill_parent"
+    android:background="@drawable/dialog_bg"
     android:layout_height="fill_parent">
 
     <LinearLayout
@@ -23,13 +24,14 @@
                 android:layout_height="wrap_content"
                 android:id="@+id/engword"
                 android:textSize="40dp"
+                android:textColor="#000000"
                 android:layout_weight="1" />
 
             <ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                app:srcCompat="@drawable/ad_btn_check_on_pressed_holo_light"
+                app:srcCompat="@drawable/volume"
                 android:id="@+id/engvoice"
                 android:layout_weight="1"
                 android:layout_marginRight="20dp"
@@ -49,6 +51,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/engmeaning"
+                android:textColor="#000000"
                 android:layout_weight="1" />
 
             <ImageView
@@ -82,12 +85,13 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/otherword"
+                android:textColor="#000000"
                 android:layout_weight="1" />
 
             <ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                app:srcCompat="@drawable/ad_btn_check_on_pressed_holo_light"
+                app:srcCompat="@drawable/volume"
                 android:id="@+id/othervoice"
                 android:layout_weight="1"
                 android:layout_marginRight="20dp"
@@ -107,6 +111,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/othermeaning"
+                android:textColor="#000000"
                 android:layout_weight="1" />
 
 <!--            <ImageButton

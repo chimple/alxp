@@ -133,6 +133,7 @@ import org.ironrabbit.type.CustomTypefaceSpan;
 
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
@@ -251,6 +252,7 @@ public class ConversationView {
     public static final int MICROPHONE_KEYBOARD_TYPE = 3;
 
     private int mKeyboardType = DEFAULT_KEYBOARD_TYPE;
+    private String[] mKeyboardContents;
 
     SpeechToTextKeyboard speechCustomKeyboard = null;
 
@@ -282,9 +284,9 @@ public class ConversationView {
     }
 
     public void setKeyboardType(int keyboardType, String...params) {
-        if(keyboardType != mKeyboardType) {
+        if(keyboardType != mKeyboardType || !Arrays.equals(params, mKeyboardContents)) {
             mKeyboardType = keyboardType;
-//            String[] keys = {"A","B","E"};
+            mKeyboardContents = params;
             if (mKeyboardType == CUSTOM_KEYBOARD_TYPE){
 
                 if(speechCustomKeyboard!=null)
@@ -319,6 +321,7 @@ public class ConversationView {
             else
             {
                 mDynamicKeyboardIsVisible = false;
+                mActivity.findViewById(R.id.inputLayout).setVisibility(View.VISIBLE);
                 if (mcustomKeyboard != null) {
                     mcustomKeyboard.hideCustomKeyboard();
                 }
@@ -1123,6 +1126,9 @@ public class ConversationView {
         @Override
         public void onReadyForSpeech(Bundle params)
         {
+//            Activity activity = (Activity) mActivity;
+//            Drawable d = mActivity.getResources().getDrawable(R.drawable.microphone_process);
+//            speechCustomKeyboard.keys.get(0).icon = d;
         }
 
         @Override
@@ -1131,7 +1137,10 @@ public class ConversationView {
             //Log.d(TAG, "onResults"); //$NON-NLS-1$
             ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
             mComposeMessage.setText(mComposeMessage.getText() +" "+ matches.get(0));
-            // matches are the return values of speech guptarecognition engine
+//            Activity activity = (Activity) mActivity;
+//            Drawable d = mActivity.getResources().getDrawable(R.drawable.microphone_default);
+//            speechCustomKeyboard.keys.get(0).icon = d;
+            // matches are the return values of speech recognition engine
             // Use these values for whatever you wish to do
         }
 

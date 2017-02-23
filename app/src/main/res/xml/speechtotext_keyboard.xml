@@ -6,7 +6,7 @@
         <Key
             android:codes="-101"
             android:keyWidth="70%p"
-            android:keyIcon="@drawable/microphone" />
+            android:keyIcon="@drawable/microphone_default" />
 
         <Key
             android:codes="-102"

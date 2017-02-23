@@ -76,11 +76,12 @@ public class AlphabetTeacher implements ObjectMacro {
         if(Math.random() > 0.5) {
             rs.setUservar(user, "topic", "oquestion1");
             sb.append(rs.getUservar(user, "w1")).append(" ?");
+            ImApp.sImApp.displayKeyBoard(ConversationView.CUSTOM_KEYBOARD_TYPE, rs.getUservar(user, "o1"), rs.getUservar(user, "o2"), rs.getUservar(user, "o3"));
         } else {
             rs.setUservar(user, "topic", "aquestion1");
             sb.append(rs.getUservar(user, "o1")).append(" ?");
+            ImApp.sImApp.displayKeyBoard(ConversationView.CUSTOM_KEYBOARD_TYPE, rs.getUservar(user, "a1"), rs.getUservar(user, "a2"), rs.getUservar(user, "a3"));
         }
-        ImApp.sImApp.displayKeyBoard(ConversationView.CUSTOM_KEYBOARD_TYPE, rs.getUservar(user, "a1"), rs.getUservar(user, "a2"), rs.getUservar(user, "a3"));
         return sb.toString();
     }
 
