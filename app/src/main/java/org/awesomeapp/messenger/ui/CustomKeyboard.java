@@ -32,6 +32,7 @@ public class CustomKeyboard {
     private HashMap<Integer, String> sentence_HashMap ;
     private String mInputType;
 
+    private  EditText edittext = null;
     /** A link to the activity that hosts the {@link #mKeyboardView}. */
     private Activity     mHostActivity;
 
@@ -55,7 +56,7 @@ public class CustomKeyboard {
             // Get the EditText and its Editable
             View focusCurrent = mHostActivity.getWindow().getCurrentFocus();
            // if( focusCurrent==null || focusCurrent.getClass()!=EditText.class ) return;
-            EditText edittext = (EditText) focusCurrent;
+          //  EditText edittext = (EditText) focusCurrent;
             if (mInputType.equals("word")){
                 Editable editable = edittext.getText();
                 edittext.setText(editable.toString() + sentence_HashMap.get(primaryCode).toString());
@@ -169,9 +170,11 @@ public class CustomKeyboard {
      */
     public EditText registerEditText(int resid) {
         // Find the EditText 'resid'
-        EditText edittext= (EditText)mHostActivity.findViewById(resid);
+
+        edittext= (EditText)mHostActivity.findViewById(resid);
         // Make the custom keyboard appear
         edittext.setHint("choose a correct answer");
+
         edittext.setEnabled(false);
         edittext.setOnFocusChangeListener(new OnFocusChangeListener() {
             // NOTE By setting the on focus listener, we can show the custom keyboard when the edit box gets focus, but also hide it when the edit box loses focus
@@ -199,6 +202,7 @@ public class CustomKeyboard {
         });
         // Disable spell check (hex strings look like words to Android)
         edittext.setInputType(edittext.getInputType() | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        mHostActivity.findViewById(R.id.inputLayout).setVisibility(View.GONE);
         return edittext;
     }
 

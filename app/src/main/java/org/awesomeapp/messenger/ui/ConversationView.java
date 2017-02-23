@@ -319,6 +319,7 @@ public class ConversationView {
             else
             {
                 mDynamicKeyboardIsVisible = false;
+                mActivity.findViewById(R.id.inputLayout).setVisibility(View.VISIBLE);
                 if (mcustomKeyboard != null) {
                     mcustomKeyboard.hideCustomKeyboard();
                 }
