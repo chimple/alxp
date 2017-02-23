@@ -99,6 +99,9 @@
 + <get w1>
 - 👏\n<get w2> ?<set tries=0>{topic=oquestion2}
 
++ <get o1>
+- 👏\n<get w2> ?<set tries=0>{topic=oquestion2}
+
 + *
 * <add tries=1><get tries> < 3 => 👎
 - 👎\n<get a1> for <get w1> <get o1>\n<get w2> ?<set tries=0>{topic=oquestion2}
@@ -110,6 +113,9 @@
 + <get w2>
 - 👏\n<get w3> ?<set tries=0>{topic=oquestion3}
 
++ <get o2>
+- 👏\n<get w3> ?<set tries=0>{topic=oquestion3}
+
 + *
 * <add tries=1><get tries> < 3 => 👎
 - 👎\n<get a2> for <get w2> <get o2>\n<get w3> ?<set tries=0>{topic=oquestion3}
@@ -119,6 +125,9 @@
 > topic oquestion3
 
 + <get w3>
+- 👏<set tries=0><call>change_keyboard</call>{topic=random}
+
++ <get o3>
 - 👏<set tries=0><call>change_keyboard</call>{topic=random}
 
 + *

@@ -133,6 +133,7 @@ import org.ironrabbit.type.CustomTypefaceSpan;
 
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
@@ -251,6 +252,7 @@ public class ConversationView {
     public static final int MICROPHONE_KEYBOARD_TYPE = 3;
 
     private int mKeyboardType = DEFAULT_KEYBOARD_TYPE;
+    private String[] mKeyboardContents;
 
     SpeechToTextKeyboard speechCustomKeyboard = null;
 
@@ -282,9 +284,9 @@ public class ConversationView {
     }
 
     public void setKeyboardType(int keyboardType, String...params) {
-        if(keyboardType != mKeyboardType) {
+        if(keyboardType != mKeyboardType || !Arrays.equals(params, mKeyboardContents)) {
             mKeyboardType = keyboardType;
-//            String[] keys = {"A","B","E"};
+            mKeyboardContents = params;
             if (mKeyboardType == CUSTOM_KEYBOARD_TYPE){
 
                 if(speechCustomKeyboard!=null)
