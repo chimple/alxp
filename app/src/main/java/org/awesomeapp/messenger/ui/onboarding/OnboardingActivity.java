@@ -437,6 +437,8 @@ public class OnboardingActivity extends BaseActivity {
     private void showOnboarding ()
     {
         findViewById(R.id.loadingPanel).setVisibility(View.VISIBLE);
+        View btnStartOnboardingNext = viewSplash.findViewById(R.id.nextButton);
+        btnStartOnboardingNext.setOnClickListener(null);
 //        mViewFlipper.setDisplayedChild(1);
         startAvatarTakerForNewAccount(getPickCameraImageChooserIntent());
        // findViewById(R.id.loadingPanel).setVisibility(View.GONE);

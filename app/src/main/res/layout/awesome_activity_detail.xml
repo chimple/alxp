@@ -291,7 +291,7 @@
                android:keyTextColor="@color/background_black"
                android:shadowRadius="0.0"
                android:visibility="gone" />
-           <android.inputmethodservice.KeyboardView
+           <org.awesomeapp.messenger.ui.CustomKeyboardView
                android:id="@+id/keyboardview_1x3"
                android:layout_width="match_parent"
                android:layout_height="wrap_content"
