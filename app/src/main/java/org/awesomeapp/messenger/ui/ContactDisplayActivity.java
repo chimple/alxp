@@ -40,8 +40,11 @@ import org.awesomeapp.messenger.ui.legacy.DatabaseUtils;
 import org.awesomeapp.messenger.ui.onboarding.OnboardingManager;
 import org.awesomeapp.messenger.ui.qr.QrDisplayActivity;
 import org.awesomeapp.messenger.ui.qr.QrShareAsyncTask;
+import org.awesomeapp.messenger.ui.widgets.LetterAvatar;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 
 import cn.pedant.SweetAlert.SweetAlertDialog;
 import im.zom.messenger.R;
@@ -57,6 +60,11 @@ public class ContactDisplayActivity extends BaseActivity {
     private IImConnection mConn;
     private String mRemoteFingerprint;
 
+    private String getPathToIconFile(final String folder) {
+        ImApp app = (ImApp) getApplicationContext();
+        String path = app.getFilesDir().getAbsolutePath() + File.separator + folder + File.separator + folder + "_big.png";
+        return path;
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -100,6 +108,37 @@ public class ContactDisplayActivity extends BaseActivity {
                     ImageView iv = (ImageView) findViewById(R.id.imageAvatar);
                     iv.setImageDrawable(avatar);
                     iv.setVisibility(View.VISIBLE);
+                }
+                else
+                {
+                    // int color = getAvatarBorder(presence);
+                    ImageView iv = (ImageView) findViewById(R.id.imageAvatar);
+                    int padding = 24;
+                    String iconPath = getPathToIconFile(mNickname);
+                    Drawable drawableFromDownload = Drawable.createFromPath(iconPath);
+                    if(drawableFromDownload==null)  //   file is not found in download folder
+                    {
+                        try {
+                            InputStream inputStream = getApplicationContext().getAssets().open(mNickname+"/"+mNickname+"_big.png");
+                            Drawable drawableFromAssets = Drawable.createFromStream(inputStream, null);
+                            if(drawableFromAssets==null)
+                            {
+                                LetterAvatar lavatar = new LetterAvatar(getApplicationContext(), mNickname, padding);
+                                iv.setImageDrawable(lavatar);
+                            }
+                            else
+                            {
+                                iv.setImageDrawable(drawableFromAssets);
+                            }
+                        }
+                        catch(Exception e)
+                        {
+                            LetterAvatar lavatar = new LetterAvatar(getApplicationContext(), mNickname, padding);
+                            iv.setImageDrawable(lavatar);
+                        }
+                    }
+                    else
+                        iv.setImageDrawable(drawableFromDownload);
                 }
             } catch (Exception e) {
             }
