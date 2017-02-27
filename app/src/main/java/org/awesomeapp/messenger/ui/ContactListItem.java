@@ -39,6 +39,7 @@ import org.ocpsoft.prettytime.PrettyTime;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.AssetManager;
 import android.database.Cursor;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -53,6 +54,9 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
+
+import java.io.File;
+import java.io.InputStream;
 
 public class ContactListItem extends FrameLayout {
     public static final String[] CONTACT_PROJECTION = { Imps.Contacts._ID, Imps.Contacts.PROVIDER,
@@ -99,6 +103,12 @@ public class ContactListItem extends FrameLayout {
 
     public void bind(ContactViewHolder holder, Cursor cursor, String underLineText, boolean scrolling) {
         bind(holder, cursor, underLineText, true, scrolling);
+    }
+
+    private String getPathToIconFile(final String folder) {
+        ImApp app = (ImApp) getContext().getApplicationContext();
+        String path = app.getFilesDir().getAbsolutePath() + File.separator + folder + File.separator + folder + "_small.png";
+        return path;
     }
 
     public void bind(ContactViewHolder holder, Cursor cursor, String underLineText, boolean showChatMsg, boolean scrolling) {
@@ -196,9 +206,35 @@ public class ContactListItem extends FrameLayout {
                         //int color = getAvatarBorder(presence);
                         int padding = 24;
 
+                        String iconPath = getPathToIconFile(nickname);
+                        Drawable drawableFromDownload = Drawable.createFromPath(iconPath);
+                        if(drawableFromDownload==null)  //   file is not found in download folder
+                        {
+                            try {
+                                InputStream inputStream = getContext().getAssets().open(nickname+"/"+nickname+"_small.png");
+                                Drawable drawableFromAssets = Drawable.createFromStream(inputStream, null);
+                                if(drawableFromAssets==null)
+                                {
+                                    LetterAvatar lavatar = new LetterAvatar(getContext(), nickname, padding);
+                                    holder.mAvatar.setImageDrawable(lavatar);
+                                }
+                                else
+                                {
+                                    holder.mAvatar.setImageDrawable(drawableFromAssets);
+                                }
+                            }
+                            catch(Exception e)
+                            {
+                                LetterAvatar lavatar = new LetterAvatar(getContext(), nickname, padding);
+                                holder.mAvatar.setImageDrawable(lavatar);
+                            }
+                        }
+                        else
+                            holder.mAvatar.setImageDrawable(drawableFromDownload);
+
+/*
                         String packageName = getContext().getPackageName();
                         int resID = getResources().getIdentifier(packageName+":drawable/"+nickname, null, null);
-
                         if(resID==0)
                         {
                             LetterAvatar lavatar = new LetterAvatar(getContext(), nickname, padding);
@@ -206,7 +242,7 @@ public class ContactListItem extends FrameLayout {
                         }
                         else
                             holder.mAvatar.setImageDrawable(getResources().getDrawable(resID));
-                    }
+*/                    }
 
                     holder.mAvatar.setVisibility(View.VISIBLE);
                 }

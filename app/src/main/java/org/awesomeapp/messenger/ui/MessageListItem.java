@@ -30,6 +30,7 @@ import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.RoundRectShape;
 import android.net.Uri;
@@ -74,6 +75,8 @@ import org.awesomeapp.messenger.util.LinkifyHelper;
 import org.awesomeapp.messenger.util.SecureMediaStore;
 import org.ocpsoft.prettytime.PrettyTime;
 
+import java.io.File;
+import java.io.InputStream;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Date;
@@ -787,6 +790,12 @@ public class MessageListItem extends FrameLayout {
             return "";
     }
 
+    private String getPathToIconFile(final String folder) {
+        ImApp app = (ImApp) getContext().getApplicationContext();
+        String path = app.getFilesDir().getAbsolutePath() + File.separator + folder + File.separator + folder + "_small.png";
+        return path;
+    }
+
     public void bindOutgoingMessage(MessageViewHolder holder, int id, int messageType, String address, final String mimeType, final String body, Date date, Markup smileyRes, boolean scrolling,
             DeliveryState delivery, EncryptionState encryption) {
 
@@ -1052,16 +1061,31 @@ public class MessageListItem extends FrameLayout {
 //                    mHolder.mAvatar.setVisibility(View.VISIBLE);
 //                    mHolder.mAvatar.setImageDrawable(getResources().getDrawable(R.drawable.ad_btn_check_off_pressed_holo_light));
 
-                    String packageName = getContext().getPackageName();
-                    int resID = getResources().getIdentifier(packageName+":drawable/"+nickname, null, null);
-                    mHolder.mAvatar.setVisibility(View.VISIBLE);
-                    if(resID==0)
+                    String iconPath = getPathToIconFile(nickname);
+                    Drawable drawableFromDownload = Drawable.createFromPath(iconPath);
+                    if(drawableFromDownload==null)  //   file is not found in download folder
                     {
-                        LetterAvatar lavatar = new LetterAvatar(getContext(), nickname, padding);
-                        mHolder.mAvatar.setImageDrawable(lavatar);
+                        try {
+                            InputStream inputStream = getContext().getAssets().open(nickname+"/"+nickname+"_small.png");
+                            Drawable drawableFromAssets = Drawable.createFromStream(inputStream, null);
+                            if(drawableFromAssets==null)
+                            {
+                                LetterAvatar lavatar = new LetterAvatar(getContext(), nickname, padding);
+                                mHolder.mAvatar.setImageDrawable(lavatar);
+                            }
+                            else
+                            {
+                                mHolder.mAvatar.setImageDrawable(drawableFromAssets);
+                            }
+                        }
+                        catch(Exception e)
+                        {
+                            LetterAvatar lavatar = new LetterAvatar(getContext(), nickname, padding);
+                            mHolder.mAvatar.setImageDrawable(lavatar);
+                        }
                     }
                     else
-                        mHolder.mAvatar.setImageDrawable(getResources().getDrawable(resID));
+                        mHolder.mAvatar.setImageDrawable(drawableFromDownload);
                 }
             }
         }

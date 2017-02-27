@@ -113,6 +113,12 @@ public class ConversationListItem extends FrameLayout {
     }
 */
 
+private String getPathToIconFile(final String folder) {
+    ImApp app = (ImApp) getContext().getApplicationContext();
+    String path = app.getFilesDir().getAbsolutePath() + File.separator + folder + File.separator + folder + "_small.png";
+    return path;
+}
+
     public void bind(ConversationViewHolder holder, long contactId, long providerId, long accountId, String address, String nickname, int contactType, String message, long messageDate, int presence, String underLineText, boolean showChatMsg, boolean scrolling) {
 
 
@@ -199,16 +205,31 @@ public class ConversationListItem extends FrameLayout {
                     {
                        // int color = getAvatarBorder(presence);
                         int padding = 24;
-                        String packageName = getContext().getPackageName();
-                        int resID = getResources().getIdentifier(packageName+":drawable/"+nickname, null, null);
-
-                        if(resID==0)
+                        String iconPath = getPathToIconFile(nickname);
+                        Drawable drawableFromDownload = Drawable.createFromPath(iconPath);
+                        if(drawableFromDownload==null)  //   file is not found in download folder
                         {
-                            LetterAvatar lavatar = new LetterAvatar(getContext(), nickname, padding);
-                            holder.mAvatar.setImageDrawable(lavatar);
+                            try {
+                                InputStream inputStream = getContext().getAssets().open(nickname+"/"+nickname+"_small.png");
+                                Drawable drawableFromAssets = Drawable.createFromStream(inputStream, null);
+                                if(drawableFromAssets==null)
+                                {
+                                    LetterAvatar lavatar = new LetterAvatar(getContext(), nickname, padding);
+                                    holder.mAvatar.setImageDrawable(lavatar);
+                                }
+                                else
+                                {
+                                    holder.mAvatar.setImageDrawable(drawableFromAssets);
+                                }
+                            }
+                            catch(Exception e)
+                            {
+                                LetterAvatar lavatar = new LetterAvatar(getContext(), nickname, padding);
+                                holder.mAvatar.setImageDrawable(lavatar);
+                            }
                         }
                         else
-                            holder.mAvatar.setImageDrawable(getResources().getDrawable(resID));
+                            holder.mAvatar.setImageDrawable(drawableFromDownload);
                     }
 
                     holder.mAvatar.setVisibility(View.VISIBLE);
