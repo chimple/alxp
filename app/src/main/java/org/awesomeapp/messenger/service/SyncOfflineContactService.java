@@ -19,7 +19,7 @@ public class SyncOfflineContactService extends Service {
     private static final String DEBUG_TAG = "SyncContacts";
     private ContactSyncTask syncContactTask;
     private URL contactsPath;
-    private static final String CONTACT_INFO_SERVER_URL = "https://api.myjson.com/bins/m5mtx";
+    private static final String CONTACT_INFO_SERVER_URL = "http://wikitaki.org/app/contacts.json";
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
