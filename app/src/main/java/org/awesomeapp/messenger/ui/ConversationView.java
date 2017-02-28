@@ -44,7 +44,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Message;
 import android.os.RemoteException;
-import android.os.SystemClock;
 import android.provider.Browser;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
@@ -1838,6 +1837,17 @@ public class ConversationView {
         {
             float i = msg.mTextViewForMessages.getTextSize();
 
+            Resources r;
+
+            if (mContext == null)
+                r = Resources.getSystem();
+            else
+                r = mContext.getResources();
+
+            float uConv = r.getDisplayMetrics().scaledDensity;
+
+            i = i / uConv;
+
             if(i<60 ) {
                 MessageListItem.FONTSIZE = i+5.0f;
                 msg.mTextViewForMessages.setTextSize(i + 5.0f);
@@ -1853,8 +1863,19 @@ public class ConversationView {
         {
             float i = msg.mTextViewForMessages.getTextSize();
 
+            Resources r;
+
+            if (mContext == null)
+                r = Resources.getSystem();
+            else
+                r = mContext.getResources();
+
+            float uConv = r.getDisplayMetrics().scaledDensity;
+
+            i = i / uConv;
+
             if(i> 20 ) {
-                MessageListItem.FONTSIZE = i- 5.0f;
+                MessageListItem.FONTSIZE = i - 5.0f;
                 msg.mTextViewForMessages.setTextSize(i - 5.0f);
             }
         }
