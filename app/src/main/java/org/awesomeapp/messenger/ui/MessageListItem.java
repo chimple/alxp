@@ -847,6 +847,7 @@ public class MessageListItem extends FrameLayout {
                     btn = new Button(getContext(), null, R.drawable.button_bg);
                     btn.setBackgroundResource(R.drawable.button_bg);
                     btn.setText(Message[i]);
+                    workTokens.add(btn);
                     btn.setTextSize(20);
                     bg.getPaint().setColor(Color.parseColor("#F2F2F2"));
                     btn.setLayoutParams(params);
@@ -897,7 +898,11 @@ public class MessageListItem extends FrameLayout {
                 Spellbtn.setOnClickListener(new OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        if(workTokens != null && workTokens.size() > currentWorkToken) {
 
+                            speakCallBackListener = new SpeakCallBackListener();
+                            appContext.speakOut(workTokens.get(currentWorkToken).getText().toString(), engLocale, speakCallBackListener);
+                        }
                     }
                 });
 
