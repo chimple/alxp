@@ -146,7 +146,7 @@ public class ImApp extends Application implements ICacheWordSubscriber, TextToSp
 
     public final static String ZOM_SERVICES_ADDRESS = "zombot@home.zom.im";
 
-    public final static String BASE_CONVERSATION_URL = "http://chimple.org/wikitaki/";
+    public final static String BASE_CONVERSATION_URL = "http://wikitaki.org/app/";
 
     public final static String BASE_CONVERSATION_FILE_EXT = ".zip";
 
