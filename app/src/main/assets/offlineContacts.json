@@ -1,15 +1,15 @@
 {
   "contacts": [
     {
-      "userName": "Aiden",
-      "nickName": "Aiden",
-      "address": "Aiden@google.com",
+      "userName": "Ada",
+      "nickName": "Ada",
+      "address": "Ada@wikitaki.com",
       "version": "1.0"
     },
     {
-      "userName": "Ada",
-      "nickName": "Ada",
-      "address": "Ada@google.com",
+      "userName": "Bob",
+      "nickName": "Bob",
+      "address": "Bob@wikitaki.com",
       "version": "1.0"
     }
   ]

@@ -320,7 +320,7 @@ public class OnboardingManager {
 
                     XmppConnection xmppConn = new XmppConnection(context);
                     xmppConn.initUser(providerId, accountId);
-                    username = username.replaceAll("@home.zom.im","");
+                    username = username.replaceAll("@im.wikitaki.org","");
                     success = xmppConn.registerAccount(settings, username, password, aParams);
                     ImApp.isXMPPAccountRegistered = true;
 

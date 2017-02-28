@@ -77,6 +77,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
 
     private static final String TABLE_WORDS = "words";
     private static final String TABLE_PHONICS = "phonics";
+    private static final String TABLE_PHONICS_LIST = "phonics_list";
     private static final String TABLE_ACCOUNTS = "accounts";
     private static final String TABLE_PROVIDERS = "providers";
     private static final String TABLE_PROVIDER_SETTINGS = "providerSettings";
@@ -424,8 +425,11 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
                     + "sp_name TEXT," + "sp_meaning TEXT" + ");");
 
             db.execSQL("CREATE TABLE " + TABLE_PHONICS + " (" + "_id INTEGER PRIMARY KEY,"
-                    + "letters TEXT," + "word TEXT,"
+                    + "letters TEXT," + "phonetic TEXT," + "word TEXT,"
                     + "split TEXT," + "choice1 TEXT" + "choice2 TEXT" + "choice2 TEXT" + ");");
+
+            db.execSQL("CREATE TABLE " + TABLE_PHONICS_LIST + " (" + "_id INTEGER PRIMARY KEY,"
+                    + "difficulty INTEGER," + "phonetic TEXT"+ ");");
 
             db.execSQL("CREATE TABLE " + TABLE_ACCOUNTS + " (" + "_id INTEGER PRIMARY KEY,"
                     + "name TEXT," + "provider INTEGER," + "username TEXT," + "pw TEXT,"
@@ -708,6 +712,7 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
         private void destroyOldTables(SQLiteDatabase db) {
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_WORDS);
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_PHONICS);
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_PHONICS_LIST);
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_PROVIDERS);
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_ACCOUNTS);
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_CONTACT_LIST);
@@ -905,16 +910,36 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
                 List<String[]> rows = new CSVFile(fin).read();
                 //process it....
                 for (String[] sRows: rows) {
-                    if(sRows != null && sRows.length == 6) {
-                        ContentValues values = new ContentValues(6);
+                    if(sRows != null && sRows.length == 7) {
+                        ContentValues values = new ContentValues(7);
                         values.put(Imps.Phonic.LETTERS, sRows[0]);
-                        values.put(Imps.Phonic.WORD, sRows[1]);
-                        values.put(Imps.Phonic.SPLIT, sRows[2]);
-                        values.put(Imps.Phonic.CHOICE1, sRows[3]);
-                        values.put(Imps.Phonic.CHOICE2, sRows[4]);
-                        values.put(Imps.Phonic.CHOICE3, sRows[5]);
+                        values.put(Imps.Phonic.PHONETIC, sRows[1]);
+                        values.put(Imps.Phonic.WORD, sRows[2]);
+                        values.put(Imps.Phonic.SPLIT, sRows[3]);
+                        values.put(Imps.Phonic.CHOICE1, sRows[4]);
+                        values.put(Imps.Phonic.CHOICE2, sRows[5]);
+                        values.put(Imps.Phonic.CHOICE3, sRows[6]);
 
                         db.insert(TABLE_PHONICS, null, values);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        private void batchUpdatePhonicsList(SQLiteDatabase db, String file) {
+            try {
+                InputStream fin = getContext().getAssets().open(file);
+                List<String[]> rows = new CSVFile(fin).read();
+                //process it....
+                for (String[] sRows: rows) {
+                    if(sRows != null && sRows.length == 2) {
+                        ContentValues values = new ContentValues(2);
+                        values.put(Imps.PhonicsList.DIFFICULTY, sRows[0]);
+                        values.put(Imps.PhonicsList.PHONETIC, sRows[1]);
+
+                        db.insert(TABLE_PHONICS_LIST, null, values);
                     }
                 }
             } catch (Exception e) {

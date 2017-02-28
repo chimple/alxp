@@ -206,7 +206,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:host="zom.im"
+                    android:host="wikitaki.org"
                     android:pathPrefix="/i/"
                     android:scheme="https" />
             </intent-filter>
