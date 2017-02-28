@@ -208,6 +208,9 @@ public class Imps {
         /** Letters <P>Type: TEXT</P> */
         String LETTERS = "letters";
 
+        /** PHONETIC <P>Type: TEXT</P> */
+        String PHONETIC = "phonetic";
+
         /** word <P>Type: TEXT</P> */
         String WORD = "word";
 
@@ -245,6 +248,44 @@ public class Imps {
          * account.
          */
         public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/imps-phonics";
+
+        /** The default sort order for this table */
+        public static final String DEFAULT_SORT_ORDER = "name ASC";
+
+    }
+
+    /**
+     * The columns for IM words.
+     */
+    public interface PhonicsListColumns {
+        /** order <P>Type: INTEGER</P> */
+        String DIFFICULTY = "difficulty";
+
+        /** PHONETIC <P>Type: TEXT</P> */
+        String PHONETIC = "phonetic";
+    }
+
+    /** This table contains the phonics. */
+    public static final class PhonicsList implements BaseColumns, PhonicsListColumns {
+        private PhonicsList() {
+
+        }
+
+        /** The content:// style URL for this table */
+        public static final Uri CONTENT_URI = Uri
+                .parse("content://org.awesomeapp.messenger.provider.Imps/phonicsList");
+
+        /**
+         * The MIME type of {@link #CONTENT_URI} providing a directory of
+         * account.
+         */
+        public static final String CONTENT_TYPE = "vnd.android.cursor.dir/imps-phonicsList";
+
+        /**
+         * The MIME type of a {@link #CONTENT_URI} subdirectory of a single
+         * account.
+         */
+        public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/imps-phonicsList";
 
         /** The default sort order for this table */
         public static final String DEFAULT_SORT_ORDER = "name ASC";

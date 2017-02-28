@@ -2361,9 +2361,9 @@ public class ConversationView {
 
                 break;
             case SHOW_TYPING:
-
-                boolean isTyping = msg.getData().getBoolean("typing");
-                mActivity.findViewById(R.id.tvTyping).setVisibility(isTyping ? View.VISIBLE : View.GONE);
+//                Was crashing when migrated to wikitaki from zom, so commented it
+//                boolean isTyping = msg.getData().getBoolean("typing");
+//                mActivity.findViewById(R.id.tvTyping).setVisibility(isTyping ? View.VISIBLE : View.GONE);
 
              default:
                  updateWarningView();

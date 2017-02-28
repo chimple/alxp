@@ -549,7 +549,7 @@ public class ImApp extends Application implements ICacheWordSubscriber, TextToSp
         return -1;
     }
 
-    public static long insertOrUpdatePhonic(ContentResolver cr, String letters, String word, String split, String choice1, String choice2, String choice3) {
+    public static long insertOrUpdatePhonic(ContentResolver cr, String letters, String phonetic, String word, String split, String choice1, String choice2, String choice3) {
 
         String where = Imps.Phonic.WORD + " = ?";
         String[] selectionArgs = new String[]{word.toLowerCase()};
@@ -562,9 +562,9 @@ public class ImApp extends Application implements ICacheWordSubscriber, TextToSp
                 c.moveToFirst();
                 long id = c.getLong(0);
 
-                ContentValues values = new ContentValues(6);
+                ContentValues values = new ContentValues(7);
                 values.put(Imps.Phonic.LETTERS, letters);
-
+                values.put(Imps.Phonic.PHONETIC, phonetic);
                 values.put(Imps.Phonic.WORD, word);
 
                 if (!TextUtils.isEmpty(split))
@@ -584,8 +584,9 @@ public class ImApp extends Application implements ICacheWordSubscriber, TextToSp
                 c.close();
                 return id;
             } else {
-                ContentValues values = new ContentValues(6);
+                ContentValues values = new ContentValues(7);
                 values.put(Imps.Phonic.LETTERS, letters);
+                values.put(Imps.Phonic.PHONETIC, letters);
                 values.put(Imps.Phonic.WORD, word);
                 values.put(Imps.Phonic.SPLIT, split);
                 values.put(Imps.Phonic.CHOICE1, choice1);

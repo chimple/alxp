@@ -381,7 +381,7 @@ public class ImUrlActivity extends Activity {
         Uri data = intent.getData();
         mHost = data.getHost();
 
-        if (data.getScheme().equals("https") && mHost.equals("zom.im"))
+        if (data.getScheme().equals("https") && mHost.equals("wikitaki.org"))
         {
             //special zom.im invite link: https://zom.im/invite/<base64 encoded username?k=otrFingerprint
 
