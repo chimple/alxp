@@ -24,7 +24,7 @@
 
     >
 
-    <fragment android:name="org.awesomeapp.messenger.ui.AccountsFragment"
+    <fragment android:name="org.chimple.messenger.ui.AccountsFragment"
         android:id="@+id/accounts_fragment"
         android:layout_weight="1"
         android:layout_width="match_parent"

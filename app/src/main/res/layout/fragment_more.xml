@@ -21,7 +21,7 @@
         android:id="@+id/btnOpenServices"
         >
 
-        <org.awesomeapp.messenger.ui.CircleColorImageView
+        <org.chimple.messenger.ui.CircleColorImageView
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/notify_zom"
@@ -52,7 +52,7 @@
         android:id="@+id/btnOpenGalllery"
         >
 
-        <org.awesomeapp.messenger.ui.CircleColorImageView
+        <org.chimple.messenger.ui.CircleColorImageView
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/ic_photo_library_white_36dp"
@@ -83,7 +83,7 @@
         android:id="@+id/btnOpenGroups"
         >
 
-        <org.awesomeapp.messenger.ui.CircleColorImageView
+        <org.chimple.messenger.ui.CircleColorImageView
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/ic_group_add_white_36dp"
@@ -113,7 +113,7 @@
         android:id="@+id/btnOpenStickers"
         >
 
-        <org.awesomeapp.messenger.ui.CircleColorImageView
+        <org.chimple.messenger.ui.CircleColorImageView
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/ic_insert_emoticon_white_36dp"
@@ -142,7 +142,7 @@
         android:id="@+id/btnOpenThemes"
         >
 
-        <org.awesomeapp.messenger.ui.CircleColorImageView
+        <org.chimple.messenger.ui.CircleColorImageView
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/tshirt128px"
