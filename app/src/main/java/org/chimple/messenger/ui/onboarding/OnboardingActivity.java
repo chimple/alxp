@@ -36,7 +36,9 @@ import android.view.inputmethod.InputMethodInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
@@ -201,7 +203,8 @@ public class OnboardingActivity extends BaseActivity {
             }
         });
 
-        View btnStartOnboardingNext = viewSplash.findViewById(R.id.nextButton);
+        //View btnStartOnboardingNext = viewSplash.findViewById(R.id.nextButton);
+        ImageButton  btnStartOnboardingNext = (ImageButton) findViewById(R.id.nextButton);
         btnStartOnboardingNext.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -436,9 +439,9 @@ public class OnboardingActivity extends BaseActivity {
 
     private void showOnboarding ()
     {
-        findViewById(R.id.loadingPanel).setVisibility(View.VISIBLE);
-        View btnStartOnboardingNext = viewSplash.findViewById(R.id.nextButton);
-        btnStartOnboardingNext.setOnClickListener(null);
+//        findViewById(R.id.loadingPanel).setVisibility(View.VISIBLE);
+//        View btnStartOnboardingNext = viewSplash.findViewById(R.id.nextButton);
+//        btnStartOnboardingNext.setOnClickListener(null);
 //        mViewFlipper.setDisplayedChild(1);
         startAvatarTakerForNewAccount(getPickCameraImageChooserIntent());
        // findViewById(R.id.loadingPanel).setVisibility(View.GONE);
@@ -954,6 +957,15 @@ public class OnboardingActivity extends BaseActivity {
                                     //setAvatar(mCropImageView.getCroppedImage(), mNewAccount);
                                     startAccountSetupWithImageData(mNickname, mCropImageView.getCroppedImage());
                                     delete(mOutputFileUri);
+                                    findViewById(R.id.loadingPanel).setVisibility(View.VISIBLE);
+
+                                    ImageButton  btnClickOnboardingNext1 = (ImageButton) findViewById(R.id.nextButton);
+                                    btnClickOnboardingNext1.setVisibility(View.INVISIBLE);
+                                    View btnStartOnboardingNext = viewSplash.findViewById(R.id.nextButton);
+                                    btnStartOnboardingNext.setOnClickListener(null);
+
+                                    ImageButton  btnClickOnboardingNextClick = (ImageButton) findViewById(R.id.nextButtonClick);
+                                    btnClickOnboardingNextClick.setVisibility(View.VISIBLE);
                                 }
                             })
                             .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
