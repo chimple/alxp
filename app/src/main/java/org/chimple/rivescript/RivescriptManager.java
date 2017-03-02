@@ -1,7 +1,7 @@
 package org.chimple.rivescript;
 
 import com.rivescript.RiveScript;
-import org.awesomeapp.messenger.ImApp;
+import org.chimple.messenger.ImApp;
 import android.content.SharedPreferences;
 
 import java.util.Map;
@@ -27,7 +27,7 @@ public class RivescriptManager {
             }
             currentChattee = chattee;
             rs = new RiveScript(ImApp.getAppContext(), true);
-            rs.loadDirectory(chattee);
+            rs.loadDirectory(chattee + "/rive");
             rs.sortReplies();
             rs.setSubroutine("alphabet_teacher", new AlphabetTeacher(ImApp.getAppContext()));
             rs.setSubroutine("change_keyboard", new ChangeKeyboard(ImApp.getAppContext()));

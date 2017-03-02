@@ -2,13 +2,13 @@
 {
   "servers":[
     {
-      "domain": "home.zom.im",
-      "server": "home.zom.im",
-      "address": "162.247.72.41",
+      "domain": "im.wikitaki.org",
+      "server": "im.wikitaki.org",
+      "address": "34.198.178.154",
       "port": 5222,
       "certificate": "",
       "logoUrl": "https://s3....",
-      "country": "BO",
+      "country": "US",
       "muc": "conference.zom.im"
     }
 ]

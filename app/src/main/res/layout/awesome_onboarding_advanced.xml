@@ -56,7 +56,7 @@ android:paddingTop="40dp"
 
 
     <!--
-<org.awesomeapp.messenger.ui.widgets.InstantAutoCompleteTextView
+<org.chimple.messenger.ui.widgets.InstantAutoCompleteTextView
     android:id="@+id/spinnerDomains"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"

@@ -35,7 +35,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
 
-        android:name="org.awesomeapp.messenger.ui.legacy.AccountsFragment"
+        android:name="org.chimple.messenger.ui.legacy.AccountsFragment"
         />-->
 
 </LinearLayout>
