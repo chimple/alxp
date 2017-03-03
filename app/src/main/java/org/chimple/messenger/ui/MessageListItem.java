@@ -291,7 +291,7 @@ public class MessageListItem extends FrameLayout {
                  Spellbtn.setOnClickListener(new OnClickListener() {
                      @Override
                      public void onClick(View v) {
-                         if(workTokens != null && workTokens.size() > currentWorkToken) {
+                         if(workTokens != null && currentWorkToken==0) {
 
                              speakCallBackListener = new SpeakCallBackListener();
                              appContext.speakOut(workTokens.get(currentWorkToken).getText().toString(), engLocale, speakCallBackListener);
@@ -898,7 +898,7 @@ public class MessageListItem extends FrameLayout {
                 Spellbtn.setOnClickListener(new OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        if(workTokens != null && workTokens.size() > currentWorkToken) {
+                        if(workTokens != null && currentWorkToken==0) {
 
                             speakCallBackListener = new SpeakCallBackListener();
                             appContext.speakOut(workTokens.get(currentWorkToken).getText().toString(), engLocale, speakCallBackListener);
@@ -1428,7 +1428,8 @@ public class MessageListItem extends FrameLayout {
             {
                 appContext.speakOut(workTokens.get(currentWorkToken).getText().toString(), engLocale, speakCallBackListener);
             }
-
+            else
+                currentWorkToken = 0;
         }
 
     }
