@@ -40,11 +40,23 @@ android:orientation="vertical"
         <!--android:layout_marginTop="30dp"-->
         <!--/>-->
 
-    <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="100sp"
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@color/float_transparent"
         android:id="@+id/nextButton"
-        android:src="@drawable/ic_photo_camera_white_36dp"
+        android:src="@drawable/camera"
+        android:scaleType="fitXY"
+        android:visibility="visible"
+        />
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@color/float_transparent"
+        android:id="@+id/nextButtonClick"
+        android:src="@drawable/camera_click"
+        android:visibility="gone"
+
         />
 
     <RelativeLayout

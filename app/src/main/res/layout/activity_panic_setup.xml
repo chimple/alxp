@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context="org.awesomeapp.messenger.ui.PanicSetupActivity">
+    tools:context="org.chimple.messenger.ui.PanicSetupActivity">
 
     <android.support.design.widget.AppBarLayout
         android:id="@+id/appbar"

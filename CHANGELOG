@@ -299,7 +299,7 @@ b73497e add cacheword and PushManager inst creation
 cc94df7 remove reference to cardview library which we don't otherwise have
 7dbb16c remove unneeded classes to make build work
 a5730df make contact profile view more compact
-29f6619 added push package from dbro @OnlyInAmerica csp branch manually adding in classes from here, since rebasing was a disaster https://github.com/OnlyInAmerica/Zom-Android/tree/csp/awesomeAppCore/src/main/java/org/awesomeapp/messenger/push
+29f6619 added push package from dbro @OnlyInAmerica csp branch manually adding in classes from here, since rebasing was a disaster https://github.com/OnlyInAmerica/Zom-Android/tree/csp/awesomeAppCore/src/main/java/org.chimple/messenger/push
 9808410 got basic push support building
 cc4d17a make sure to clear previous image loading logic before starting new
 4683a38 small user interface + recyvlerview improvements

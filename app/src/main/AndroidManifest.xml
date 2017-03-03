@@ -12,9 +12,9 @@
         android:normalScreens="true"
         android:smallScreens="true" />
 
-    <uses-permission android:name="org.awesomeapp.messenger.permission.READ_ONLY" />
-    <uses-permission android:name="org.awesomeapp.messenger.permission.WRITE_ONLY" />
-    <uses-permission android:name="org.awesomeapp.messenger.permission.IM_SERVICE" />
+    <uses-permission android:name="org.chimple.messenger.permission.READ_ONLY" />
+    <uses-permission android:name="org.chimple.messenger.permission.WRITE_ONLY" />
+    <uses-permission android:name="org.chimple.messenger.permission.IM_SERVICE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -46,26 +46,26 @@
         android:required="false" />
 
     <permission
-        android:name="org.awesomeapp.messenger.permission.IM_SERVICE"
+        android:name="org.chimple.messenger.permission.IM_SERVICE"
         android:description="@string/perm_desc"
         android:label="@string/perm_label"
         android:permissionGroup="android.permission-group.MESSAGES"
         android:protectionLevel="dangerous" />
     <permission
-        android:name="org.awesomeapp.messenger.permission.READ_ONLY"
+        android:name="org.chimple.messenger.permission.READ_ONLY"
         android:description="@string/ro_perm_desc"
         android:label="@string/ro_perm_label"
         android:permissionGroup="android.permission-group.MESSAGES"
         android:protectionLevel="dangerous" />
     <permission
-        android:name="org.awesomeapp.messenger.permission.WRITE_ONLY"
+        android:name="org.chimple.messenger.permission.WRITE_ONLY"
         android:description="@string/wo_perm_desc"
         android:label="@string/wo_perm_label"
         android:permissionGroup="android.permission-group.MESSAGES"
         android:protectionLevel="dangerous" />
 
     <application
-        android:name="org.awesomeapp.messenger.ImApp"
+        android:name="org.chimple.messenger.ImApp"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/ic_launcher_name"
@@ -73,7 +73,7 @@
         tools:replace="android:icon,android:allowBackup,android:label"
         >
         <activity
-            android:name="org.awesomeapp.messenger.RouterActivity"
+            android:name="org.chimple.messenger.RouterActivity"
             android:theme="@style/InviteDialog">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -213,10 +213,10 @@
         </activity>
 
         <service
-            android:name="org.awesomeapp.messenger.plugin.xmpp.XmppImPlugin"
+            android:name="org.chimple.messenger.plugin.xmpp.XmppImPlugin"
             android:exported="false">
             <intent-filter>
-                <action android:name="org.awesomeapp.messenger.plugin" />
+                <action android:name="org.chimple.messenger.plugin" />
             </intent-filter>
 
             <meta-data
@@ -231,9 +231,9 @@
         </service>
 
 
-        <service android:name="org.awesomeapp.messenger.plugin.loopback.LoopbackImPlugin">
+        <service android:name="org.chimple.messenger.plugin.loopback.LoopbackImPlugin">
             <intent-filter>
-                <action android:name="org.awesomeapp.messenger.plugin" />
+                <action android:name="org.chimple.messenger.plugin" />
             </intent-filter>
             <meta-data android:name="info.guardianproject.otr.app.im.provider_name" android:value="Loopback"/>
             <meta-data android:name="info.guardianproject.otr.app.im.provider_full_name"
@@ -247,35 +247,35 @@
 
         <!-- android:process="info.guardianproject.otr.app.process.im" -->
         <service
-            android:name="org.awesomeapp.messenger.service.RemoteImService"
+            android:name="org.chimple.messenger.service.RemoteImService"
             android:exported="false"
-            android:permission="org.awesomeapp.messenger.permission.IM_SERVICE">
+            android:permission="org.chimple.messenger.permission.IM_SERVICE">
             <intent-filter>
                 <action android:name="info.guardianproject.otr.app.im.IRemoteImService" />
                 <action android:name="info.guardianproject.otr.app.im.SERVICE" />
             </intent-filter>
         </service>
         <service
-            android:name="org.awesomeapp.messenger.service.HeartbeatService"
+            android:name="org.chimple.messenger.service.HeartbeatService"
             android:exported="false" />
 
         <service
-            android:name="org.awesomeapp.messenger.service.SyncOfflineContactService"
+            android:name="org.chimple.messenger.service.SyncOfflineContactService"
             android:exported="false" />
 
         <provider
-            android:name="org.awesomeapp.messenger.provider.ImpsProvider"
-            android:authorities="org.awesomeapp.messenger.provider.Imps"
+            android:name="org.chimple.messenger.provider.ImpsProvider"
+            android:authorities="org.chimple.messenger.provider.Imps"
             android:exported="false"
             android:grantUriPermissions="true"
-            android:readPermission="org.awesomeapp.messenger.permission.READ_ONLY"
-            android:writePermission="org.awesomeapp.messenger.permission.WRITE_ONLY" />
+            android:readPermission="org.chimple.messenger.permission.READ_ONLY"
+            android:writePermission="org.chimple.messenger.permission.WRITE_ONLY" />
 
         <activity
-            android:name="org.awesomeapp.messenger.ImUrlActivity"
+            android:name="org.chimple.messenger.ImUrlActivity"
             android:theme="@style/InviteDialog"></activity>
         <activity
-            android:name="org.awesomeapp.messenger.ui.legacy.SignoutActivity"
+            android:name="org.chimple.messenger.ui.legacy.SignoutActivity"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -284,11 +284,11 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="org.awesomeapp.messenger.ui.AddContactActivity"
+            android:name="org.chimple.messenger.ui.AddContactActivity"
             android:exported="false"
             android:label="@string/add_friends" />
         <activity
-            android:name="org.awesomeapp.messenger.ui.ContactsPickerActivity"
+            android:name="org.chimple.messenger.ui.ContactsPickerActivity"
             android:exported="false"
             android:label="@string/choose_friend">
             <intent-filter>
@@ -307,26 +307,26 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="org.awesomeapp.messenger.ui.AccountActivity"
+            android:name="org.chimple.messenger.ui.AccountActivity"
             android:exported="false"
             android:windowSoftInputMode="stateUnchanged" >
             <intent-filter>
                 <action android:name="android.intent.action.EDIT" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="org.awesomeapp.messenger.service.IMPS_CATEGORY" />
+                <category android:name="org.chimple.messenger.service.IMPS_CATEGORY" />
 
                 <data android:mimeType="vnd.android.cursor.item/imps-accounts" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.INSERT" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="org.awesomeapp.messenger.service.IMPS_CATEGORY" />
+                <category android:name="org.chimple.messenger.service.IMPS_CATEGORY" />
                 <data android:mimeType="vnd.android.cursor.item/imps-providers" />
             </intent-filter>
         </activity>
 
         <activity
-            android:name="org.awesomeapp.messenger.ui.legacy.AccountSettingsActivity"
+            android:name="org.chimple.messenger.ui.legacy.AccountSettingsActivity"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.PICK" />
@@ -338,7 +338,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="org.awesomeapp.messenger.ui.legacy.SettingActivity"
+            android:name="org.chimple.messenger.ui.legacy.SettingActivity"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.PICK" />
@@ -350,7 +350,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="org.awesomeapp.messenger.ui.legacy.SmpResponseActivity"
+            android:name="org.chimple.messenger.ui.legacy.SmpResponseActivity"
             android:exported="false"
             android:theme="@android:style/Theme.Dialog" />
         <activity
@@ -359,14 +359,14 @@
             android:exported="false"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
-        <receiver android:name="org.awesomeapp.messenger.service.SyncContactUpdateReceiver"
+        <receiver android:name="org.chimple.messenger.service.SyncContactUpdateReceiver"
             android:enabled="true"
             android:exported="true">
 
         </receiver>
 
         <receiver
-            android:name="org.awesomeapp.messenger.tts.TTSDataInstalledBroadcastReceiver">
+            android:name="org.chimple.messenger.tts.TTSDataInstalledBroadcastReceiver">
             <intent-filter>
                 <action
                     android:name="android.speech.tts.engine.TTS_DATA_INSTALLED"/>
@@ -374,7 +374,7 @@
         </receiver>
 
         <receiver
-            android:name="org.awesomeapp.messenger.service.NetworkConnectivityReceiver"
+            android:name="org.chimple.messenger.service.NetworkConnectivityReceiver"
             android:enabled="true"
             android:exported="true">
             <intent-filter>
@@ -382,7 +382,7 @@
             </intent-filter>
         </receiver>
         <receiver
-            android:name="org.awesomeapp.messenger.service.BootCompletedListener"
+            android:name="org.chimple.messenger.service.BootCompletedListener"
             android:enabled="true"
             android:exported="true">
             <intent-filter>
@@ -391,17 +391,17 @@
         </receiver>
 
         <activity
-            android:name="org.awesomeapp.messenger.ui.LockScreenActivity"
+            android:name="org.chimple.messenger.ui.LockScreenActivity"
             android:label="@string/title_activity_lock_screen"></activity>
         <activity
-            android:name="org.awesomeapp.messenger.ui.onboarding.OnboardingActivity"
+            android:name="org.chimple.messenger.ui.onboarding.OnboardingActivity"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:launchMode="singleTask"></activity>
         <activity
-            android:name="org.awesomeapp.messenger.ui.qr.QrScanActivity"
+            android:name="org.chimple.messenger.ui.qr.QrScanActivity"
             android:configChanges="keyboardHidden|orientation|screenSize" />
         <activity
-            android:name="org.awesomeapp.messenger.ui.qr.QrDisplayActivity"
+            android:name="org.chimple.messenger.ui.qr.QrDisplayActivity"
             android:configChanges="keyboardHidden|orientation|screenSize" />
         <service
             android:name="info.guardianproject.cacheword.CacheWordService"
@@ -410,7 +410,7 @@
 
         <activity android:name="net.hockeyapp.android.UpdateActivity" />
         <activity
-            android:name="org.awesomeapp.messenger.ui.legacy.DummyActivity"
+            android:name="org.chimple.messenger.ui.legacy.DummyActivity"
             android:allowTaskReparenting="true"
             android:alwaysRetainTaskState="false"
             android:clearTaskOnLaunch="true"
@@ -420,10 +420,10 @@
             android:noHistory="true"
             android:stateNotNeeded="true"
             android:theme="@android:style/Theme.NoDisplay" />
-        <activity android:name="org.awesomeapp.messenger.ui.widgets.ImageViewActivity" />
-        <activity android:name="org.awesomeapp.messenger.ui.widgets.SecureCameraActivity" />
+        <activity android:name="org.chimple.messenger.ui.widgets.ImageViewActivity" />
+        <activity android:name="org.chimple.messenger.ui.widgets.SecureCameraActivity" />
         <activity
-            android:name="org.awesomeapp.messenger.MainActivity"
+            android:name="org.chimple.messenger.MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
             android:theme="@style/AppThemeNoAction">
@@ -451,24 +451,24 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="org.awesomeapp.messenger.ui.ConversationDetailActivity"
+            android:name="org.chimple.messenger.ui.ConversationDetailActivity"
             android:exported="false"
             android:launchMode="singleTask"
             android:theme="@style/AppThemeNoAction"
             android:windowSoftInputMode="stateHidden|adjustPan|adjustResize" />
         <activity
-            android:name="org.awesomeapp.messenger.ui.ContactListActivity"
+            android:name="org.chimple.messenger.ui.ContactListActivity"
             android:exported="false" />
         <activity
-            android:name="org.awesomeapp.messenger.ui.GalleryActivity"
+            android:name="org.chimple.messenger.ui.GalleryActivity"
             android:exported="false"
             android:title="@string/photo_gallery" />
         <activity
-            android:name="org.awesomeapp.messenger.ui.StickerActivity"
+            android:name="org.chimple.messenger.ui.StickerActivity"
             android:exported="false"
             android:title="@string/action_stickers" />
         <activity
-            android:name="org.awesomeapp.messenger.ui.PanicSetupActivity"
+            android:name="org.chimple.messenger.ui.PanicSetupActivity"
             android:label="@string/panic_trigger_app"
             android:theme="@style/AppThemeNoAction">
             <intent-filter>
@@ -478,18 +478,18 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        <activity android:name="org.awesomeapp.messenger.ui.ContactDisplayActivity"
+        <activity android:name="org.chimple.messenger.ui.ContactDisplayActivity"
             android:exported="false"
             android:theme="@style/AppThemeNoAction"
             ></activity>
-        <activity android:name="org.awesomeapp.messenger.ui.GroupDisplayActivity"></activity>
+        <activity android:name="org.chimple.messenger.ui.GroupDisplayActivity"></activity>
 
         <meta-data
-            android:name="org.awesomeapp.messenger.tasks.GlideVFSModule"
+            android:name="org.chimple.messenger.tasks.GlideVFSModule"
             android:value="GlideModule" />
 
         <activity
-            android:name="org.awesomeapp.messenger.ui.AccountsActivity"
+            android:name="org.chimple.messenger.ui.AccountsActivity"
             android:label="@string/accounts"></activity>
     </application>
 

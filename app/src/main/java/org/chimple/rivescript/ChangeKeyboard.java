@@ -5,8 +5,8 @@ import android.content.res.AssetManager;
 
 import com.rivescript.ObjectMacro;
 
-import org.awesomeapp.messenger.ImApp;
-import org.awesomeapp.messenger.ui.ConversationView;
+import org.chimple.messenger.ImApp;
+import org.chimple.messenger.ui.ConversationView;
 
 import java.io.BufferedReader;
 import java.io.File;
