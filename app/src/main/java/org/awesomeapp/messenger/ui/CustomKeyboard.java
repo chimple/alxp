@@ -53,6 +53,7 @@ public class CustomKeyboard {
 //        public final static int CodeClear    = 55006;
 
         @Override public void onKey(int primaryCode, int[] keyCodes) {
+
             // NOTE We can say '<Key android:codes="49,50" ... >' in the xml file; all codes come in keyCodes, the first in this list in primaryCode
             // Get the EditText and its Editable
             View focusCurrent = mHostActivity.getWindow().getCurrentFocus();
@@ -249,7 +250,7 @@ public class CustomKeyboard {
             mInputType = "word";
             sentence_HashMap.clear();
             updatedKeyboard = new Keyboard(mHostActivity,R.xml.custom_word_keyboard);
-            mKeyboardView = (KeyboardView) mHostActivity.findViewById(R.id.keyboardview_1x3);
+            mKeyboardView = (KeyboardView) mHostActivity.findViewById(R.id.alphabet_keyboardview_1x3);
 
             mKeyboardView.setKeyboard(updatedKeyboard);
             mKeyboardView.setPreviewEnabled(false);
