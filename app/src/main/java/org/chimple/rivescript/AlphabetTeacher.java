@@ -2,11 +2,13 @@ package org.chimple.rivescript;
 
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.database.Cursor;
 
 import com.rivescript.ObjectMacro;
 
-import org.awesomeapp.messenger.ImApp;
-import org.awesomeapp.messenger.ui.ConversationView;
+import org.chimple.messenger.ImApp;
+import org.chimple.messenger.provider.Imps;
+import org.chimple.messenger.ui.ConversationView;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -15,6 +17,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+
+import timber.log.Timber;
 
 /**
  * Created by srikanth on 08/02/17.
@@ -68,7 +73,15 @@ public class AlphabetTeacher implements ObjectMacro {
         // To get/set user variables for the user, you can use currentUser
         // to find their ID and then use the usual methods.
         String user = rs.currentUser();
-
+        Cursor mCursor = ImApp.getAppContext().getContentResolver().query(Imps.Phonic.CONTENT_URI, null, null, null, null);
+        if (mCursor != null) {
+            while (mCursor.moveToNext()) {
+                String newWord = mCursor.getString(mCursor.getColumnIndex(Imps.Phonic.WORD));
+                Timber.d(newWord);
+            }
+        } else {
+            Timber.d("Failed getting data from phonics");
+        }
         StringBuilder sb = new StringBuilder(getTeaching(rs, user, 1, message++)).append("\n");
         sb.append(getTeaching(rs, user, 2, message++)).append("\n");
         sb.append(getTeaching(rs, user, 3, message++)).append("\n");

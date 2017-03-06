@@ -22,7 +22,7 @@
     android:layout_height="match_parent">
 
 
-    <fragment android:name="org.awesomeapp.messenger.ui.GalleryListFragment"
+    <fragment android:name="org.chimple.messenger.ui.GalleryListFragment"
         android:id="@+id/gallery_fragment"
         android:layout_weight="1"
         android:layout_width="match_parent"

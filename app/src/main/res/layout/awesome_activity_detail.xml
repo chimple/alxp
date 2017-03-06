@@ -95,7 +95,7 @@
             android:transcriptMode="normal"
             android:scrollbars="vertical"
             android:layout_weight="9"
-            app:layout_behavior="org.awesomeapp.messenger.ui.widgets.PatchedScrollingViewBehavior"
+            app:layout_behavior="org.chimple.messenger.ui.widgets.PatchedScrollingViewBehavior"
             android:paddingBottom="0dp"
             android:layout_marginTop="0dp"
             android:paddingTop="0dp"
@@ -130,7 +130,7 @@
                 <!--&gt;-->
 
 
-                <!--<org.awesomeapp.messenger.ui.CircleColorImageView-->
+                <!--<org.chimple.messenger.ui.CircleColorImageView-->
                     <!--android:id="@+id/btnAttachPicture"-->
                     <!--android:src="@drawable/ic_insert_photo_white_36dp"-->
                     <!--android:layout_margin="3dp"-->
@@ -141,7 +141,7 @@
                     <!--android:layout_height="64dp"-->
                     <!--/>-->
 
-                <!--<org.awesomeapp.messenger.ui.CircleColorImageView-->
+                <!--<org.chimple.messenger.ui.CircleColorImageView-->
                     <!--android:id="@+id/btnTakePicture"-->
                     <!--android:src="@drawable/ic_photo_camera_white_36dp"-->
                     <!--android:layout_margin="3dp"-->
@@ -152,7 +152,7 @@
 
                     <!--/>-->
 
-                <!--<org.awesomeapp.messenger.ui.CircleColorImageView-->
+                <!--<org.chimple.messenger.ui.CircleColorImageView-->
                     <!--android:id="@+id/btnAttachSticker"-->
                     <!--android:src="@drawable/ic_insert_emoticon_white_36dp"-->
                     <!--android:layout_margin="3dp"-->
@@ -163,7 +163,7 @@
                     <!--/>-->
 
 <!--&lt;!&ndash;-->
-                <!--<org.awesomeapp.messenger.ui.CircleColorImageView-->
+                <!--<org.chimple.messenger.ui.CircleColorImageView-->
                     <!--android:id="@+id/btnAttachFile"-->
                     <!--android:src="@drawable/ic_insert_drive_file_white_36dp"-->
                     <!--android:layout_margin="3dp"-->
@@ -291,7 +291,7 @@
                android:keyTextColor="@color/background_black"
                android:shadowRadius="0.0"
                android:visibility="gone" />
-           <org.awesomeapp.messenger.ui.CustomKeyboardView
+           <org.chimple.messenger.ui.CustomKeyboardView
                android:id="@+id/keyboardview_1x3"
                android:layout_width="match_parent"
                android:layout_height="wrap_content"

@@ -1,7 +1,7 @@
 package org.chimple.rivescript;
 
 import com.rivescript.RiveScript;
-import org.awesomeapp.messenger.ImApp;
+import org.chimple.messenger.ImApp;
 import android.content.SharedPreferences;
 
 import java.util.Map;

@@ -32,7 +32,7 @@
     native <methods>;
 }
 
--keep class org.awesomeapp.messenger.** { *; }
+-keep class org.chimple.messenger.** { *; }
 -keep class org.jivesoftware.smack.** { *; }
 -keep class org.jivesoftware.smackx.** { *; }
 -keep class info.guardianproject.libcore.** { *; }
