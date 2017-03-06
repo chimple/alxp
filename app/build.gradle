@@ -39,8 +39,8 @@ android {
 
     defaultConfig {
         applicationId 'org.wikitaki.messenger'
-        versionCode 1502002
-        versionName getVersionName()
+        versionCode 1502003
+        versionName '1_0_0'
         archivesBaseName = "Wikitaki-$versionName"
         minSdkVersion project.ext.minSdkVersion
         targetSdkVersion project.ext.targetSdkVersion

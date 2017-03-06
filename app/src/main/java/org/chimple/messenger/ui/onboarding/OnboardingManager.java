@@ -40,7 +40,7 @@ public class OnboardingManager {
     public final static int REQUEST_CHOOSE_AVATAR = REQUEST_SCAN+1;
     public final static int REQUEST_CHOOSE_AVATAR_FOR_NEW_ACCOUNT = REQUEST_CHOOSE_AVATAR+1;
 
-    public final static String BASE_INVITE_URL = "https://zom.im/i/#";
+    public final static String BASE_INVITE_URL = "https://wikitaki.org/i/#";
 
     public static void inviteSMSContact (Activity context, String phoneNumber, String message)
     {

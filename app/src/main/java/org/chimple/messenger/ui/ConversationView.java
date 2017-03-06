@@ -286,12 +286,13 @@ public class ConversationView {
         if(keyboardType != mKeyboardType || !Arrays.equals(params, mKeyboardContents)) {
             mKeyboardType = keyboardType;
             mKeyboardContents = params;
+            if (mcustomKeyboard != null) {
+                mcustomKeyboard.hideCustomKeyboard();
+            }
+            if(speechCustomKeyboard!=null) {
+                speechCustomKeyboard.hideSpeechToTextKeyboard();
+            }
             if (mKeyboardType == CUSTOM_KEYBOARD_TYPE){
-
-                if(speechCustomKeyboard!=null)
-                {
-                    speechCustomKeyboard.hideSpeechToTextKeyboard();
-                }
                 // mComposeMessage.setInputType(InputType.TYPE_NULL);
                 InputMethodManager imm = (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
                 imm.hideSoftInputFromWindow(mComposeMessage.getWindowToken(), 0);
@@ -306,11 +307,6 @@ public class ConversationView {
             }
             else if(mKeyboardType == MICROPHONE_KEYBOARD_TYPE)
             {
-                if(mcustomKeyboard!=null)
-                {
-                    mcustomKeyboard.hideCustomKeyboard();
-                }
-
                 mComposeMessage.setInputType(InputType.TYPE_NULL);
                 InputMethodManager imm = (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
                 imm.hideSoftInputFromWindow(mComposeMessage.getWindowToken(), 0);
@@ -321,12 +317,6 @@ public class ConversationView {
             {
                 mDynamicKeyboardIsVisible = false;
                 mActivity.findViewById(R.id.inputLayout).setVisibility(View.VISIBLE);
-                if (mcustomKeyboard != null) {
-                    mcustomKeyboard.hideCustomKeyboard();
-                }
-                if(speechCustomKeyboard!=null) {
-                    speechCustomKeyboard.hideSpeechToTextKeyboard();
-                }
                 InputMethodManager imm = (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
                 imm.showSoftInput(mComposeMessage, InputMethodManager.SHOW_IMPLICIT);
                 mComposeMessage.setHint("send a message");

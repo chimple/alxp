@@ -82,6 +82,7 @@ public class AlphabetTeacher implements ObjectMacro {
         } else {
             Timber.d("Failed getting data from phonics");
         }
+        mCursor.close();
         StringBuilder sb = new StringBuilder(getTeaching(rs, user, 1, message++)).append("\n");
         sb.append(getTeaching(rs, user, 2, message++)).append("\n");
         sb.append(getTeaching(rs, user, 3, message++)).append("\n");
@@ -90,17 +91,25 @@ public class AlphabetTeacher implements ObjectMacro {
             rs.setUservar(user, "topic", "oquestion1");
             sb.append(rs.getUservar(user, "w1")).append(" ?");
             if(Math.random() > 0.5) {
-                ImApp.sImApp.displayKeyBoard(ConversationView.CUSTOM_KEYBOARD_TYPE, rs.getUservar(user, "o1"), rs.getUservar(user, "o2"), rs.getUservar(user, "o3"));
+                String[] ar = {rs.getUservar(user, "o1"), rs.getUservar(user, "o2"), rs.getUservar(user, "o3")};
+                RivescriptManager.shuffleArray(ar);
+                ImApp.sImApp.displayKeyBoard(ConversationView.CUSTOM_KEYBOARD_TYPE, ar);
             } else {
-                ImApp.sImApp.displayKeyBoard(ConversationView.CUSTOM_KEYBOARD_TYPE, rs.getUservar(user, "w1"), rs.getUservar(user, "w2"), rs.getUservar(user, "w3"));
+                String[] ar = {rs.getUservar(user, "w1"), rs.getUservar(user, "w2"), rs.getUservar(user, "w3")};
+                RivescriptManager.shuffleArray(ar);
+                ImApp.sImApp.displayKeyBoard(ConversationView.CUSTOM_KEYBOARD_TYPE, ar);
             }
         } else {
             rs.setUservar(user, "topic", "aquestion1");
             sb.append(rs.getUservar(user, "o1")).append(" ?");
             if(Math.random() > 0.5) {
-                ImApp.sImApp.displayKeyBoard(ConversationView.CUSTOM_KEYBOARD_TYPE, rs.getUservar(user, "a1"), rs.getUservar(user, "a2"), rs.getUservar(user, "a3"));
+                String[] ar = {rs.getUservar(user, "a1"), rs.getUservar(user, "a2"), rs.getUservar(user, "a3")};
+                RivescriptManager.shuffleArray(ar);
+                ImApp.sImApp.displayKeyBoard(ConversationView.CUSTOM_KEYBOARD_TYPE, ar);
             } else {
-                ImApp.sImApp.displayKeyBoard(ConversationView.CUSTOM_KEYBOARD_TYPE, rs.getUservar(user, "w1"), rs.getUservar(user, "w2"), rs.getUservar(user, "w3"));
+                String[] ar = {rs.getUservar(user, "w1"), rs.getUservar(user, "w2"), rs.getUservar(user, "w3")};
+                RivescriptManager.shuffleArray(ar);
+                ImApp.sImApp.displayKeyBoard(ConversationView.CUSTOM_KEYBOARD_TYPE, ar);
             }
         }
         return sb.toString();

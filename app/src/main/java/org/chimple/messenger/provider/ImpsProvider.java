@@ -184,6 +184,8 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
     protected static final int MATCH_WORDS_BY_NAME = 108;
     protected static final int MATCH_PHONICS = 109;
     protected static final int MATCH_PHONICS_BY_LETTERS = 110;
+    protected static final int MATCH_PHONICS_LIST = 111;
+    protected static final int MATCH_PHONICS_LIST_BY_DIFFICULTY = 112;
 
     // mcs url matcher
     protected static final int MATCH_OUTGOING_RMQ_MESSAGES = 200;
@@ -1246,6 +1248,9 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
         mUrlMatcher.addURI(authority, "phonics", MATCH_PHONICS);
         mUrlMatcher.addURI(authority, "phonics/#", MATCH_PHONICS_BY_LETTERS);
 
+        mUrlMatcher.addURI(authority, "phonicsList", MATCH_PHONICS_LIST);
+        mUrlMatcher.addURI(authority, "phonicsList/#", MATCH_PHONICS_LIST_BY_DIFFICULTY);
+
         mUrlMatcher.addURI(authority, "accounts", MATCH_ACCOUNTS);
         mUrlMatcher.addURI(authority, "domainAccounts", MATCH_ACCOUNTS_WITH_DOMAIN);
         mUrlMatcher.addURI(authority, "accounts/#", MATCH_ACCOUNTS_BY_ID);
@@ -1580,6 +1585,13 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
                 // falls down
             case MATCH_PHONICS:
                 qb.setTables(TABLE_PHONICS);
+                break;
+
+            case MATCH_PHONICS_LIST_BY_DIFFICULTY:
+                appendWhere(whereClause, Imps.PhonicsList.DIFFICULTY, "=", url.getPathSegments().get(1));
+                // falls down
+            case MATCH_PHONICS_LIST:
+                qb.setTables(TABLE_PHONICS_LIST);
                 break;
 
             case MATCH_CONTACTS:
@@ -2755,6 +2767,14 @@ public class ImpsProvider extends ContentProvider implements ICacheWordSubscribe
                 rowID = db.insert(TABLE_PHONICS, "name", initialValues);
                 if (rowID > 0) {
                     resultUri = Uri.parse(Imps.Phonic.CONTENT_URI + "/" + rowID);
+                }
+                break;
+
+            case MATCH_PHONICS_LIST:
+                // Insert into the accounts table
+                rowID = db.insert(TABLE_PHONICS_LIST, "name", initialValues);
+                if (rowID > 0) {
+                    resultUri = Uri.parse(Imps.PhonicsList.CONTENT_URI + "/" + rowID);
                 }
                 break;
 
