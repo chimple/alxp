@@ -941,7 +941,7 @@ public class OnboardingActivity extends BaseActivity {
 
                 mCropImageView = new CropImageView(OnboardingActivity.this);// (CropImageView)view.findViewById(R.id.CropImageView);
                 mCropImageView.setAspectRatio(1, 1);
-                mCropImageView.setFixedAspectRatio(true);
+                mCropImageView.setFixedAspectRatio(false);
                 mCropImageView.setCropShape(CropImageView.CropShape.OVAL);
                 //  mCropImageView.setGuidelines(1);
 
